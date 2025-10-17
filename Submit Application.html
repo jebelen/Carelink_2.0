@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPRAS Dashboard - Barangay Pinagbuhatan</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --light: #ecf0f1;
+            --dark: #34495e;
+            --gray: #95a5a6;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background: var(--primary);
+            color: white;
+            padding: 20px 0;
+            transition: all 0.3s;
+            flex-shrink: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+         .logo {
+            display: flex;
+            align-items: center;
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .logo-image {
+            height: 45px;
+            width: auto;
+            margin-right: 12px;
+            border-radius: 5px;
+            object-fit: contain;
+        }
+        
+        .logo h1 {
+            font-size: 18px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .nav-links {
+            list-style: none;
+        }
+
+        .nav-links li {
+            padding: 12px 20px;
+            transition: all 0.3s;
+        }
+
+        .nav-links li:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-links li.active {
+            background: var(--secondary);
+            border-left: 4px solid white;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-links i {
+            margin-right: 10px;
+            font-size: 18px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            height: 100vh;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .header-content h1 {
+            color: var(--primary);
+            font-size: 1.8rem;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 15px;
+            background: white;
+            border-radius: 25px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+        }
+
+        .user-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-details h2 {
+            font-size: 14px;
+            margin-bottom: 2px;
+            color: var(--primary);
+        }
+
+        .user-details p {
+            color: var(--gray);
+            font-size: 12px;
+        }
+
+        .btn {
+            display: inline-block;
+            background: var(--secondary);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+        }
+
+        .btn-accent {
+            background: var(--accent);
+        }
+
+        .btn-accent:hover {
+            background: #c0392b;
+        }
+
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        /* Application Form Styles */
+        .application-form {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .form-section:last-of-type {
+            border-bottom: none;
+        }
+
+        .form-section h3 {
+            font-size: 20px;
+            color: var(--primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .form-section h3 i {
+            margin-right: 10px;
+            color: var(--secondary);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--primary);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: var(--secondary);
+            outline: none;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .required::after {
+            content: " *";
+            color: var(--accent);
+        }
+
+        .document-list {
+            list-style: none;
+            margin-top: 10px;
+        }
+
+        .document-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .document-list li:last-child {
+            border-bottom: none;
+        }
+
+        .file-upload {
+            border: 2px dashed #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 10px;
+            transition: border 0.3s;
+        }
+
+        .file-upload:hover {
+            border-color: var(--secondary);
+        }
+
+        .file-upload input {
+            display: none;
+        }
+
+        .file-upload label {
+            display: block;
+            cursor: pointer;
+            color: var(--secondary);
+            font-weight: 500;
+        }
+
+        .file-info {
+            font-size: 14px;
+            color: var(--gray);
+            margin-top: 10px;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 30px;
+            color: var(--gray);
+            font-size: 14px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                padding: 10px;
+                height: auto;
+            }
+            
+            .nav-links {
+                display: flex;
+                overflow-x: auto;
+            }
+            
+            .nav-links li {
+                white-space: nowrap;
+            }
+            
+            .main-content {
+                height: auto;
+                overflow-y: visible;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .header-actions {
+                align-self: flex-end;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-actions {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .form-actions .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <div class="logo-image">
+                    <img src="d:\CAPSTONE\LOGO.jpg" alt="Barangay Pinagbuhatan Logo" class="logo-image" onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex';">
+                </div>
+                <h1>CARELINK</h1>
+            </div>
+            <ul class="nav-links">
+                <li><a href="Barangay Dash.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li class="active"><a href="Submit Application.html"><i class="fas fa-user-plus"></i> Submit Application</a></li>
+                <li><a href=""><i class="fas fa-database"></i> Records</a></li>
+                <li><a href=""><i class="fas fa-cog"></i> Settings</a></li>
+                <li><a href=""><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="header">
+                <div class="header-content">
+                    <h1>Barangay Pinagbuhatan Dashboard</h1>
+                    <h3>Application Form</h3>
+                </div>
+                <div class="header-actions">
+                    <button class="btn"><i class="fas fa-bell"></i> Notifications</button>
+                    <div class="user-info">
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="user-details">
+                            <h2>Barangay Staff</h2>
+                            <p>Pinagbuhatan</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page Title -->
+            <div class="page-title">
+                <p>Manage PWD and Senior Citizen applications for your barangay. Submit applications, verify documents, and track the status of applications sent to City Hall.</p>
+            </div>
+
+            <!-- Application Form -->
+            <div class="application-form">
+                <h2 style="margin-bottom: 20px; color: var(--primary);">New Application Form</h2>
+                <p style="margin-bottom: 30px; color: var(--gray);">Submit a new application for PWD or Senior Citizen benefits</p>
+                
+                <!-- Basic Information Section -->
+                <div class="form-section">
+                    <h3><i class="fas fa-user"></i> Basic Information</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fullName" class="required">Full Name</label>
+                            <input type="text" id="fullName" placeholder="Enter full name">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="applicationType" class="required">Application Type</label>
+                            <select id="applicationType">
+                                <option value="">Select application type</option>
+                                <option value="pwd">PWD (Person With Disability)</option>
+                                <option value="senior">Senior Citizen</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="birthDate" class="required">Birth Date</label>
+                            <input type="date" id="birthDate">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="contactNumber" class="required">Contact Number</label>
+                            <input type="tel" id="contactNumber" placeholder="0805-0000-0000">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="completeAddress" class="required">Complete Address</label>
+                        <textarea id="completeAddress" placeholder="Enter complete address"></textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="emailAddress">Email Address (Optional)</label>
+                            <input type="email" id="emailAddress" placeholder="email@example.com">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="emergencyContact" class="required">Emergency Contact Number</label>
+                            <input type="tel" id="emergencyContact" placeholder="0805-0000-0000">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="emergencyContactName">Emergency Contact Name</label>
+                        <input type="text" id="emergencyContactName" placeholder="Enter emergency contact name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="medicalConditions">Medical Conditions (Optional)</label>
+                        <textarea id="medicalConditions" placeholder="Any relevant medical conditions"></textarea>
+                    </div>
+                </div>
+                
+                <!-- Required Documents Section -->
+                <div class="form-section">
+                    <h3><i class="fas fa-file-alt"></i> Required Documents</h3>
+                    
+                    <div class="form-group">
+                        <label class="required">Status of documents being submitted</label>
+                        <ul class="document-list">
+                            <li>
+                                <input type="checkbox" id="birthCertificate">
+                                <label for="birthCertificate">Birth Certificate</label>
+                                <!-- Upload & Verify -->
+                                <input type="file" id="birthCertificateFile" accept=".jpg,.jpeg,.png,.pdf" style="margin-left:10px;">
+                                <button type="button" class="btn btn-small" onclick="verifyDocument('birthCertificateFile', 'birthCertificateResult')">
+                                    <i class="fas fa-search"></i> Verify
+                                </button>
+                                <span id="birthCertificateResult" style="margin-left:10px; font-weight:500;"></span>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="medicalCertificate">
+                                <label for="medicalCertificate">Medical Certificate</label>
+                                <input type="file" id="medicalCertificateFile" accept=".jpg,.jpeg,.png,.pdf" style="margin-left:10px;">
+                                <button type="button" class="btn btn-small" onclick="verifyDocument('medicalCertificateFile', 'medicalCertificateResult')">
+                                    <i class="fas fa-search"></i> Verify
+                                </button>
+                                <span id="medicalCertificateResult" style="margin-left:10px; font-weight:500;"></span>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="clientIdentification">
+                                <label for="clientIdentification">Client Identification</label>
+                                <input type="file" id="clientIdentificationFile" accept=".jpg,.jpeg,.png,.pdf" style="margin-left:10px;">
+                                <button type="button" class="btn btn-small" onclick="verifyDocument('clientIdentificationFile', 'clientIdentificationResult')">
+                                    <i class="fas fa-search"></i> Verify
+                                </button>
+                                <span id="clientIdentificationResult" style="margin-left:10px; font-weight:500;"></span>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="proofOfAddress">
+                                <label for="proofOfAddress">Proof of Address</label>
+                                <input type="file" id="proofOfAddressFile" accept=".jpg,.jpeg,.png,.pdf" style="margin-left:10px;">
+                                <button type="button" class="btn btn-small" onclick="verifyDocument('proofOfAddressFile', 'proofOfAddressResult')">
+                                    <i class="fas fa-search"></i> Verify
+                                </button>
+                                <span id="proofOfAddressResult" style="margin-left:10px; font-weight:500;"></span>
+                            </li>
+                            <li>
+                                <input type="checkbox" id="idImage">
+                                <label for="idImage">Updated ID Image</label>
+                                <input type="file" id="idImageFile" accept=".jpg,.jpeg,.png,.pdf" style="margin-left:10px;">
+                                <button type="button" class="btn btn-small" onclick="verifyDocument('idImageFile', 'idImageResult')">
+                                    <i class="fas fa-search"></i> Verify
+                                </button>
+                                <span id="idImageResult" style="margin-left:10px; font-weight:500;"></span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="validId" class="required">Validated ID for verification</label>
+                        <div class="file-upload">
+                            <input type="file" id="validId" accept=".jpg,.jpeg,.png,.pdf">
+                            <label for="validId">
+                                <i class="fas fa-cloud-upload-alt"></i> Click to upload file
+                            </label>
+                            <div class="file-info">Max file size: 5MB | Supported formats: JPG, PNG, PDF</div>
+                            <button type="button" class="btn btn-small" onclick="verifyDocument('validId', 'validIdResult')" style="margin-top:10px;">
+                                <i class="fas fa-search"></i> Verify Document
+                            </button>
+                            <div id="validIdResult" style="margin-top:10px; color: var(--success); font-weight: 500;"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Additional Information Section -->
+                <div class="form-section">
+                    <h3><i class="fas fa-info-circle"></i> Additional Information</h3>
+                    
+                    <div class="form-group">
+                        <label for="additionalNotes">Additional Notes (Optional)</label>
+                        <textarea id="additionalNotes" placeholder="Any additional information or special circumstances"></textarea>
+                    </div>
+                </div>
+                
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <button class="btn btn-accent"><i class="fas fa-times"></i> Clear Form</button>
+                    <button class="btn"><i class="fas fa-paper-plane"></i> Submit Application</button>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer">
+                <p>Centralized Profiling and Record Authentication System | Barangay Pinagbuhatan &copy; 2024</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple script for interactive elements
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add click event to navigation items
+            const navItems = document.querySelectorAll('.nav-links li');
+            navItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    navItems.forEach(i => i.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+            
+            // Form functionality
+            const clearFormBtn = document.querySelector('.btn-accent');
+            const submitFormBtn = document.querySelector('.form-actions .btn:last-child');
+            
+            clearFormBtn.addEventListener('click', function() {
+                if (confirm('Are you sure you want to clear the form? All entered data will be lost.')) {
+                    document.querySelector('.application-form').reset();
+                }
+            });
+            
+            submitFormBtn.addEventListener('click', function() {
+                // Basic form validation
+                const requiredFields = document.querySelectorAll('.required');
+                let isValid = true;
+                
+                requiredFields.forEach(field => {
+                    const input = field.closest('.form-group').querySelector('input, select, textarea');
+                    if (!input.value.trim()) {
+                        isValid = false;
+                        input.style.borderColor = 'var(--accent)';
+                    } else {
+                        input.style.borderColor = '#ddd';
+                    }
+                });
+                
+                if (isValid) {
+                    alert('Application submitted successfully!');
+                    document.querySelector('.application-form').reset();
+                } else {
+                    alert('Please fill in all required fields marked with *');
+                }
+            });
+            
+            // File upload display
+            const fileInput = document.getElementById('validId');
+            const fileInfo = document.querySelector('.file-info');
+            
+            fileInput.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    const file = this.files[0];
+                    const fileSize = (file.size / 1024).toFixed(2);
+                    fileInfo.textContent = `Selected: ${file.name} (${fileSize} KB)`;
+                }
+            });
+        });
+        
+        // CNN Verification Simulation (replace with real backend call)
+        function verifyDocument(fileInputId, resultSpanId) {
+            const fileInput = document.getElementById(fileInputId);
+            const resultSpan = document.getElementById(resultSpanId);
+            if (!fileInput.files.length) {
+                resultSpan.style.color = 'var(--accent)';
+                resultSpan.textContent = 'Please upload a file first.';
+                return;
+            }
+            resultSpan.style.color = 'var(--secondary)';
+            resultSpan.textContent = 'Verifying document...';
+            // Simulate async CNN verification (replace with real API call)
+            setTimeout(() => {
+                // This should be replaced with the actual result from your CNN backend
+                // For demo: randomly legit or not legit
+                const legit = Math.random() > 0.2;
+                if (legit) {
+                    resultSpan.style.color = 'var(--success)';
+                    resultSpan.textContent = 'Document is LEGIT ✅';
+                } else {
+                    resultSpan.style.color = 'var(--accent)';
+                    resultSpan.textContent = 'Document is NOT LEGIT ❌';
+                }
+            }, 1500);
+        }
+    </script>
+</body>
+</html>
