@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CARELINK Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #130654, #0aa3b4);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            display: flex;
+            max-width: 1000px;
+            width: 100%;
+            background: rgba(245, 245, 245, 0.925);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .left-panel {
+            flex: 1;
+            background: linear-gradient(135deg, #19183B, #f8f9fa);
+            color: white;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 2;
+        }
+
+        .logo-container {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        .logo-image {
+            height: 150px;
+            width: auto;
+            border-radius: 8px;
+            z-index: 2;
+            position: relative;
+        }
+
+        .system-name {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 15px; /* Increased margin to move it down */
+            text-align: center;
+            z-index: 2;
+            margin-top: 50px; /* Added top margin to push it down */
+        }
+
+        .system-full-name {
+            font-size: 16px;
+            margin-bottom: 30px;
+            opacity: 0.9;
+            text-align: center;
+            z-index: 2;
+        }
+
+        .right-panel {
+            flex: 1;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .login-header {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .login-header h2 {
+            color: #2c3e50;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .login-header p {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        input:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+            outline: none;
+        }
+
+        .login-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .login-btn:hover {
+            background: #2980b9;
+        }
+
+        .forgot-password {
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .forgot-password a {
+            color: #3498db;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+
+        .forgot-password a:hover {
+            color: #2980b9;
+            text-decoration: underline;
+        }
+
+        .role-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #7f8c8d;
+            text-align: center;
+        }
+
+        .role-info i {
+            margin-right: 5px;
+            color: #3498db;
+        }
+
+        /* From Uiverse.io by MikeAndrewDesigner - Full panel waves */
+        .wave {
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            opacity: 0.6;
+            left: 0;
+            top: 0;
+            margin-left: -50%;
+            margin-top: -70%;
+            background: linear-gradient(744deg, #19183B, #708993 60%, #050234);
+        }
+
+        .wave:nth-child(2),
+        .wave:nth-child(3) {
+            top: 210px;
+        }
+
+        .playing .wave {
+            border-radius: 40%;
+            animation: wave 3000ms infinite linear;
+        }
+
+        .wave {
+            border-radius: 40%;
+            animation: wave 55s infinite linear;
+        }
+
+        .playing .wave:nth-child(2) {
+            animation-duration: 4000ms;
+        }
+
+        .wave:nth-child(2) {
+            animation-duration: 50s;
+        }
+
+        .playing .wave:nth-child(3) {
+            animation-duration: 5000ms;
+        }
+
+        .wave:nth-child(3) {
+            animation-duration: 45s;
+        }
+
+        @keyframes wave {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .left-panel-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Updated Logo Animation - From Uiverse.io by ShrinilDhorda */
+        .logo-btn {
+            font-size: 1.2rem;
+            padding: 1rem 2.5rem;
+            border: none;
+            outline: none;
+            border-radius: 0.4rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            background-color: rgb(14, 14, 26);
+            color: rgb(234, 234, 234);
+            font-weight: 700;
+            transition: 0.6s;
+            box-shadow: 0px 0px 60px #1f4c65;
+            -webkit-box-reflect: below 10px linear-gradient(to bottom, rgba(0,0,0,0.0), rgba(0,0,0,0.4));
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 160px;
+            height: 160px;
+            overflow: hidden;
+        }
+
+        .logo-btn:active {
+            scale: 0.92;
+        }
+
+        .logo-btn:hover {
+            background: rgb(2,29,78);
+            background: linear-gradient(270deg, rgba(2, 29, 78, 0.681) 0%, rgba(31, 215, 232, 0.873) 60%);
+            color: rgb(4, 4, 38);
+        }
+
+        .logo-btn-image {
+            width: 140px;
+            height: 140px;
+            object-fit: cover;
+            border-radius: 8px;
+            transition: 0.6s;
+            z-index: 1;
+        }
+
+        .logo-btn:hover .logo-btn-image {
+            transform: scale(1.05);
+            filter: brightness(1.1);
+        }
+
+        .logo-btn-text {
+            position: absolute;
+            bottom: -30px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
+            color: white;
+            z-index: 2;
+            transition: 0.6s;
+            opacity: 0;
+        }
+
+        .logo-btn:hover .logo-btn-text {
+            opacity: 1;
+            bottom: -25px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .left-panel, .right-panel {
+                padding: 30px;
+            }
+            
+            .logo-btn {
+                width: 140px;
+                height: 140px;
+            }
+            
+            .logo-btn-image {
+                width: 120px;
+                height: 120px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="left-panel playing">
+            <!-- Background waves for entire left panel -->
+            <div class="wave"></div>
+            <div class="wave"></div>
+            <div class="wave"></div>
+            
+            <div class="left-panel-content">
+                <div class="logo">
+                    <div class="logo-container">
+                        <button class="logo-btn">
+                            <img src="d:\CAPSTONE\LOGO.jpg" alt="CARELINK Logo" class="logo-btn-image">
+                            <div class="logo-btn-text">CARELINK</div>
+                        </button>
+                    </div>
+                    CARELINK
+                </div>
+                <h1 class="system-name">Centralized Profiling and Record Authentication System</h1>
+                <p class="system-full-name">A unified platform for PWD and Senior Citizen application management</p>
+            </div>
+        </div>
+        
+        <div class="right-panel">
+            <div class="login-header">
+                <h2><i class="fas fa-user-shield"></i> Login System</h2>
+                <p>Login to access the PWD and Senior Citizen application system</p>
+            </div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username"><i class="fas fa-user"></i> Username</label>
+                    <input type="text" id="username" placeholder="Enter your username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password"><i class="fas fa-lock"></i> Password</label>
+                    <input type="password" id="password" placeholder="Enter your password" required>
+                </div>
+                
+                <button type="submit" class="login-btn">Login</button>
+                
+                <div class="forgot-password">
+                    <a href="#"><i class="fas fa-key"></i> Forgot Password?</a>
+                </div>
+            </form>
+            
+            <div class="role-info">
+                <i class="fas fa-info-circle"></i> Role is automatically detected based on username keyword!
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            // Simple role detection based on username
+            let role = "Unknown Role";
+            
+            if (username.includes('barangay') || username.includes('staff')) {
+                role = "Barangay Staff";
+            } else if (username.includes('pwd') || username.includes('disability')) {
+                role = "PWD Department";
+            } else if (username.includes('senior') || username.includes('elderly')) {
+                role = "Senior Citizen Department";
+            } else if (username.includes('sysadmin') || username.includes('system_admin')) {
+                role = "System Administrator";
+            }
+            
+            // Simple validation for demo purposes
+            if (password === 'password') {
+                // Redirect to Barangay Dash.html after successful login
+                window.location.href = "Barangay Dash.html";
+            } else {
+                alert('Invalid credentials. Please try again.');
+            }
+        });
+    </script>
+</body>
+</html>
