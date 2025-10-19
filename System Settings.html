@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CARELINK — System Settings</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{
+      --primary:#2c3e50; --accent:#3498db; --muted:#7f8c8d; --bg:#ffffff;
+    }
+
+    /* reset / layout */
+    *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Tahoma,Arial}
+    html,body{height:100%;background:var(--bg);color:var(--primary);-webkit-font-smoothing:antialiased}
+    .layout{display:flex;min-height:100vh}
+
+    /* Department Dashboard sidebar (kept) */
+    .sidebar {
+      width:260px;
+      background:#2f3f4b;
+      color:#fff;
+      padding:18px 14px;
+      box-shadow: none;
+      position:fixed;
+      left:0;
+      top:0;
+      bottom:0;
+      overflow:auto;
+    }
+    .sidebar .logo { display:flex;align-items:center;gap:12px;padding:8px 4px 12px;border-bottom:1px solid rgba(255,255,255,0.03); margin-bottom:12px }
+    .sidebar .logo img{height:34px;border-radius:4px}
+    .sidebar .logo .title{font-weight:700;font-size:16px}
+    .nav-links{list-style:none;padding:8px 4px;margin:0}
+    .nav-links li{padding:10px 8px;border-radius:4px;display:flex;align-items:center;gap:10px;color:#e6eef8;margin-bottom:6px;cursor:pointer}
+    .nav-links li i{width:24px;text-align:center;font-size:18px}
+    .nav-links li.active{background:#374a57;color:#fff}
+    .nav-links a{color:inherit;text-decoration:none;display:flex;align-items:center;width:100%}
+
+    /* Main — maximize horizontal space */
+    .main { margin-left:260px; padding:20px 24px; width: calc(100% - 260px); }
+
+    /* Remove "card" styling: use clean flat sections that stretch full width */
+    .card{
+      background:transparent;
+      border-radius:0;
+      padding:0;
+      box-shadow:none;
+      margin-bottom:6px;
+      border-bottom:1px solid rgba(0,0,0,0.04);
+    }
+
+    /* Page header simplified */
+    h1{font-size:20px;margin:6px 0 8px}
+    .small{font-size:13px;color:var(--muted);margin-bottom:8px}
+
+    /* Tabs: subtle and compact */
+    .tabs{display:flex;gap:8px;margin:10px 0 16px;flex-wrap:wrap}
+    .tab{padding:6px 12px;border-radius:6px;background:transparent;color:var(--muted);border:1px solid transparent;cursor:pointer}
+    .tab.active{background:var(--accent);color:#fff;border-color:rgba(52,152,219,0.12)}
+
+    /* Form grid: use full width columns so inputs can stretch */
+    .form-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;align-items:start;width:100%}
+    .col-12{grid-column:span 12}
+    .col-6{grid-column:span 6}
+    .col-4{grid-column:span 4}
+
+    label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+    input[type="text"],input[type="email"],input[type="password"],select{
+      width:100%;
+      padding:12px 14px;
+      border-radius:6px;
+      border:1px solid #e6eef5;
+      background:#fff;
+      font-size:15px;
+      color:var(--primary);
+    }
+
+    /* Buttons / actions inline and compact */
+    .actions{display:flex;gap:10px;align-items:center;margin-top:10px}
+    .btn{background:var(--accent);color:#fff;padding:8px 12px;border-radius:6px;border:none;cursor:pointer;font-weight:600}
+    .btn.ghost{background:transparent;border:1px solid rgba(36,54,66,0.06);color:var(--primary)}
+
+    /* Modal minimal */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.35);display:none;align-items:center;justify-content:center;z-index:2000}
+    .modal{background:#fff;padding:16px;border-radius:8px;min-width:320px;max-width:680px;box-shadow:0 10px 30px rgba(0,0,0,0.08)}
+
+    /* Helpers */
+    .muted{color:var(--muted);font-size:13px}
+    .note{font-size:13px;color:var(--muted);margin-top:10px;padding:0 4px}
+
+    /* Responsive: let forms stack and use full width on small screens */
+    @media (max-width:1100px){
+      .form-grid{grid-template-columns:repeat(6,1fr)}
+      .col-6{grid-column:span 6}
+      .main{padding:18px}
+    }
+    @media (max-width:720px){
+      .sidebar{position:relative;width:100%;height:auto;box-shadow:none}
+      .main{margin-left:0;padding:14px;width:100%}
+      .form-grid{grid-template-columns:repeat(1,1fr)}
+      .col-6,.col-12,.col-4{grid-column:span 1}
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar" aria-label="Main sidebar">
+      <div class="logo">
+        <img src="d:/CAPSTONE/LOGO.jpg" alt="CARELINK" onerror="this.style.display='none'">
+        <div class="title">CARELINK</div>
+      </div>
+
+      <ul class="nav-links" role="menu" aria-label="Main menu">
+        <li><a href="Department Dashboard.html"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
+        <li><a href="User Management.html"><i class="fas fa-user-cog"></i> <span>User Management</span></a></li>
+        <li><a href=""><i class="fas fa-user-plus"></i> <span>Submit Application</span></a></li>
+        <li><a href=""><i class="fas fa-check-circle"></i> <span>Verify Documents</span></a></li>
+        <li class="active"><a href="System Settings.html"><i class="fas fa-cog"></i> <span>System Settings</span></a></li>
+        <li><a href="#"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a></li>
+      </ul>
+    </aside>
+
+    <main class="main" role="main">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <h1>System Settings</h1>
+            <div class="small">Configure account, security and system preferences.</div>
+          </div>
+          <div>
+            <button id="openChangePw" class="btn"><i class="fas fa-key"></i>&nbsp;Change Admin Password</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="tabs" id="tabs">
+          <div class="tab active" data-tab="profile">Profile</div>
+          <div class="tab" data-tab="security">Security</div>
+          <div class="tab" data-tab="notifications">Notifications</div>
+          <div class="tab" data-tab="preferences">Preferences</div>
+        </div>
+
+        <div id="tab-contents">
+          <section data-content="profile">
+            <form id="profileForm">
+              <div class="row">
+                <div>
+                  <label for="fullName">Full name</label>
+                  <input id="fullName" type="text" placeholder="Administrator">
+                </div>
+                <div>
+                  <label for="username">Username</label>
+                  <input id="username" type="text" placeholder="admin123">
+                </div>
+              </div>
+
+              <div class="row">
+                <div>
+                  <label for="email">Email</label>
+                  <input id="email" type="email" placeholder="admin@pasig.gov.ph">
+                </div>
+                <div>
+                  <label for="contact">Contact number</label>
+                  <input id="contact" type="text" placeholder="+63 912 345 6789">
+                </div>
+              </div>
+
+              <div class="row">
+                <div>
+                  <label for="department">Department / Office</label>
+                  <input id="department" type="text" placeholder="PWD Department - City Hall">
+                </div>
+              </div>
+
+              <div class="actions">
+                <button id="saveProfile" type="button" class="btn">Save profile</button>
+                <button id="resetProfile" type="button" class="btn ghost">Reset</button>
+                <div id="saveStatus" class="small" style="display:none;color:#27ae60;align-self:center;margin-left:8px">Saved</div>
+              </div>
+            </form>
+          </section>
+
+          <section data-content="security" style="display:none">
+            <div>
+              <h3 style="margin-top:0">Security</h3>
+              <div class="small">Manage admin authentication and access.</div>
+
+              <div style="margin-top:12px">
+                <label class="small">Require 2FA for admin</label>
+                <div style="margin-top:8px">
+                  <label><input id="require2fa" type="checkbox"> Enable two-factor authentication (demo)</label>
+                </div>
+              </div>
+
+              <div style="margin-top:14px">
+                <label class="small">Session timeout (minutes)</label>
+                <div style="margin-top:8px">
+                  <select id="sessionTimeout">
+                    <option value="15">15</option>
+                    <option value="30" selected>30</option>
+                    <option value="60">60</option>
+                    <option value="120">120</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="actions" style="margin-top:12px">
+              <button id="saveSecurity" class="btn">Save security</button>
+            </div>
+          </section>
+
+          <section data-content="notifications" style="display:none">
+            <h3 style="margin-top:0">Notifications</h3>
+            <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">
+              <label><input id="notifyEmail" type="checkbox"> Send notifications to admin email</label>
+              <label><input id="notifySMS" type="checkbox"> Send SMS alerts (demo)</label>
+            </div>
+            <div class="actions" style="margin-top:12px">
+              <button id="saveNotifications" class="btn">Save notifications</button>
+            </div>
+          </section>
+
+          <section data-content="preferences" style="display:none">
+            <h3 style="margin-top:0">Preferences</h3>
+            <div style="margin-top:8px">
+              <label class="small">Theme</label>
+              <div style="margin-top:8px">
+                <select id="uiTheme">
+                  <option value="light">Light</option>
+                  <option value="dark">Dark</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="margin-top:12px">
+              <label class="small">Default records per page</label>
+              <div style="margin-top:8px">
+                <select id="perPage">
+                  <option value="10">10</option>
+                  <option value="25" selected>25</option>
+                  <option value="50">50</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="actions" style="margin-top:12px">
+              <button id="savePrefs" class="btn">Save preferences</button>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- change password modal -->
+  <div id="pwModal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <h3 id="modalTitle">Change password</h3>
+      <div class="form-row">
+        <label for="oldPw">Current password</label>
+        <input id="oldPw" type="password" autocomplete="current-password">
+      </div>
+      <div class="form-row">
+        <label for="newPw">New password</label>
+        <input id="newPw" type="password" autocomplete="new-password">
+      </div>
+      <div class="form-row">
+        <label for="confirmPw">Confirm new password</label>
+        <input id="confirmPw" type="password" autocomplete="new-password">
+      </div>
+      <div id="pwError" class="small" style="color:#c0392b;display:none"></div>
+
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+        <button id="pwCancel" class="btn ghost">Cancel</button>
+        <button id="pwSave" class="btn">Save password</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // storage key
+    const KEY = 'carelink_system_settings_v1';
+
+    // tabs
+    document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+      const tab = t.dataset.tab;
+      document.querySelectorAll('[data-content]').forEach(s => s.style.display = s.dataset.content === tab ? '' : 'none');
+    }));
+
+    // load/save settings
+    function load() {
+      const raw = localStorage.getItem(KEY);
+      const s = raw ? JSON.parse(raw) : {};
+      document.getElementById('fullName').value = s.fullName || 'Administrator';
+      document.getElementById('username').value = s.username || 'admin123';
+      document.getElementById('email').value = s.email || '';
+      document.getElementById('contact').value = s.contact || '';
+      document.getElementById('department').value = s.department || 'PWD Department - City Hall';
+      document.getElementById('require2fa').checked = !!s.require2fa;
+      document.getElementById('sessionTimeout').value = s.sessionTimeout || '30';
+      document.getElementById('notifyEmail').checked = !!s.notifyEmail;
+      document.getElementById('notifySMS').checked = !!s.notifySMS;
+      document.getElementById('uiTheme').value = s.uiTheme || 'light';
+      document.getElementById('perPage').value = s.perPage || '25';
+    }
+    function save(keyVals){
+      const raw = localStorage.getItem(KEY);
+      const s = raw ? JSON.parse(raw) : {};
+      Object.assign(s, keyVals);
+      localStorage.setItem(KEY, JSON.stringify(s));
+    }
+
+    document.getElementById('saveProfile').addEventListener('click', () => {
+      save({
+        fullName: document.getElementById('fullName').value,
+        username: document.getElementById('username').value,
+        email: document.getElementById('email').value,
+        contact: document.getElementById('contact').value,
+        department: document.getElementById('department').value
+      });
+      const st = document.getElementById('saveStatus');
+      st.style.display = 'block';
+      setTimeout(()=>st.style.display='none',1500);
+    });
+    document.getElementById('resetProfile').addEventListener('click', () => { localStorage.removeItem(KEY); load(); alert('Settings reset (local only).'); });
+
+    document.getElementById('saveSecurity').addEventListener('click', () => {
+      save({ require2fa: document.getElementById('require2fa').checked, sessionTimeout: document.getElementById('sessionTimeout').value });
+      alert('Security settings saved (demo only).');
+    });
+
+    document.getElementById('saveNotifications').addEventListener('click', () => {
+      save({ notifyEmail: document.getElementById('notifyEmail').checked, notifySMS: document.getElementById('notifySMS').checked });
+      alert('Notification settings saved (demo only).');
+    });
+
+    document.getElementById('savePrefs').addEventListener('click', () => {
+      save({ uiTheme: document.getElementById('uiTheme').value, perPage: document.getElementById('perPage').value });
+      alert('Preferences saved (demo only).');
+    });
+
+    // change password modal
+    const pwModal = document.getElementById('pwModal');
+    document.getElementById('openChangePw').addEventListener('click', ()=>{ pwModal.style.display='flex'; pwModal.setAttribute('aria-hidden','false'); });
+    document.getElementById('pwCancel').addEventListener('click', ()=>{ pwModal.style.display='none'; pwModal.setAttribute('aria-hidden','true'); });
+    document.getElementById('pwSave').addEventListener('click', ()=> {
+      const oldPw = document.getElementById('oldPw').value.trim();
+      const p1 = document.getElementById('newPw').value.trim();
+      const p2 = document.getElementById('confirmPw').value.trim();
+      const err = document.getElementById('pwError'); err.style.display='none';
+      // demo validation: require new password >=8 and match
+      if (p1.length < 8) { err.innerText = 'New password must be at least 8 characters.'; err.style.display='block'; return; }
+      if (p1 !== p2) { err.innerText = 'Passwords do not match.'; err.style.display='block'; return; }
+      // store hashed password? for demo just save plain (do not do this in production)
+      save({ adminPassword: p1 });
+      pwModal.style.display='none'; pwModal.setAttribute('aria-hidden','true');
+      alert('Password updated (demo only).');
+    });
+
+    // sidebar navigation - ensure links navigate and active highlight
+    document.querySelectorAll('.nav-links a').forEach(a=>{
+      a.addEventListener('click', function(e){
+        const href = this.getAttribute('href');
+        if (!href || href === '#') return;
+        // allow normal modifier behavior
+        if (e.ctrlKey || e.metaKey || e.shiftKey) return;
+        e.preventDefault();
+        window.location.href = href;
+      });
+    });
+
+    // set active sidebar item by filename
+    (function(){ const path = location.pathname.split('/').pop();
+      document.querySelectorAll('.nav-links a').forEach(a=>{
+        const href = a.getAttribute('href');
+        const li = a.closest('li');
+        if (!href || !li) return;
+        if (href === path) li.classList.add('active'); else li.classList.remove('active');
+      });
+    })();
+
+    load();
+  </script>
+</body>
+</html>

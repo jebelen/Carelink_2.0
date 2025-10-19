@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CARELINK — User Management</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/shared.css"> <!-- shared topbar styles -->
+  <style>
+    /* Sidebar layout (added) */
+    .layout { display:flex; min-height:100vh; }
+    .sidebar {
+      width:260px;
+      background:#2f3f4b;
+      color:#fff;
+      padding:18px 14px;
+      box-shadow: 2px 0 0 rgba(0,0,0,0.04);
+      position:fixed;
+      left:0;
+      top:0;
+      bottom:0;
+      overflow:auto;
+    }
+    .sidebar .logo { display:flex;align-items:center;gap:12px;padding:8px 4px 16px;border-bottom:1px solid rgba(255,255,255,0.04); margin-bottom:12px }
+    .sidebar .logo img{height:36px;border-radius:6px}
+    .sidebar .logo .title{font-weight:700;font-size:18px}
+    .nav-links{list-style:none;padding:12px 4px;margin:0}
+    .nav-links li{padding:12px 10px;border-radius:6px;display:flex;align-items:center;gap:12px;color:#e6eef8;margin-bottom:6px;cursor:pointer}
+    .nav-links li i{width:26px;text-align:center;font-size:18px}
+    .nav-links li.active{background:#3e5f7f;color:#fff}
+    .nav-links a{color:inherit;text-decoration:none;display:flex;align-items:center;width:100%}
+    
+    /* ensure main area keeps same offset */
+    .main { margin-left:280px; padding:32px; }
+
+    /* Action buttons (compact, theme-consistent) */
+    .actions { display:flex; gap:8px; align-items:center; }
+    .action-btn {
+      border: 1px solid transparent;
+      background: transparent;
+      padding: 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width:36px;
+      height:36px;
+    }
+    .action-btn i { font-size:14px; width:16px; text-align:center; }
+    .action-btn.view { background:#eef6ff; color:var(--secondary,#3498db); border-color: rgba(52,152,219,0.12); }
+    .action-btn.edit { background:#fff7ec; color:#f39c12; border-color: rgba(243,156,18,0.12); }
+    .action-btn.toggle { background:#fffaf0; color:#f39c12; border-color: rgba(243,156,18,0.08); }
+    .action-btn.delete { background:#fdecea; color:#e74c3c; border-color: rgba(231,76,60,0.08); }
+    .action-btn:focus { outline: 2px solid rgba(52,152,219,0.12); }
+    td.pw-cell { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace; color: #333; }
+
+    body{font-family:'Segoe UI',Tahoma,sans-serif;margin:0;padding:24px; padding-top:96px;background:var(--bg,#f5f7fa);color:var(--primary,#2c3e50)}
+    .page{max-width:1100px;margin:0 auto}
+    h1{margin-bottom:8px}
+    .card{background:var(--card,#fff);border-radius:8px;padding:16px;box-shadow:0 6px 18px rgba(0,0,0,0.06);margin-bottom:16px}
+    .tools{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+    .search{flex:1;display:flex;gap:8px}
+    .search input{flex:1;padding:10px;border-radius:8px;border:1px solid #ddd}
+    .btn{background:var(--secondary,#3498db);color:#fff;padding:8px 12px;border-radius:8px;border:none;cursor:pointer}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:12px;border-bottom:1px solid #eee;text-align:left}
+    th{background:transparent;color:var(--muted,#7f8c8d);font-weight:600}
+    .actions button{margin-right:6px}
+    .badge{display:inline-block;padding:6px 10px;border-radius:999px;background:#eef6ff;color:var(--secondary,#3498db);font-weight:600;font-size:13px}
+    /* simple modal */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;z-index:2000}
+    .modal{background:var(--card,#fff);padding:16px;border-radius:10px;min-width:320px;max-width:420px;box-shadow:0 6px 24px rgba(0,0,0,0.2)}
+    .form-row{display:flex;flex-direction:column;margin-bottom:10px}
+    label{font-size:13px;color:var(--muted,#7f8c8d);margin-bottom:6px}
+    input[type="password"]{padding:10px;border:1px solid #ddd;border-radius:8px}
+    .muted{font-size:13px;color:var(--muted,#7f8c8d)}
+    .small{font-size:12px;color:#c0392b;margin-top:6px}
+    @media (max-width:720px){ body{padding:12px;padding-top:96px} .page{padding:0} }
+
+    /* slightly larger icons and spacing for sidebar and action buttons */
+    .sidebar .logo img { height:44px; border-radius:6px; }
+    .sidebar .logo .title { font-weight:700; font-size:20px; }
+
+    .nav-links li { padding:12px 10px; border-radius:6px; display:flex; align-items:center; gap:14px; color:#e6eef8; margin-bottom:6px; cursor:pointer; }
+    .nav-links li i { width:28px; text-align:center; font-size:18px; }
+
+    .action-btn { min-width:44px; height:44px; padding:10px; border-radius:8px; }
+    .action-btn i { font-size:18px; width:20px; text-align:center; }
+
+    td.pw-cell { font-size:14px; }
+
+    /* responsive adjustments */
+    @media (max-width:900px){
+      .nav-links li i { width:22px; font-size:16px; }
+      .action-btn { min-width:40px; height:40px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar" aria-label="Main sidebar">
+      <div class="logo">
+        <img src="d:/CAPSTONE/LOGO.jpg" alt="CARELINK" onerror="this.style.display='none'">
+        <div class="title">CARELINK</div>
+      </div>
+      <ul class="nav-links" role="menu" aria-label="Main menu">
+        <li><a href="Department Dashboard.html"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
+        <li class="active"><a href="User Management.html"><i class="fas fa-user-cog"></i> <span>User Management</span></a></li>
+        <li><a href="Submit Application.html"><i class="fas fa-user-plus"></i> <span>Submit Application</span></a></li>
+        <li><a href="Verify Document.html"><i class="fas fa-check-circle"></i> <span>Verify Documents</span></a></li>
+        <li><a href="System Settings.html"><i class="fas fa-cog"></i> <span>System Settings</span></a></li>
+        <li><a href="#"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a></li>
+      </ul>
+    </aside>
+
+    <main class="main" role="main">
+       <main class="page">
+         <div class="card">
+           <div style="display:flex;justify-content:space-between;align-items:center">
+             <div>
+               <h1>User Management</h1>
+               <div class="muted">Manage barangay user accounts (Pasig) — change passwords or deactivate accounts.</div>
+             </div>
+             <div>
+               <span class="badge">Pasig</span>
+             </div>
+           </div>
+         </div>
+ 
+         <div class="card">
+           <div class="tools">
+             <div class="search">
+               <input id="txtSearch" placeholder="Search barangay, username, or office">
+               <button id="btnSearch" class="btn"><i class="fas fa-search"></i></button>
+             </div>
+             <button id="btnAdd" class="btn"><i class="fas fa-user-plus"></i>&nbsp;Add</button>
+           </div>
+ 
+           <div style="overflow-x:auto">
+             <table id="usersTable" aria-live="polite">
+               <thead>
+                 <tr>
+                   <th>Barangay</th>
+                   <th>Username</th>
+                   <th>Office / Role</th>
+                   <th>Status</th>
+                   <th style="width:210px">Actions</th>
+                 </tr>
+               </thead>
+               <tbody>
+               </tbody>
+             </table>
+           </div>
+         </div>
+       </main>
+    </main>
+  </div>
+ 
+   <!-- Change password / Add user modal -->
+   <div id="modal" style="display:none">
+    <div class="modal-backdrop" role="dialog" aria-modal="true">
+      <div class="modal" role="document">
+        <h3 id="modalTitle">Change password</h3>
+        <div class="muted" id="modalSubtitle">for <strong id="modalUser"></strong></div>
+
+        <div class="form-row">
+          <label for="pwd1">New password</label>
+          <input id="pwd1" type="password" autocomplete="new-password">
+        </div>
+        <div class="form-row">
+          <label for="pwd2">Confirm password</label>
+          <input id="pwd2" type="password" autocomplete="new-password">
+        </div>
+        <div id="modalError" class="small" style="display:none"></div>
+
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px">
+          <button id="modalCancel" class="btn" style="background:#ccc;color:#111">Cancel</button>
+          <button id="modalSave" class="btn">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // demo users (stored in localStorage key 'carelink_users')
+    const STORAGE_KEY = 'carelink_users';
+    const defaults = [
+      { id: 'u1', barangay: 'Pinagbuhatan', username: 'pinagbuhatan_officer', office: 'Barangay Staff', status: 'active', password: 'password1' },
+      { id: 'u2', barangay: 'Maybunga', username: 'maybunga_officer', office: 'Barangay Staff', status: 'active', password: 'password2' },
+      { id: 'u3', barangay: 'Ugong', username: 'ugong_officer', office: 'Barangay Staff', status: 'disabled', password: 'password3' }
+    ];
+
+    function loadUsers(){
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) { localStorage.setItem(STORAGE_KEY, JSON.stringify(defaults)); return defaults.slice(); }
+      try { return JSON.parse(raw); } catch(e){ localStorage.setItem(STORAGE_KEY, JSON.stringify(defaults)); return defaults.slice(); }
+    }
+
+    function saveUsers(users){ localStorage.setItem(STORAGE_KEY, JSON.stringify(users)); }
+
+    function renderTable(filter=''){
+      const tbody = document.querySelector('#usersTable tbody');
+      tbody.innerHTML = '';
+      const users = loadUsers().filter(u => {
+        if (!filter) return true;
+        const f = filter.toLowerCase();
+        return (u.barangay||'').toLowerCase().includes(f) || (u.username||'').toLowerCase().includes(f) || (u.office||'').toLowerCase().includes(f);
+      });
+      users.forEach(u => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${u.barangay}</td>
+          <td>${u.username}</td>
+          <td>${u.office}</td>
+          <td>${u.status === 'active' ? '<span style="color:#27ae60">Active</span>' : '<span style="color:#c0392b">Disabled</span>'}</td>
+          <td class="pw-cell" data-id="${u.id}">••••••••</td>
+          <td class="actions">
+            <button class="action-btn view" title="View password" data-action="viewpw" data-id="${u.id}"><i class="fas fa-eye"></i></button>
+            <button class="action-btn edit" title="Change password" data-action="changepw" data-id="${u.id}"><i class="fas fa-key"></i></button>
+            <button class="action-btn toggle" title="${u.status==='active'?'Disable':'Enable'}" data-action="toggle" data-id="${u.id}"><i class="fas ${u.status==='active'?'fa-toggle-on':'fa-toggle-off'}"></i></button>
+            <button class="action-btn delete" title="Delete user" data-action="delete" data-id="${u.id}"><i class="fas fa-trash"></i></button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // modal helpers
+    let currentId = null;
+    function openModal(mode, id){
+      currentId = id || null;
+      const modal = document.getElementById('modal');
+      document.getElementById('modalError').style.display = 'none';
+      if (mode === 'changepw') {
+        const users = loadUsers();
+        const u = users.find(x=>x.id===id);
+        document.getElementById('modalTitle').innerText = 'Change password';
+        document.getElementById('modalUser').innerText = `${u.barangay} — ${u.username}`;
+      } else if (mode === 'add') {
+        document.getElementById('modalTitle').innerText = 'Add user';
+        document.getElementById('modalUser').innerText = 'new user';
+      }
+      document.getElementById('pwd1').value = '';
+      document.getElementById('pwd2').value = '';
+      modal.style.display = '';
+    }
+    function closeModal(){ document.getElementById('modal').style.display = 'none'; currentId = null; }
+
+    document.addEventListener('click', function(e){
+      const a = e.target.closest('button[data-action]');
+      if (a){
+        const id = a.dataset.id;
+        const action = a.dataset.action;
+        if (action === 'viewpw') {
+          const users = loadUsers();
+          const u = users.find(x=>x.id===id);
+          const tr = a.closest('tr');
+          const pwCell = tr && tr.querySelector('.pw-cell');
+          if (!pwCell) return;
+          const visible = pwCell.dataset.visible === '1';
+          if (visible) {
+            pwCell.innerText = '••••••••';
+            pwCell.dataset.visible = '0';
+            a.innerHTML = '<i class="fas fa-eye"></i>';
+            a.title = 'View password';
+          } else {
+            pwCell.innerText = u ? u.password : '';
+            pwCell.dataset.visible = '1';
+            a.innerHTML = '<i class="fas fa-eye-slash"></i>';
+            a.title = 'Hide password';
+          }
+          return;
+        }
+        if (action === 'changepw') openModal('changepw', id);
+        if (action === 'toggle'){
+          const users = loadUsers();
+          const u = users.find(x=>x.id===id);
+          if (u){ u.status = u.status==='active' ? 'disabled' : 'active'; saveUsers(users); renderTable(document.getElementById('txtSearch').value); }
+          // update button icon/title after re-render
+          // (renderTable will re-create buttons)
+        }
+        if (action === 'delete'){
+          if (!confirm('Delete user? This cannot be undone (demo only).')) return;
+          let users = loadUsers().filter(x=>x.id!==id);
+          saveUsers(users); renderTable(document.getElementById('txtSearch').value);
+        }
+      }
+    });
+
+    document.getElementById('btnSearch').addEventListener('click', function(){ renderTable(document.getElementById('txtSearch').value); });
+    document.getElementById('txtSearch').addEventListener('keyup', function(e){ if (e.key === 'Enter') renderTable(this.value); });
+
+    document.getElementById('btnAdd').addEventListener('click', function(){
+      // quick add with prompt (for demo)
+      const barangay = prompt('Barangay name (e.g. Pinagbuhatan)');
+      if (!barangay) return;
+      const username = prompt('Username (e.g. pinagbuhatan_officer)');
+      if (!username) return;
+      const users = loadUsers();
+      const id = 'u' + Date.now();
+      users.push({ id, barangay, username, office: 'Barangay Staff', status: 'active', password: 'changeme' });
+      saveUsers(users); renderTable(document.getElementById('txtSearch').value);
+    });
+
+    // modal buttons
+    document.getElementById('modalCancel').addEventListener('click', closeModal);
+    document.getElementById('modalSave').addEventListener('click', function(){
+      const p1 = document.getElementById('pwd1').value.trim();
+      const p2 = document.getElementById('pwd2').value.trim();
+      const err = document.getElementById('modalError');
+      if (p1.length < 8){ err.innerText = 'Password must be at least 8 characters.'; err.style.display = ''; return; }
+      if (p1 !== p2){ err.innerText = 'Passwords do not match.'; err.style.display = ''; return; }
+
+      const users = loadUsers();
+      if (currentId){
+        const u = users.find(x=>x.id===currentId);
+        if (u) u.password = p1;
+      } else {
+        // add new user (not used in this modal in demo)
+      }
+      saveUsers(users);
+      closeModal();
+      alert('Password updated (demo only).');
+    });
+
+    // initial render
+    renderTable();
+
+    // mark active sidebar link
+    (function(){
+      const path = location.pathname.split('/').pop();
+      document.querySelectorAll('.nav-links a').forEach(a=>{
+        const href = a.getAttribute('href');
+        if (!href) return;
+        if (href === path || (href === 'Department Dashboard.html' && (path === '' || path === 'Department Dashboard.html'))) {
+          a.parentElement.classList.add('active');
+        } else {
+          a.parentElement.classList.remove('active');
+        }
+      });
+      // ensure sidebar links always navigate (handles environments where default navigation may be prevented)
+      document.querySelectorAll('.nav-links a').forEach(a=>{
+        a.addEventListener('click', function(e){
+          const href = this.getAttribute('href');
+          if (!href || href.trim() === '#') return;
+          // allow normal modifier-key behavior (open in new tab)
+          if (e.ctrlKey || e.metaKey || e.shiftKey) return;
+          e.preventDefault();
+          window.location.href = href;
+        });
+      });
+    })();
+   </script>
+ </body>
+ </html>

@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>CARELINK — Settings</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Minimal styles matched to Barangay Dash */
+        *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Tahoma,sans-serif}
+        body{background:#f5f7fa;color:#333;min-height:100vh}
+        .container{display:flex;min-height:100vh}
+        .sidebar{width:250px;background:#2c3e50;color:#fff;padding:20px}
+        .logo{display:flex;align-items:center;gap:10px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:18px}
+        .logo img{height:40px;border-radius:4px}
+        .nav-links{list-style:none;padding:0}
+        .nav-links li{padding:10px 0}
+        .nav-links a{color:#fff;text-decoration:none;display:flex;gap:10px;align-items:center}
+        .main{flex:1;padding:24px;overflow:auto;position:relative} /* position:relative to place top-right controls */
+        .card{background:#fff;border-radius:10px;padding:20px;box-shadow:0 6px 18px rgba(0,0,0,.06);margin-bottom:18px}
+        h1,h2{color:#2c3e50}
+        .tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+        .tab{padding:8px 12px;border-radius:8px;background:#eef3f7;color:#2c3e50;cursor:pointer}
+        .tab.active{background:#3498db;color:#fff}
+        form .row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+        label{display:block;font-size:13px;color:#34495e;margin-bottom:6px}
+        input[type="text"],input[type="email"],select{padding:10px;border:1px solid #ddd;border-radius:8px;width:280px}
+        input[disabled]{background:#f3f3f3}
+        .switch{display:flex;align-items:center;gap:8px}
+        .btn{background:#3498db;color:#fff;padding:10px 16px;border-radius:8px;border:none;cursor:pointer}
+        .btn.ghost{background:#fff;color:#3498db;border:1px solid #3498db}
+        .actions{display:flex;gap:8px;margin-top:12px}
+        .small{font-size:13px;color:#7f8c8d}
+
+        /* Theme toggle icon (upper-right) */
+        .top-right-controls { position: absolute; top: 16px; right: 24px; display:flex; gap:8px; align-items:center; z-index:20; }
+        .theme-toggle { background: transparent; border: none; color: #2c3e50; font-size:18px; padding:8px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .theme-toggle:focus { outline: 2px solid rgba(52,152,219,0.25); }
+
+        /* Dark theme */
+        :root { --bg: #f5f7fa; --card: #ffffff; --text: #2c3e50; --muted: #7f8c8d; --accent: #3498db; --sidebar-bg: #2c3e50; }
+        [data-theme="dark"] { --bg: #0f1720; --card: #0b1520; --text: #e6eef8; --muted: #9fb4c9; --accent: #3aa9ff; --sidebar-bg: #0b1220; }
+        body { background: var(--bg); color: var(--text); }
+        .card { background: var(--card); box-shadow: 0 6px 18px rgba(0,0,0,0.15); }
+        .sidebar { background: var(--sidebar-bg); }
+        .small { color: var(--muted); }
+        .tab { background: rgba(255,255,255,0.03); color: var(--text); }
+        .tab.active { background: var(--accent); color: #fff; }
+        .theme-toggle i { font-size: 18px; color: var(--text); }
+
+        @media (max-width:768px){
+            .top-right-controls { right: 12px; top: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo">
+                <img src="d:\CAPSTONE\LOGO.jpg" alt="logo" onerror="this.style.display='none'">
+                <div>
+                    <div style="font-weight:700">CARELINK</div>
+                    <div style="font-size:12px;opacity:.9">Settings</div>
+                </div>
+            </div>
+
+            <ul class="nav-links">
+                <li><a href="Barangay Dash.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li><a href="Submit Application.html"><i class="fas fa-user-plus"></i> Submit Application</a></li>
+                <li><a href="Settings.html" class="active"><i class="fas fa-cog"></i> Settings</a></li>
+                <li><a href="#"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </aside>
+
+        <main class="main">
+            <!-- top-right controls: theme icon -->
+            <div class="top-right-controls" aria-hidden="false">
+                <button id="themeToggle" class="theme-toggle" title="Toggle dark mode" aria-label="Toggle dark mode">
+                    <i id="themeIcon" class="fas fa-moon"></i>
+                </button>
+            </div>
+
+            <div class="card profile-overview">
+                <div style="display:flex;align-items:center;gap:16px;">
+                    <div id="profileAvatar" title="Click to change picture" style="width:72px;height:72px;cursor:pointer;border-radius:50%;background:#3498db;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:22px;overflow:hidden;position:relative;">
+                        <img id="avatarImg" alt="avatar" style="width:100%;height:100%;object-fit:cover;display:none;">
+                        <span id="avatarInitials">BS</span>
+                    </div>
+                    <div>
+                        <div id="profileName" style="font-size:18px;font-weight:700;color:var(--text)">Barangay Staff</div>
+                        <div id="profileRole" style="font-size:13px;color:var(--muted)">Barangay Staff • Barangay Pinagbuhatan</div>
+                        <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+                            <input id="avatarInput" type="file" accept="image/*" style="display:none">
+                        </div>
+                    </div>
+                </div>
+                <p class="small" style="margin-top:12px">Manage your account preferences and appearance.</p>
+            </div>
+
+            <div class="card">
+                <div class="tabs" id="tabs">
+                    <div class="tab active" data-tab="profile">Profile</div>
+                </div>
+
+                <div id="tab-contents">
+                    <!-- Profile -->
+                    <section data-content="profile">
+                        <div style="display:flex;align-items:center;justify-content:space-between;">
+                            <h2 style="margin:0">Profile</h2>
+                            <button id="editProfileBtn" class="btn btn-small" type="button">Edit Profile</button>
+                        </div>
+                         <form id="profileForm">
+                             <div class="row">
+                                 <div>
+                                     <label for="displayName">Display name</label>
+                                     <input id="displayName" type="text" placeholder="e.g. Barangay Staff" disabled />
+                                 </div>
+                                 <div>
+                                     <label for="office">Office / Unit</label>
+                                     <input id="office" type="text" placeholder="e.g. Pinagbuhatan" disabled />
+                                 </div>
+                             </div>
+
+                             <div class="row">
+                                 <div>
+                                     <label for="email">Email</label>
+                                     <input id="email" type="email" placeholder="you@example.com" disabled />
+                                 </div>
+                                 <div>
+                                     <label for="phone">Phone (optional)</label>
+                                     <input id="phone" type="text" placeholder="+63 912 345 6789" disabled />
+                                 </div>
+                             </div>
+                         </form>
+                     </section>
+                </div>
+
+                <div class="actions">
+                    <button id="saveBtn" class="btn">Save changes</button>
+                    <button id="resetBtn" class="btn ghost">Reset</button>
+                    <div id="status" style="align-self:center;color:#2ecc71;display:none;margin-left:8px">Saved</div>
+                </div>
+            </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Tabs
+        document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', function() {
+            document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+            this.classList.add('active');
+            const tab = this.dataset.tab;
+            document.querySelectorAll('[data-content]').forEach(s => s.style.display = s.dataset.content === tab ? '' : 'none');
+        }));
+
+        // Simple localStorage-based save/load + avatar & edit locking
+        const defaults = {
+            displayName: '',
+            office: '',
+            email: '',
+            phone: '',
+            avatar: null
+        };
+
+        let avatarData = null;
+        let editing = false;
+
+        function initialsFromName(name) {
+            if (!name) return 'BS';
+            return name.split(' ').filter(Boolean).slice(0,2).map(n => n[0].toUpperCase()).join('');
+        }
+
+        function updateProfileDisplay(settings) {
+            const name = settings.displayName || 'Barangay Staff';
+            const office = settings.office || 'Barangay Pinagbuhatan';
+            document.getElementById('profileName').innerText = name;
+            document.getElementById('profileRole').innerText = `Barangay Staff • ${office}`;
+            const initials = initialsFromName(name);
+            document.getElementById('avatarInitials').innerText = initials;
+            const img = document.getElementById('avatarImg');
+            const initialsEl = document.getElementById('avatarInitials');
+            if (settings.avatar) {
+                avatarData = settings.avatar;
+                img.src = settings.avatar;
+                img.style.display = '';
+                initialsEl.style.display = 'none';
+            } else {
+                avatarData = null;
+                img.src = '';
+                img.style.display = 'none';
+                initialsEl.style.display = '';
+            }
+        }
+
+        function setEditing(on) {
+            editing = !!on;
+            ['displayName','office','email','phone'].forEach(id=>{
+                const el = document.getElementById(id);
+                if (el) el.disabled = !editing;
+            });
+            // visually indicate edit state on the Edit Profile button
+            const btn = document.getElementById('editProfileBtn');
+            if (btn) {
+                if (editing) {
+                    btn.innerText = 'Editing…';
+                    btn.style.background = '#2ecc71';
+                } else {
+                    btn.innerText = 'Edit Profile';
+                    btn.style.background = '';
+                }
+            }
+            if (editing) document.getElementById('displayName').focus();
+        }
+
+        function loadSettings() {
+            const s = JSON.parse(localStorage.getItem('carelink_settings') || '{}');
+            const settings = Object.assign({}, defaults, s);
+            document.getElementById('displayName').value = settings.displayName;
+            document.getElementById('office').value = settings.office;
+            document.getElementById('email').value = settings.email;
+            document.getElementById('phone').value = settings.phone;
+            updateProfileDisplay(settings);
+            setEditing(false); // ensure fields start disabled
+            // load theme
+            applyTheme(localStorage.getItem('carelink_theme') || 'light');
+        }
+
+        function saveSettings() {
+            const settings = {
+                displayName: document.getElementById('displayName').value,
+                office: document.getElementById('office').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                avatar: avatarData
+            };
+            localStorage.setItem('carelink_settings', JSON.stringify(settings));
+            updateProfileDisplay(settings);
+            setEditing(false);
+            const status = document.getElementById('status');
+            status.style.display = 'block';
+            setTimeout(()=>status.style.display='none',1500);
+        }
+
+        // Theme toggle logic
+        function applyTheme(mode) {
+            mode = mode === 'dark' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', mode);
+            const icon = document.getElementById('themeIcon');
+            if (icon) {
+                if (mode === 'dark') {
+                    icon.classList.remove('fa-moon');
+                    icon.classList.add('fa-sun');
+                } else {
+                    icon.classList.remove('fa-sun');
+                    icon.classList.add('fa-moon');
+                }
+            }
+            localStorage.setItem('carelink_theme', mode);
+        }
+
+        document.getElementById('themeToggle').addEventListener('click', function() {
+            const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+            const next = current === 'dark' ? 'light' : 'dark';
+            applyTheme(next);
+        });
+
+        // Avatar upload handling + enabling edit
+        // Click avatar area opens file picker and enables editing
+        document.getElementById('profileAvatar').addEventListener('click', function() {
+            setEditing(true);
+            document.getElementById('avatarInput').click();
+        });
+
+        // Edit Profile button enables editing (does not force file pick)
+        document.getElementById('editProfileBtn').addEventListener('click', function() {
+            setEditing(true);
+        });
+
+        document.getElementById('avatarInput').addEventListener('change', function(e) {
+             const file = e.target.files && e.target.files[0];
+             if (!file) return;
+             const reader = new FileReader();
+             reader.onload = function(ev) {
+                 avatarData = ev.target.result; // data URL
+                 const img = document.getElementById('avatarImg');
+                 img.src = avatarData;
+                 img.style.display = '';
+                 document.getElementById('avatarInitials').style.display = 'none';
+             };
+             reader.readAsDataURL(file);
+         });
+
+        document.getElementById('saveBtn').addEventListener('click', saveSettings);
+        document.getElementById('resetBtn').addEventListener('click', function() {
+            localStorage.removeItem('carelink_settings');
+            loadSettings();
+            alert('Settings reset to defaults (local only).');
+        });
+
+        loadSettings();
+    </script>
+</body>
+</html>
