@@ -34,14 +34,37 @@
             overflow: hidden;
         }
 
+<<<<<<< Updated upstream
         /* layout handled by shared sidebar CSS (assets/css/barangay-sidebar.css) */
+=======
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Top Navigation */
+        .top-nav {
+            background: var(--primary);
+            color: white;
+            padding: 15px 0;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+
+        .nav-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+>>>>>>> Stashed changes
 
         .logo {
             display: flex;
             align-items: center;
-            padding: 0 20px 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            margin-bottom: 20px;
         }
         
         .logo-image {
@@ -60,6 +83,7 @@
 
         .nav-links {
             list-style: none;
+            display: flex;
         }
 
         .nav-links li {
@@ -73,7 +97,6 @@
 
         .nav-links li.active {
             background: var(--secondary);
-            border-left: 4px solid white;
         }
 
         .nav-links a {
@@ -92,6 +115,14 @@
         .main-content {
             flex: 1;
             padding: 20px;
+<<<<<<< Updated upstream
+=======
+            overflow-y: auto;
+            height: calc(100vh - 80px);
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+>>>>>>> Stashed changes
         }
 
         .header {
@@ -432,25 +463,55 @@
             border-top: 1px solid #e0e0e0;
         }
 
+        /* Sidebar User Section */
+        .sidebar-user-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            margin-top: auto;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+        }
+
+        .sidebar-user-details {
+            display: flex;
+            flex-direction: column;
+            color: white;
+        }
+
+        .sidebar-user-details h2 {
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+
+        .sidebar-user-details p {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
         /* Responsive */
         @media (max-width: 992px) {
-            .container {
+            .nav-container {
                 flex-direction: column;
-            }
-            
-            .sidebar {
-                width: 100%;
-                padding: 10px;
-                height: auto;
+                gap: 15px;
             }
             
             .nav-links {
-                display: flex;
-                overflow-x: auto;
-            }
-            
-            .nav-links li {
-                white-space: nowrap;
+                width: 100%;
+                justify-content: center;
             }
             
             .main-content {
@@ -497,25 +558,52 @@
             .header {
                 flex-direction: column;
                 align-items: flex-start;
-                gap: 15px;
             }
             
             .header-actions {
                 align-self: flex-end;
+            }
+            
+            .nav-links {
+                flex-wrap: wrap;
+            }
+            
+            .nav-links li {
+                padding: 10px 15px;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <div class="logo">
-                <div class="logo-image">
-                    <img src="d:\CAPSTONE\LOGO.jpg" alt="Barangay Pinagbuhatan Logo" class="logo-image" onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex';">
+        <!-- Top Navigation -->
+        <div class="top-nav">
+            <div class="nav-container">
+                <div class="logo">
+                    <div class="logo-image">
+                        <img src="d:\CAPSTONE\LOGO.jpg" alt="Barangay Pinagbuhatan Logo" class="logo-image" onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex';">
+                    </div>
+                    <h1>CARELINK</h1>
                 </div>
-                <h1>CARELINK</h1>
+                <ul class="nav-links">
+                    <li class="active"><a href="#"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                    <li><a href="Submit Application.html"><i class="fas fa-user-plus"></i> Submit Application</a></li>
+                    <li><a href=""><i class="fas fa-database"></i> Records</a></li>
+                    <li><a href=""><i class="fas fa-cog"></i> Settings</a></li>
+                    <li><a href=""><i class="fas fa-bell"></i> Notifications</a></li>
+                    <li class="sidebar-user-section" style="background: transparent; padding: 0; border-top: none;">
+                        <div class="sidebar-user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="sidebar-user-details">
+                            <h2>Barangay Staff</h2>
+                            <p>Pinagbuhatan</p>
+                        </div>
+                    </li>
+                    <li><a href=""><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                </ul>
             </div>
+<<<<<<< Updated upstream
             <ul class="nav-links">
                 <li class="active"><a href="#"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
                 <li><a href="Submit Application.html"><i class="fas fa-user-plus"></i> Submit Application</a></li>
@@ -523,6 +611,8 @@
                 <li><a href="Settings.html"><i class="fas fa-cog"></i> Settings</a></li>
                 <li><a href=""><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
+=======
+>>>>>>> Stashed changes
         </div>
 
         <!-- Main Content -->
