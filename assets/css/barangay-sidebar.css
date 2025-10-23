@@ -1,0 +1,51 @@
+/* Shared sidebar styles for Barangay pages */
+:root {
+  --sidebar-width: 220px;
+  --topbar-height: 64px;
+}
+
+/* layout helpers */
+.container { display: block; min-height: 100vh; }
+
+/* Sidebar */
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: var(--sidebar-width);
+  background: var(--primary, #2c3e50);
+  color: #fff;
+  padding: 18px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  z-index: 1000;
+  overflow-y: auto;
+}
+
+.sidebar .logo { display:flex; align-items:center; gap:12px; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.06); }
+.sidebar .logo img { height:36px; border-radius:6px; object-fit:cover; }
+.sidebar .logo h1 { font-size:18px; margin:0; color:inherit; }
+
+.nav-links { list-style: none; margin: 0; padding: 0; }
+.nav-links li { padding: 12px 16px; transition: all 0.2s; }
+.nav-links li:hover { background: rgba(255,255,255,0.06); }
+.nav-links li.active { background: var(--secondary, #3498db); border-left: 4px solid white; }
+.nav-links a { color: inherit; text-decoration: none; display:flex; align-items:center; gap:10px; }
+.nav-links i { width:20px; text-align:center; }
+
+/* main content offset (covers both .main and .main-content variants) */
+.main, .main-content {
+  margin-left: var(--sidebar-width);
+  padding-top: calc(var(--topbar-height) + 12px);
+  overflow-y: auto;
+  min-height: calc(100vh - var(--topbar-height));
+}
+
+/* mobile: stack sidebar on top */
+@media (max-width: 768px) {
+  .sidebar { position: static; width: 100%; height: auto; flex-direction: row; align-items: center; padding: 10px; }
+  .nav-links { display:flex; gap:8px; }
+  .main, .main-content { margin-left: 0; padding-top: calc(var(--topbar-height) / 2 + 12px); }
+}
