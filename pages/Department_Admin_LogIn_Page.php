@@ -1,9 +1,43 @@
+<?php
+session_start();
+require_once '../includes/db_connect.php';
+
+$error = '';
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $username = $_POST['adminUsername'];
+    $password = $_POST['adminPassword'];
+
+    if (empty($username) || empty($password)) {
+        $error = 'Please fill in all fields.';
+    } else {
+        $stmt = $conn->prepare("SELECT * FROM users WHERE username = :username AND role = 'department_admin'");
+        $stmt->execute(['username' => $username]);
+        $user = $stmt->fetch();
+
+        if ($user && password_verify($password, $user['password'])) {
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['username'] = $user['username'];
+            $_SESSION['first_name'] = $user['first_name'];
+            $_SESSION['last_name'] = $user['last_name'];
+            $_SESSION['role'] = $user['role'];
+            header("Location: Department_Dashboard.php");
+            exit;
+        } else {
+            $error = 'Invalid username or password.';
+        }
+    }
+}
+?>
+
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barangay Staff Login - CARELINK</title>
+    <title>Department Admin Login - CARELINK</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -27,7 +61,7 @@
             width: 100%;
             height: 100%;
             z-index: -1;
-            background-image: url('LOGO 1.png');
+            background-image: url('../images/LOGO_1.png');
             background-size: cover;
             background-position: center;
             opacity: 0.3;
@@ -164,6 +198,16 @@
             text-decoration: underline;
         }
 
+        .error-message {
+            color: #ff4d4d;
+            background: rgba(255, 77, 77, 0.1);
+            border: 1px solid rgba(255, 77, 77, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
         @keyframes slideUp {
             from {
                 opacity: 0;
@@ -194,7 +238,7 @@
 </head>
 <body>
     <!-- Back Button -->
-    <a href="System Front.html" class="back-btn">
+    <a href="../index.php" class="back-btn">
         <i class="fas fa-arrow-left"></i>
         Back to Home
     </a>
@@ -206,37 +250,28 @@
         <div class="login-card">
             <div class="login-header">
                 <div class="login-icon">
-                    <i class="fas fa-user-shield"></i>
+                    <i class="fas fa-user-cog"></i>
                 </div>
-                <h1>Barangay Staff Login</h1>
-                <p>Access your local records and beneficiary management system</p>
+                <h1>Department Admin Login</h1>
+                <p>Access system administration and management tools</p>
             </div>
+
+            <?php if ($error): ?>
+                <div class="error-message"><?php echo $error; ?></div>
+            <?php endif; ?>
             
-            <form id="staffLoginForm">
+            <form id="adminLoginForm" method="post" action="">
                 <div class="form-group">
-                    <label for="staffId">Staff ID</label>
-                    <input type="text" id="staffId" class="form-control" placeholder="Enter your staff ID" required>
+                    <label for="adminUsername">Username</label>
+                    <input type="text" id="adminUsername" name="adminUsername" class="form-control" placeholder="Enter admin username" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="staffPassword">Password</label>
-                    <input type="password" id="staffPassword" class="form-control" placeholder="Enter your password" required>
+                    <label for="adminPassword">Password</label>
+                    <input type="password" id="adminPassword" name="adminPassword" class="form-control" placeholder="Enter admin password" required>
                 </div>
                 
-                <div class="form-group">
-                    <label for="barangaySelect">Barangay</label>
-                    <select id="barangaySelect" class="form-control" required>
-                        <option value="">Select your barangay</option>
-                        <option value="brgy1">Barangay 1</option>
-                        <option value="brgy2">Barangay 2</option>
-                        <option value="brgy3">Barangay 3</option>
-                        <option value="brgy4">Barangay 4</option>
-                        <option value="brgy5">Barangay 5</option>
-                        <option value="brgy6">Barangay 6</option>
-                    </select>
-                </div>
-                
-                <button type="submit" class="btn btn-primary">Login to System</button>
+                <button type="submit" class="btn btn-primary">Login to Admin Panel</button>
                 
                 <div class="forgot-password">
                     <a href="#">Forgot Password?</a>
@@ -245,17 +280,5 @@
         </div>
     </div>
     
-    <script>
-        document.getElementById('staffLoginForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const staffId = document.getElementById('staffId').value;
-            const password = document.getElementById('staffPassword').value;
-            const barangay = document.getElementById('barangaySelect').value;
-            
-            // In a real application, you would validate credentials with a backend
-            alert(`Barangay Staff login attempted with ID: ${staffId} from ${barangay}`);
-            // Redirect to staff dashboard would happen here
-        });
-    </script>
 </body>
 </html>

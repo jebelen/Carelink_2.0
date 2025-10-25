@@ -1,0 +1,147 @@
+/* Department Sidebar Styles */
+:root {
+    --sidebar-width: 250px;
+    --topbar-height: 64px;
+}
+
+/* Layout helpers */
+.container { display: block; min-height: 100vh; }
+
+
+/* Department Sidebar */
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: var(--sidebar-width);
+    background: linear-gradient(135deg, #1a4b8c 0%, #0d3a6e 50%);
+    color: #fff;
+    padding: 18px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    z-index: 1000;
+    overflow-y: auto;
+  }
+
+.sidebar-header {
+    padding: 0;
+    background: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.logo-image {
+    height: 36px;
+    border-radius: 6px;
+    object-fit: cover;
+}
+
+.logo-text {
+    font-size: 18px;
+    font-weight: 600;
+    color: white;
+}
+
+.sidebar-menu {
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar-menu ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.sidebar-menu li {
+    padding: 12px 16px;
+    transition: all 0.2s;
+    border-left: 4px solid transparent;
+    margin-bottom: 0;
+}
+
+.sidebar-menu li:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.sidebar-menu li.active {
+    background: var(--secondary, #3498db);
+    border-left: 4px solid white;
+}
+
+.sidebar-menu a {
+    color: white;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sidebar-menu i {
+    width: 20px;
+    text-align: center;
+}
+    
+/* Main content offset for department pages */
+.main-content {
+    margin-left: var(--sidebar-width);
+    padding: 20px;
+    overflow-y: auto;
+    min-height: 100vh;
+}
+
+/* Mobile: stack sidebar on top */
+@media (max-width: 768px) {
+    .sidebar { 
+        position: static; 
+        width: 100%; 
+        height: auto; 
+        flex-direction: row;
+        align-items: center;
+        padding: 10px;
+    }
+
+      .nav-links { display:flex; gap:8px; }
+
+    
+    .sidebar-menu ul {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .sidebar-menu li {
+        white-space: nowrap;
+        border-left: none;
+        border-bottom: 4px solid transparent;
+    }
+    
+    .sidebar-menu li:hover,
+    .sidebar-menu li.active {
+        border-left: none;
+        border-bottom: 4px solid white;
+    }
+    
+    .main-content { 
+        margin-left: 0; 
+        padding: 10px;
+    }
+}

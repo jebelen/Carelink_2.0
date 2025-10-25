@@ -27,7 +27,7 @@
             width: 100%;
             height: 100%;
             z-index: -1;
-            background-image: url('LOGO 1.png');
+            background-image: url('images/LOGO_1.png');
             background-size: cover;
             background-position: center;
             opacity: 0.3;
@@ -416,7 +416,7 @@
         <!-- Role Selection Section -->
         <div class="role-section">
             <div class="role-selection">
-                <a href="Barangay Staff LogIn Page.html" class="role-card pulse" id="staffCard">
+                <a href="pages/Barangay_Staff_LogInPage.php" class="role-card pulse" id="staffCard">
                     <div class="role-icon">
                         <i class="fas fa-user-shield"></i>
                     </div>
@@ -424,7 +424,7 @@
                     <p>Register beneficiaries, capture facial data, and manage local records.</p>
                 </a>
                 
-                <a href="Department Admin LogIn Page.html" class="role-card pulse" id="adminCard">
+                <a href="pages/Department_Admin_LogIn_Page.php" class="role-card pulse" id="adminCard">
                     <div class="role-icon">
                         <i class="fas fa-user-cog"></i>
                     </div>

@@ -1,3 +1,6 @@
+<?php
+session_start();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CPRAS Dashboard - Barangay Pinagbuhatan</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="assets/css/barangay-sidebar.css">
+    <link rel="stylesheet" href="../assets/css/barangay-sidebar.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
@@ -14,6 +17,7 @@
             box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
+
 
         :root {
             --primary: #2c3e50;
@@ -26,45 +30,25 @@
             --gray: #95a5a6;
         }
 
+
         body {
             background-color: #f5f7fa;
             color: #333;
             line-height: 1.6;
             height: 100vh;
-            overflow: hidden;
+            overflow: auto;
         }
 
-<<<<<<< Updated upstream
+
         /* layout handled by shared sidebar CSS (assets/css/barangay-sidebar.css) */
-=======
-        .container {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
 
-        /* Top Navigation */
-        .top-nav {
-            background: var(--primary);
-            color: white;
-            padding: 15px 0;
-            transition: all 0.3s;
-            flex-shrink: 0;
-        }
-
-        .nav-container {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
->>>>>>> Stashed changes
 
         .logo {
             display: flex;
             align-items: center;
+            padding: 0 20px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
         }
         
         .logo-image {
@@ -81,23 +65,28 @@
             color: white;
         }
 
+
         .nav-links {
             list-style: none;
-            display: flex;
         }
+
 
         .nav-links li {
             padding: 12px 20px;
             transition: all 0.3s;
         }
 
+
         .nav-links li:hover {
             background: rgba(255, 255, 255, 0.1);
         }
 
+
         .nav-links li.active {
             background: var(--secondary);
+            border-left: 4px solid white;
         }
+
 
         .nav-links a {
             color: white;
@@ -106,24 +95,19 @@
             align-items: center;
         }
 
+
         .nav-links i {
             margin-right: 10px;
             font-size: 18px;
         }
 
+
         /* Main Content */
         .main-content {
             flex: 1;
             padding: 20px;
-<<<<<<< Updated upstream
-=======
-            overflow-y: auto;
-            height: calc(100vh - 80px);
-            max-width: 1200px;
-            margin: 0 auto;
-            width: 100%;
->>>>>>> Stashed changes
         }
+
 
         .header {
             display: flex;
@@ -134,10 +118,12 @@
             border-bottom: 1px solid #e0e0e0;
         }
 
+
         .header-content {
             display: flex;
             flex-direction: column;
         }
+
 
         .welcome-message {
             font-size: 1.2rem;
@@ -145,16 +131,19 @@
             margin-bottom: 5px;
         }
 
+
         .header h1 {
             color: var(--primary);
             font-size: 1.8rem;
         }
+
 
         .header-actions {
             display: flex;
             align-items: center;
             gap: 15px;
         }
+
 
         .user-info {
             display: flex;
@@ -165,6 +154,7 @@
             border-radius: 25px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
+
 
         .user-avatar {
             width: 40px;
@@ -178,10 +168,12 @@
             font-size: 18px;
         }
 
+
         .user-details {
             display: flex;
             flex-direction: column;
         }
+
 
         .user-details h2 {
             font-size: 14px;
@@ -189,10 +181,12 @@
             color: var(--primary);
         }
 
+
         .user-details p {
             color: var(--gray);
             font-size: 12px;
         }
+
 
         .btn {
             display: inline-block;
@@ -207,30 +201,51 @@
             cursor: pointer;
         }
 
+
         .btn:hover {
             background: #2980b9;
         }
+
 
         .btn-accent {
             background: var(--accent);
         }
 
+
         .btn-accent:hover {
             background: #c0392b;
         }
+
 
         .btn-small {
             padding: 5px 10px;
             font-size: 12px;
         }
 
-        /* Charts Section */
-        .charts-container {
+
+        /* Two Panel Layout */
+        .dashboard-panels {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            grid-template-columns: 2fr 1fr;
             gap: 20px;
             margin-bottom: 30px;
         }
+
+
+        .left-panel, .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+
+        /* Charts Section */
+        .charts-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
 
         .chart-card {
             background: white;
@@ -238,6 +253,7 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             padding: 20px;
         }
+
 
         .chart-card h3 {
             font-size: 18px;
@@ -247,10 +263,12 @@
             align-items: center;
         }
 
+
         .chart-card h3 i {
             margin-right: 10px;
             color: var(--secondary);
         }
+
 
         .chart-wrapper {
             position: relative;
@@ -258,10 +276,147 @@
             width: 100%;
         }
 
+
+        /* Notifications Section */
+        .notifications-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            height: 100%;
+        }
+
+
+        .notifications-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+
+        .notifications-header h3 {
+            font-size: 18px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+        }
+
+
+        .notifications-header h3 i {
+            margin-right: 10px;
+            color: var(--secondary);
+        }
+
+
+        .notification-badge {
+            background: var(--accent);
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+
+        .notifications-list {
+            max-height: 450px;
+            overflow-y: auto;
+        }
+
+
+        .notification-item {
+            display: flex;
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+
+
+        .notification-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+
+        .notification-info {
+            flex: 1;
+        }
+
+
+        .notification-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: var(--primary);
+        }
+
+
+        .notification-message {
+            font-size: 14px;
+            color: var(--gray);
+            margin-bottom: 5px;
+        }
+
+
+        .notification-time {
+            font-size: 12px;
+            color: var(--gray);
+        }
+
+
+        .notification-urgent .notification-icon {
+            background: rgba(231, 76, 60, 0.2);
+            color: var(--accent);
+        }
+
+
+        .notification-info .notification-title {
+            color: var(--accent);
+        }
+
+
+        .notification-warning .notification-icon {
+            background: rgba(243, 156, 18, 0.2);
+            color: var(--warning);
+        }
+
+
+        .notification-success .notification-icon {
+            background: rgba(46, 204, 113, 0.2);
+            color: var(--success);
+        }
+
+
+        .notification-info .notification-title {
+            color: var(--success);
+        }
+
+
+        .notification-default .notification-icon {
+            background: rgba(52, 152, 219, 0.2);
+            color: var(--secondary);
+        }
+
+
         /* Records Section */
         .records-section {
             margin-bottom: 30px;
         }
+
 
         .records-header {
             display: flex;
@@ -270,10 +425,12 @@
             margin-bottom: 20px;
         }
 
+
         .records-actions {
             display: flex;
             gap: 10px;
         }
+
 
         .search-box {
             display: flex;
@@ -284,6 +441,7 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
+
         .search-box input {
             border: none;
             outline: none;
@@ -291,12 +449,14 @@
             width: 200px;
         }
 
+
         .records-table {
             background: white;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             overflow: hidden;
         }
+
 
         .table-header {
             display: grid;
@@ -307,6 +467,7 @@
             font-weight: 600;
         }
 
+
         .table-row {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
@@ -315,13 +476,16 @@
             transition: background 0.3s;
         }
 
+
         .table-row:hover {
             background: #f8f9fa;
         }
 
+
         .table-row:last-child {
             border-bottom: none;
         }
+
 
         .table-pagination {
             display: flex;
@@ -332,10 +496,12 @@
             border-top: 1px solid #e0e0e0;
         }
 
+
         .pagination-controls {
             display: flex;
             gap: 10px;
         }
+
 
         .pagination-btn {
             padding: 5px 10px;
@@ -346,10 +512,12 @@
             transition: all 0.3s;
         }
 
+
         .pagination-btn:hover {
             background: var(--secondary);
             color: white;
         }
+
 
         .application-status {
             padding: 5px 10px;
@@ -358,36 +526,43 @@
             font-weight: 500;
         }
 
+
         .status-pending {
             background: #fff3cd;
             color: var(--warning);
         }
+
 
         .status-verified {
             background: #d1edff;
             color: var(--secondary);
         }
 
+
         .status-rejected {
             background: #ffebee;
             color: var(--accent);
         }
+
 
         .status-sent {
             background: #d4edda;
             color: var(--success);
         }
 
+
         /* Responsibilities */
         .responsibilities {
             margin-bottom: 30px;
         }
+
 
         .steps {
             display: flex;
             justify-content: space-between;
             flex-wrap: wrap;
         }
+
 
         .step {
             flex: 1;
@@ -399,6 +574,7 @@
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
         }
+
 
         .step-number {
             width: 40px;
@@ -413,15 +589,18 @@
             font-weight: bold;
         }
 
+
         .step h4 {
             margin-bottom: 10px;
             color: var(--primary);
         }
 
+
         .step p {
             color: var(--gray);
             font-size: 14px;
         }
+
 
         /* System Features */
         .features {
@@ -430,6 +609,7 @@
             gap: 20px;
         }
 
+
         .feature {
             background: white;
             border-radius: 10px;
@@ -437,21 +617,25 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
         }
 
+
         .feature i {
             font-size: 24px;
             color: var(--secondary);
             margin-bottom: 15px;
         }
 
+
         .feature h4 {
             margin-bottom: 10px;
             color: var(--primary);
         }
 
+
         .feature p {
             color: var(--gray);
             font-size: 14px;
         }
+
 
         /* Footer */
         .footer {
@@ -463,62 +647,38 @@
             border-top: 1px solid #e0e0e0;
         }
 
-        /* Sidebar User Section */
-        .sidebar-user-section {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 15px 20px;
-            background: rgba(255, 255, 255, 0.1);
-            margin-top: auto;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .sidebar-user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: var(--secondary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 18px;
-        }
-
-        .sidebar-user-details {
-            display: flex;
-            flex-direction: column;
-            color: white;
-        }
-
-        .sidebar-user-details h2 {
-            font-size: 14px;
-            margin-bottom: 2px;
-        }
-
-        .sidebar-user-details p {
-            font-size: 12px;
-            opacity: 0.8;
-        }
 
         /* Responsive */
         @media (max-width: 992px) {
-            .nav-container {
+            .container {
                 flex-direction: column;
-                gap: 15px;
+            }
+            
+            .sidebar {
+                width: 100%;
+                padding: 10px;
+                height: auto;
             }
             
             .nav-links {
-                width: 100%;
-                justify-content: center;
+                display: flex;
+                overflow-x: auto;
+            }
+            
+            .nav-links li {
+                white-space: nowrap;
             }
             
             .main-content {
                 height: auto;
                 overflow-y: visible;
             }
+            
+            .dashboard-panels {
+                grid-template-columns: 1fr;
+            }
         }
+
 
         @media (max-width: 768px) {
             .steps {
@@ -558,176 +718,142 @@
             .header {
                 flex-direction: column;
                 align-items: flex-start;
+                gap: 15px;
             }
             
             .header-actions {
                 align-self: flex-end;
-            }
-            
-            .nav-links {
-                flex-wrap: wrap;
-            }
-            
-            .nav-links li {
-                padding: 10px 15px;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Top Navigation -->
-        <div class="top-nav">
-            <div class="nav-container">
-                <div class="logo">
-                    <div class="logo-image">
-                        <img src="d:\CAPSTONE\LOGO.jpg" alt="Barangay Pinagbuhatan Logo" class="logo-image" onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex';">
-                    </div>
-                    <h1>CARELINK</h1>
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <div class="logo-image">
+                    <img src="../images/LOGO.jpg" alt="Barangay Pinagbuhatan Logo" class="logo-image" onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex';">
                 </div>
-                <ul class="nav-links">
-                    <li class="active"><a href="#"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-                    <li><a href="Submit Application.html"><i class="fas fa-user-plus"></i> Submit Application</a></li>
-                    <li><a href=""><i class="fas fa-database"></i> Records</a></li>
-                    <li><a href=""><i class="fas fa-cog"></i> Settings</a></li>
-                    <li><a href=""><i class="fas fa-bell"></i> Notifications</a></li>
-                    <li class="sidebar-user-section" style="background: transparent; padding: 0; border-top: none;">
-                        <div class="sidebar-user-avatar">
-                            <i class="fas fa-user"></i>
-                        </div>
-                        <div class="sidebar-user-details">
-                            <h2>Barangay Staff</h2>
-                            <p>Pinagbuhatan</p>
-                        </div>
-                    </li>
-                    <li><a href=""><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-                </ul>
+                <h1>CARELINK</h1>
             </div>
-<<<<<<< Updated upstream
             <ul class="nav-links">
-                <li class="active"><a href="#"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-                <li><a href="Submit Application.html"><i class="fas fa-user-plus"></i> Submit Application</a></li>
-                <li><a href="Barangay Records.html"><i class="fas fa-database"></i> Records</a></li>
+                <li class="active"><a href="Barangay_Dash.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li><a href="Submit_Application.php"><i class="fas fa-user-plus"></i> Submit Application</a></li>
+                <li><a href="Barangay_Records.php"><i class="fas fa-database"></i> Records</a></li>
                 <li><a href="Settings.html"><i class="fas fa-cog"></i> Settings</a></li>
-                <li><a href=""><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                <li><a href="../index.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
-=======
->>>>>>> Stashed changes
         </div>
+
 
         <!-- Main Content -->
         <div class="main-content">
             <!-- Header -->
             <div class="header">
                 <div class="header-content">
-                    <div class="welcome-message">Welcome back, <strong>Barangay Staff</strong>!</div>
+                    <div class="welcome-message" data-first-name="<?php echo htmlspecialchars($_SESSION['first_name']); ?>" data-last-name="<?php echo htmlspecialchars($_SESSION['last_name']); ?>" data-role="<?php echo htmlspecialchars($_SESSION['role']); ?>"></div>
                     <h1>Barangay Pinagbuhatan Dashboard</h1>
                 </div>
                 <div class="header-actions">
-                    <button class="btn"><i class="fas fa-bell"></i> Notifications</button>
                     <div class="user-info">
                         <div class="user-avatar">
                             <i class="fas fa-user"></i>
                         </div>
                         <div class="user-details">
-                            <h2>Barangay Staff</h2>
-                            <p>Pinagbuhatan</p>
+                            <h2><?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?></h2>
+                            <p><?php echo htmlspecialchars(ucwords(str_replace('_', ' ', $_SESSION['role']))); ?></p>
                         </div>
                     </div>
                 </div>
             </div>
 
-        
-            <!-- Charts Section -->
-            <h2 style="margin-bottom: 15px; color: var(--primary);">Application Statistics</h2>
-            <div class="charts-container">
-                <div class="chart-card">
-                    <h3><i class="fas fa-chart-pie"></i> Application Status Distribution</h3>
-                    <div class="chart-wrapper">
-                        <canvas id="statusChart"></canvas>
-                    </div>
-                </div>
-                <div class="chart-card">
-                    <h3><i class="fas fa-chart-bar"></i> Monthly Applications</h3>
-                    <div class="chart-wrapper">
-                        <canvas id="monthlyChart"></canvas>
-                    </div>
-                </div>
-                
-            </div>
 
-            <!-- Records Section -->
-            <div class="records-section">
-                <div class="records-header">
-                    <h2>Application Records</h2>
-                    <div class="records-actions">
-                        <a href="Submit Application.html" class="btn btn-accent">
-                            <i class="fas fa-plus"></i> Submit Application
-                        </a>
+            <!-- Two Panel Layout -->
+            <div class="dashboard-panels">
+                <!-- Left Panel - Charts -->
+                <div class="left-panel">
+                    <h2 style="color: var(--primary);">Application Statistics</h2>
+                    <div class="charts-container">
+                        <div class="chart-card">
+                            <h3><i class="fas fa-chart-pie"></i> Application Status Distribution</h3>
+                            <div class="chart-wrapper">
+                                <canvas id="statusChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <h3><i class="fas fa-chart-bar"></i> Monthly Applications</h3>
+                            <div class="chart-wrapper">
+                                <canvas id="monthlyChart"></canvas>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                
-                <div class="records-table">
-                    <div class="table-header" style="grid-template-columns: 1.5fr 1fr 1.2fr 1fr 1fr;">
-                        <div>Applicant Name</div>
-                        <div>Application Type</div>
-                        <div>Date Submitted</div>
-                        <div>Status</div>
-                        <div>ID Number</div>
-                    </div>
-                    
-                    <div class="table-row" style="grid-template-columns: 1.5fr 1fr 1.2fr 1fr 1fr;">
-                        <div>Carlos Mendoza</div>
-                        <div>PWD</div>
-                        <div>01/05/2024</div>
-                        <div><span class="application-status status-rejected">Rejected</span></div>
-                        <div>PWD-004</div>
-                    </div>
-                    
-                    <div class="table-row" style="grid-template-columns: 1.5fr 1fr 1.2fr 1fr 1fr;">
-                        <div>Maria Santos</div>
-                        <div>Senior Citizen</div>
-                        <div>01/08/2024</div>
-                        <div><span class="application-status status-pending">Pending</span></div>
-                        <div>SC-012</div>
-                    </div>
-                    
-                    <div class="table-row" style="grid-template-columns: 1.5fr 1fr 1.2fr 1fr 1fr;">
-                        <div>Juan Dela Cruz</div>
-                        <div>PWD</div>
-                        <div>01/10/2024</div>
-                        <div><span class="application-status status-sent">Sent to City Hall</span></div>
-                        <div>PWD-007</div>
-                    </div>
-                    
-                    <div class="table-row" style="grid-template-columns: 1.5fr 1fr 1.2fr 1fr 1fr;">
-                        <div>Elena Garcia</div>
-                        <div>Senior Citizen</div>
-                        <div>01/12/2024</div>
-                        <div><span class="application-status status-verified">Verified</span></div>
-                        <div>SC-015</div>
-                    </div>
-                    
-                    <div class="table-row" style="grid-template-columns: 1.5fr 1fr 1.2fr 1fr 1fr;">
-                        <div>Roberto Santos</div>
-                        <div>PWD</div>
-                        <div>01/15/2024</div>
-                        <div><span class="application-status status-pending">Pending</span></div>
-                        <div>PWD-021</div>
-                    </div>
-                    
-                    <div class="table-pagination">
-                        <div>Showing 1-5 of 24 records</div>
-                        <div class="pagination-controls">
-                            <button class="pagination-btn"><i class="fas fa-chevron-left"></i></button>
-                            <button class="pagination-btn active">1</button>
-                            <button class="pagination-btn">2</button>
-                            <button class="pagination-btn">3</button>
-                            <button class="pagination-btn"><i class="fas fa-chevron-right"></i></button>
+
+
+                <!-- Right Panel - Notifications -->
+                <div class="right-panel">
+                    <div class="notifications-card">
+                        <div class="notifications-header">
+                            <h3><i class="fas fa-bell"></i> Department Notifications</h3>
+                            <div class="notification-badge">5</div>
+                        </div>
+                        <div class="notifications-list">
+                            <div class="notification-item notification-urgent">
+                                <div class="notification-icon">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                </div>
+                                <div class="notification-info">
+                                    <div class="notification-title">Urgent: Missing Documents</div>
+                                    <div class="notification-message">5 applications from last week are missing required documents. Please review and complete.</div>
+                                    <div class="notification-time">2 hours ago</div>
+                                </div>
+                            </div>
+                            <div class="notification-item notification-warning">
+                                <div class="notification-icon">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div class="notification-info">
+                                    <div class="notification-title">Pending Verification</div>
+                                    <div class="notification-message">12 applications are awaiting your verification before submission to City Hall.</div>
+                                    <div class="notification-time">Yesterday</div>
+                                </div>
+                            </div>
+                            <div class="notification-item notification-success">
+                                <div class="notification-icon">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <div class="notification-info">
+                                    <div class="notification-title">Applications Approved</div>
+                                    <div class="notification-message">8 applications have been approved by the Department and are ready for pickup.</div>
+                                    <div class="notification-time">2 days ago</div>
+                                </div>
+                            </div>
+                            <div class="notification-item notification-default">
+                                <div class="notification-icon">
+                                    <i class="fas fa-info-circle"></i>
+                                </div>
+                                <div class="notification-info">
+                                    <div class="notification-title">System Update</div>
+                                    <div class="notification-message">The CNN verification system will undergo maintenance this weekend.</div>
+                                    <div class="notification-time">3 days ago</div>
+                                </div>
+                            </div>
+                            <div class="notification-item notification-default">
+                                <div class="notification-icon">
+                                    <i class="fas fa-calendar-alt"></i>
+                                </div>
+                                <div class="notification-info">
+                                    <div class="notification-title">Monthly Report Due</div>
+                                    <div class="notification-message">Monthly application report is due by the end of this week.</div>
+                                    <div class="notification-time">1 week ago</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+
 
             <!-- Responsibilities -->
             <div class="responsibilities">
@@ -757,6 +883,7 @@
                 </div>
             </div>
 
+
             <!-- System Features -->
             <h2 style="margin-bottom: 15px; color: var(--primary);">System Features</h2>
             <div class="features">
@@ -777,12 +904,14 @@
                 </div>
             </div>
 
+
             <!-- Footer -->
             <div class="footer">
                 <p>Centralized Profiling and Record Authentication System | Barangay Pinagbuhatan &copy; 2024</p>
             </div>
         </div>
     </div>
+
 
     <script>
         // Simple script for interactive elements
@@ -823,6 +952,9 @@
             
             // Update welcome message based on time of day
             const welcomeMessage = document.querySelector('.welcome-message');
+            const firstName = welcomeMessage.dataset.firstName;
+            const lastName = welcomeMessage.dataset.lastName;
+            const role = welcomeMessage.dataset.role;
             const hour = new Date().getHours();
             let greeting;
             
@@ -834,8 +966,9 @@
                 greeting = "Good evening";
             }
             
-            welcomeMessage.innerHTML = `${greeting}, <strong>Barangay Staff</strong>!`;
+            welcomeMessage.innerHTML = `${greeting}, <strong>${firstName} ${lastName}</strong>!`;
         });
+
 
         function initializeCharts() {
             // Application Status Distribution Chart (Doughnut)
@@ -879,6 +1012,7 @@
                 }
             });
 
+
             // Monthly Applications Chart (Bar)
             const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
             const monthlyChart = new Chart(monthlyCtx, {
@@ -917,3 +1051,6 @@
     </script>
 </body>
 </html>
+
+
+

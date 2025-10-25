@@ -5,8 +5,10 @@
 }
 
 /* layout helpers */
-.container { display: block; min-height: 100vh; }
-
+.container { 
+    display: flex; 
+    min-height: 100vh; 
+}
 /* Sidebar */
 .sidebar {
   position: fixed;
@@ -14,7 +16,7 @@
   top: 0;
   bottom: 0;
   width: var(--sidebar-width);
-  background: var(--primary, #2c3e50);
+  background: linear-gradient(135deg, #1a4b8c 0%, #0d3a6e 50%);
   color: #fff;
   padding: 18px 12px;
   display: flex;

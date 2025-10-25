@@ -1,3 +1,6 @@
+<?php
+session_start();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,6 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Centralized Profiling and Record Authentication System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../assets/css/department-sidebar.css">
     <style>
         :root {
             --primary: #2c3e50;
@@ -31,98 +35,9 @@
             line-height: 1.6;
         }
         
-        .container {
-            display: flex;
-            min-height: 100vh;
-        }
-        
-        /* Sidebar Styles */
-        .sidebar {
-            width: 250px;
-            background: var(--primary);
-            color: white;
-            transition: all 0.3s;
-            box-shadow: 3px 0 10px rgba(0, 0, 0, 0.1);
-        }
-        
-        .sidebar-header {
-            padding: 20px;
-            background: rgba(0, 0, 0, 0.2);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .logo-container {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .logo-image {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            object-fit: cover;
-            border: 2px solid var(--secondary);
-        }
-        
-        .logo-text {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: white;
-        }
-        
-        .sidebar-menu {
-            padding: 15px 0;
-        }
-        
-        .sidebar-menu ul {
-            list-style: none;
-        }
-        
-        .sidebar-menu li {
-            padding: 12px 20px;
-            transition: all 0.3s;
-            border-left: 3px solid transparent;
-        }
-        
-        .sidebar-menu li:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-left: 3px solid var(--secondary);
-        }
-        
-        .sidebar-menu li.active {
-            background: rgba(255, 255, 255, 0.15);
-            border-left: 3px solid var(--secondary);
-        }
-        
-        .sidebar-menu a {
-            color: white;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .sidebar-menu i {
-            width: 20px;
-            text-align: center;
-        }
+        /* Sidebar styles are handled by department-sidebar.css */
         
         /* Main Content Styles */
-        .main-content {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-        }
         
         .header {
             display: flex;
@@ -416,19 +331,19 @@
             <div class="sidebar-header">
                 <div class="logo">
                     <!-- Logo image with fallback -->
-                    <img src="d:\CAPSTONE\LOGO.jpg" alt="Barangay Pinagbuhatan Logo" class="logo-image" onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex';">
+                    <img src="../images/LOGO.jpg" alt="Barangay Pinagbuhatan Logo" class="logo-image" onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex';">
                     <div id="fallback-logo" class="logo-image" style="display: none; background: var(--secondary); width: 40px; height: 40px; border-radius: 8px; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 0.9rem;">BP</div>
                     <h1 class="logo-text">CARELINK</h1>
                 </div>
             </div>
             <div class="sidebar-menu">
                 <ul>
-                    <li class="active"><a href="Department Dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-                    <li><a href="User Management.html"><i class="fas fa-user-cog"></i> User Management</a></li>
-                    <li><a href=""><i class="fas fa-user-plus"></i> Submit Application</a></li>
-                    <li><a href=""><i class="fas fa-check-circle"></i> Verify Documents</a></li>
-                    <li><a href="System Settings.html"><i class="fas fa-cog"></i> System Settings</a></li>
-                    <li><a href="#"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                    <li class="active"><a href="Department_Dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                    <li><a href="User_Management.php"><i class="fas fa-user-cog"></i> User Management</a></li>
+                    <li><a href="Department_Records.php"><i class="fas fa-database"></i> Records</a></li>
+                    <li><a href="Verify_Document.php"><i class="fas fa-check-circle"></i> Verify Documents</a></li>
+                    <li><a href="System_Settings.php"><i class="fas fa-cog"></i> System Settings</a></li>
+                    <li><a href="../index.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                 </ul>
             </div>
         </div>
@@ -437,12 +352,13 @@
         <div class="main-content">
             <div class="header">
                 <div class="header-content">
-                    <div class="welcome-message">Welcome back, <strong>Administrator</strong>!</div>
+                    <div class="welcome-message" data-first-name="<?php echo htmlspecialchars($_SESSION['first_name']); ?>" data-last-name="<?php echo htmlspecialchars($_SESSION['last_name']); ?>" data-role="<?php echo htmlspecialchars($_SESSION['role']); ?>"></div>
                     <h1>Centralized Profiling Dashboard</h1>
                 </div>
                 <div class="user-info">
                     <div class="user-avatar">AD</div>
-                    <span>Administrator</span>
+                    <span><?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?></span>
+                    <span><?php echo htmlspecialchars(ucwords(str_replace('_', ' ', $_SESSION['role']))); ?></span>
                 </div>
             </div>
             
@@ -599,6 +515,9 @@
             
             // Update welcome message based on time of day
             const welcomeMessage = document.querySelector('.welcome-message');
+            const firstName = welcomeMessage.dataset.firstName;
+            const lastName = welcomeMessage.dataset.lastName;
+            const role = welcomeMessage.dataset.role;
             const hour = new Date().getHours();
             let greeting;
             
@@ -610,7 +529,7 @@
                 greeting = "Good evening";
             }
             
-            welcomeMessage.innerHTML = `${greeting}, <strong>Administrator</strong>!`;
+            welcomeMessage.innerHTML = `${greeting}, <strong>${firstName} ${lastName}</strong>!`;
         });
     </script>
 </body>

@@ -1,3 +1,6 @@
+<?php
+session_start();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Records - Barangay Pinagbuhatan</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="assets/css/barangay-sidebar.css">
+    <link rel="stylesheet" href="../assets/css/barangay-sidebar.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
@@ -31,7 +34,7 @@
             color: #333;
             line-height: 1.6;
             height: 100vh;
-            overflow: hidden;
+            overflow: auto;
         }
 
         /* layout handled by shared sidebar CSS (assets/css/barangay-sidebar.css) */
@@ -453,16 +456,16 @@
         <div class="sidebar">
             <div class="logo">
                 <div class="logo-image">
-                    <img src="d:\CAPSTONE\LOGO.jpg" alt="Barangay Pinagbuhatan Logo" class="logo-image" onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex';">
+                    <img src="../images/LOGO.jpg" alt="Barangay Pinagbuhatan Logo" class="logo-image" onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex';">
                 </div>
                 <h1>CARELINK</h1>
             </div>
             <ul class="nav-links">
-                <li><a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-                <li><a href="Submit Application.html"><i class="fas fa-user-plus"></i> Submit Application</a></li>
-                <li class="active"><a href="records.html"><i class="fas fa-database"></i> Records</a></li>
-                <li><a href=""><i class="fas fa-cog"></i> Settings</a></li>
-                <li><a href=""><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                <li><a href="Barangay_Dash.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li><a href="Submit_Application.php"><i class="fas fa-user-plus"></i> Submit Application</a></li>
+                <li class="active"><a href="Barangay_Records.php"><i class="fas fa-database"></i> Records</a></li>
+                <li><a href="Settings.html"><i class="fas fa-cog"></i> Settings</a></li>
+                <li><a href="../index.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
         </div>
 
@@ -471,7 +474,7 @@
             <!-- Header -->
             <div class="header">
                 <div class="header-content">
-                    <div class="welcome-message">Welcome back, <strong>Barangay Staff</strong>!</div>
+                    <div class="welcome-message">Welcome back, <strong><?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?></strong>!</div>
                     <h1>Barangay Pinagbuhatan Records</h1>
                 </div>
                 <div class="header-actions">
@@ -481,8 +484,8 @@
                             <i class="fas fa-user"></i>
                         </div>
                         <div class="user-details">
-                            <h2>Barangay Staff</h2>
-                            <p>Pinagbuhatan</p>
+                            <h2><?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?></h2>
+                            <p><?php echo htmlspecialchars(ucwords(str_replace('_', ' ', $_SESSION['role']))); ?></p>
                         </div>
                     </div>
                 </div>
@@ -749,7 +752,7 @@
                 greeting = "Good evening";
             }
             
-            welcomeMessage.innerHTML = `${greeting}, <strong>Barangay Staff</strong>!`;
+            welcomeMessage.innerHTML = `${greeting}, <strong><?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?></strong>!`;
         });
 
         function updateTableData(year) {
