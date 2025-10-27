@@ -233,6 +233,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
         }
 
+        .password-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .password-container .form-control {
+            padding-right: 45px; /* Make space for the icon */
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: rgba(255, 255, 255, 0.7);
+            transition: color 0.3s ease;
+        }
+
+        .toggle-password:hover {
+            color: #4CAF50;
+        }
+
         .btn {
             padding: 12px 25px;
             border: none;
@@ -340,7 +363,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 
                 <div class="form-group">
                     <label for="staffPassword">Password</label>
-                    <input type="password" id="staffPassword" name="password" class="form-control" placeholder="Enter your password" required>
+                    <div class="password-container">
+                        <input type="password" id="staffPassword" name="password" class="form-control" placeholder="Enter your password" required>
+                        <i class="fas fa-eye toggle-password" id="toggleStaffPassword"></i>
+                    </div>
                 </div>
                 
                 <div class="form-group">
@@ -367,5 +393,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </div>
     </div>
     
+<script>
+        const toggleStaffPassword = document.querySelector('#toggleStaffPassword');
+        const staffPassword = document.querySelector('#staffPassword');
+
+        toggleStaffPassword.addEventListener('click', function (e) {
+            // toggle the type attribute
+            const type = staffPassword.getAttribute('type') === 'password' ? 'text' : 'password';
+            staffPassword.setAttribute('type', type);
+            // toggle the eye slash icon
+            this.classList.toggle('fa-eye-slash');
+        });
+    </script>
 </body>
 </html>
