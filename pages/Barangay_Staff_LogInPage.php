@@ -1,31 +1,105 @@
 <?php
 session_start();
 require_once '../includes/db_connect.php';
+require_once '../includes/barangays_list.php';
+
+// Auto-login from remember me cookie
+if (!isset($_SESSION['user_id']) && isset($_COOKIE['remember_me'])) {
+    list($selector, $validator) = explode(':', $_COOKIE['remember_me']);
+
+    $stmt = $conn->prepare("SELECT * FROM remember_tokens WHERE selector = :selector");
+    $stmt->execute(['selector' => $selector]);
+    $token = $stmt->fetch();
+
+    if ($token) {
+        if (hash_equals($token['validator_hash'], hash('sha256', $validator))) {
+            // Token is valid, log in the user
+            $stmt = $conn->prepare("SELECT * FROM users WHERE id = :id");
+            $stmt->execute(['id' => $token['user_id']]);
+            $user = $stmt->fetch();
+
+            if ($user) {
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['username'] = $user['username'];
+                $_SESSION['first_name'] = $user['first_name'];
+                $_SESSION['last_name'] = $user['last_name'];
+                $_SESSION['role'] = $user['role'];
+                $_SESSION['barangay'] = $user['barangay'];
+
+                // Regenerate token to prevent theft
+                $newValidator = bin2hex(random_bytes(32));
+                $newValidatorHash = hash('sha256', $newValidator);
+                $expiry = date('Y-m-d H:i:s', time() + (86400 * 30));
+
+                $stmt = $conn->prepare("UPDATE remember_tokens SET validator_hash = :validator_hash, expires = :expires WHERE id = :id");
+                $stmt->execute([
+                    'validator_hash' => $newValidatorHash,
+                    'expires' => $expiry,
+                    'id' => $token['id']
+                ]);
+
+                setcookie('remember_me', $selector . ':' . $newValidator, time() + (86400 * 30), "/", "", false, true);
+
+                header("Location: Barangay_Dash.php");
+                exit;
+            }
+        }
+    }
+    // If token is invalid or expired, clear the cookie
+    setcookie('remember_me', '', time() - 3600, "/");
+}
 
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $staffId = $_POST['staffId'];
+    $staffId = trim($_POST['staffId']);
     $password = $_POST['password'];
     $barangay = $_POST['barangay'];
+    $remember = isset($_POST['remember']);
 
     if (empty($staffId) || empty($password) || empty($barangay)) {
         $error = 'Please fill in all fields.';
     } else {
-        $stmt = $conn->prepare("SELECT * FROM users WHERE username = :username AND barangay = :barangay AND role = 'barangay_staff'");
-        $stmt->execute(['username' => $staffId, 'barangay' => $barangay]);
-        $user = $stmt->fetch();
+        try {
+            $stmt = $conn->prepare("SELECT * FROM users WHERE username = :username AND barangay = :barangay AND role = 'barangay_staff'");
+            $stmt->execute(['username' => $staffId, 'barangay' => $barangay]);
+            $user = $stmt->fetch();
 
-        if ($user && password_verify($password, $user['password'])) {
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['username'] = $user['username'];
-            $_SESSION['first_name'] = $user['first_name'];
-            $_SESSION['last_name'] = $user['last_name'];
-            $_SESSION['role'] = $user['role'];
-            header("Location: Barangay_Dash.php");
-            exit;
-        } else {
-            $error = 'Invalid Staff ID, password, or barangay.';
+            if ($user && password_verify($password, $user['password'])) {
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['username'] = $user['username'];
+                $_SESSION['first_name'] = $user['first_name'];
+                $_SESSION['last_name'] = $user['last_name'];
+                $_SESSION['role'] = $user['role'];
+                $_SESSION['barangay'] = $user['barangay'];
+
+                if ($remember) {
+                    // Generate a secure "remember me" token
+                    $selector = bin2hex(random_bytes(8)); // 16 character hex
+                    $validator = bin2hex(random_bytes(32)); // 64 character hex
+                    $validatorHash = hash('sha256', $validator);
+                    $expiry = date('Y-m-d H:i:s', time() + (86400 * 30)); // 30 days
+
+                    // Store the token in the database
+                    $stmt = $conn->prepare("INSERT INTO remember_tokens (user_id, selector, validator_hash, expires) VALUES (:user_id, :selector, :validator_hash, :expires)");
+                    $stmt->execute([
+                        'user_id' => $user['id'],
+                        'selector' => $selector,
+                        'validator_hash' => $validatorHash,
+                        'expires' => $expiry
+                    ]);
+
+                    // Set the cookie
+                    setcookie('remember_me', $selector . ':' . $validator, time() + (86400 * 30), "/", "", false, true); // 30 days, HttpOnly
+                }
+
+                header("Location: Barangay_Dash.php");
+                exit;
+            } else {
+                $error = 'Invalid Staff ID, password, or barangay.';
+            }
+        } catch (PDOException $e) {
+            $error = "Database error: " . $e->getMessage();
         }
     }
 }
@@ -273,13 +347,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <label for="barangaySelect">Barangay</label>
                     <select id="barangaySelect" name="barangay" class="form-control" required>
                         <option value="">Select your barangay</option>
-                        <option value="Maybunga">Maybunga</option>
-                        <option value="Malinao">Malinao</option>
-                        <option value="Sta. Lucia">Sta. Lucia</option>
-                        <option value="Manggahan">Manggahan</option>
-                        <option value="Rosario">Rosario</option>
-                        <option value="heheh">heheh</option>
+                        <?php foreach ($barangays_list as $b): ?>
+                            <option value="<?php echo htmlspecialchars($b); ?>"><?php echo htmlspecialchars($b); ?></option>
+                        <?php endforeach; ?>
                     </select>
+                </div>
+
+                <div class="form-group" style="display: flex; align-items: center;">
+                    <input type="checkbox" id="remember" name="remember" style="margin-right: 10px;">
+                    <label for="remember" style="margin-bottom: 0;">Remember Me</label>
                 </div>
                 
                 <button type="submit" class="btn btn-primary">Login to System</button>

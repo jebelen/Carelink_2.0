@@ -1,12 +1,21 @@
 <?php
 session_start();
+require_once '../includes/db_connect.php';
+
+// Redirect if not logged in or not barangay staff
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'barangay_staff') {
+    header('Location: ../index.php');
+    exit;
+}
+
+$barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CPRAS Dashboard - Barangay Pinagbuhatan</title>
+    <title>CPRAS Dashboard - Barangay <?php echo $barangayName; ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/barangay-sidebar.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -733,7 +742,7 @@ session_start();
         <div class="sidebar">
             <div class="logo">
                 <div class="logo-image">
-                    <img src="../images/LOGO.jpg" alt="Barangay Pinagbuhatan Logo" class="logo-image" onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex';">
+                    <img src="../images/LOGO.jpg" alt="Barangay <?php echo $barangayName; ?> Logo" class="logo-image" onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex';">
                 </div>
                 <h1>CARELINK</h1>
             </div>
@@ -741,8 +750,8 @@ session_start();
                 <li class="active"><a href="Barangay_Dash.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
                 <li><a href="Submit_Application.php"><i class="fas fa-user-plus"></i> Submit Application</a></li>
                 <li><a href="Barangay_Records.php"><i class="fas fa-database"></i> Records</a></li>
-                <li><a href="Settings.html"><i class="fas fa-cog"></i> Settings</a></li>
-                <li><a href="../index.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                <li><a href="Settings.php"><i class="fas fa-cog"></i> Settings</a></li>
+                <li><a href="../index.php?logout=true"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
         </div>
 
@@ -753,7 +762,7 @@ session_start();
             <div class="header">
                 <div class="header-content">
                     <div class="welcome-message" data-first-name="<?php echo htmlspecialchars($_SESSION['first_name']); ?>" data-last-name="<?php echo htmlspecialchars($_SESSION['last_name']); ?>" data-role="<?php echo htmlspecialchars($_SESSION['role']); ?>"></div>
-                    <h1>Barangay Pinagbuhatan Dashboard</h1>
+                    <h1>Barangay <?php echo $barangayName; ?> Dashboard</h1>
                 </div>
                 <div class="header-actions">
                     <div class="user-info">
@@ -796,9 +805,9 @@ session_start();
                     <div class="notifications-card">
                         <div class="notifications-header">
                             <h3><i class="fas fa-bell"></i> Department Notifications</h3>
-                            <div class="notification-badge">5</div>
+                            <div class="notification-badge" id="realtime-notification-badge">5</div>
                         </div>
-                        <div class="notifications-list">
+                        <div class="notifications-list" id="realtime-notifications-list">
                             <div class="notification-item notification-urgent">
                                 <div class="notification-icon">
                                     <i class="fas fa-exclamation-circle"></i>
@@ -857,7 +866,7 @@ session_start();
 
             <!-- Responsibilities -->
             <div class="responsibilities">
-                <h2 style="margin-bottom: 15px; color: var(--primary);">Your Responsibilities</h2>
+                <h2 style="color: var(--primary);">Your Responsibilities</h2>
                 
                 <div class="steps">
                     <div class="step">
@@ -885,7 +894,7 @@ session_start();
 
 
             <!-- System Features -->
-            <h2 style="margin-bottom: 15px; color: var(--primary);">System Features</h2>
+            <h2 style="color: var(--primary);">System Features</h2>
             <div class="features">
                 <div class="feature">
                     <i class="fas fa-robot"></i>
@@ -907,12 +916,13 @@ session_start();
 
             <!-- Footer -->
             <div class="footer">
-                <p>Centralized Profiling and Record Authentication System | Barangay Pinagbuhatan &copy; 2024</p>
+                <p>Centralized Profiling and Record Authentication System | Barangay <?php echo $barangayName; ?> &copy; 2024</p>
             </div>
         </div>
     </div>
 
 
+    <script src="../assets/js/realtime_updates.js"></script>
     <script>
         // Simple script for interactive elements
         document.addEventListener('DOMContentLoaded', function() {
@@ -1051,6 +1061,8 @@ session_start();
     </script>
 </body>
 </html>
+
+
 
 
 

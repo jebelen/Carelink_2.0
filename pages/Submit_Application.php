@@ -627,7 +627,7 @@ require_once '../includes/db_connect.php';
                 <li><a href="Barangay_Dash.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
                 <li class="active"><a href="Submit_Application.php"><i class="fas fa-user-plus"></i> Submit Application</a></li>
                 <li><a href="Barangay_Records.php"><i class="fas fa-database"></i> Records</a></li>
-                <li><a href="Settings.html"><i class="fas fa-cog"></i> Settings</a></li>
+                <li><a href="Settings.php"><i class="fas fa-cog"></i> Settings</a></li>
                 <li><a href="../index.php" onclick="/* implement logout */"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
         </div>

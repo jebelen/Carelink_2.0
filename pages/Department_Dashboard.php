@@ -343,7 +343,7 @@ session_start();
                     <li><a href="Department_Records.php"><i class="fas fa-database"></i> Records</a></li>
                     <li><a href="Verify_Document.php"><i class="fas fa-check-circle"></i> Verify Documents</a></li>
                     <li><a href="System_Settings.php"><i class="fas fa-cog"></i> System Settings</a></li>
-                    <li><a href="../index.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                    <li><a href="../index.php?logout=true"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                 </ul>
             </div>
         </div>

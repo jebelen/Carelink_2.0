@@ -20,17 +20,16 @@ This document provides a technical overview of the CARELINK system.
 
 *   **Current Architecture:** The project follows a traditional multi-page web application architecture. It does not use a modern single-page application (SPA) framework.
 *   **Future Architecture:** The system will evolve into a client-server model. The frontend HTML/CSS/JS will remain as is, but will be enhanced to make API calls to a PHP backend.
-*   **Structure:** Each major feature or view is encapsulated in its own `.html` or `.php` file.
+*   **Structure:** Each major feature or view is encapsulated in its own `.php` file.
 *   **Styling:** The application uses a combination of inline CSS and shared stylesheets. A consistent design language is established through CSS variables.
 
 ### 1.3. Data Management and Flow
 
-*   **Current Data Storage:** The system currently uses in-memory JavaScript arrays to store data. There is no backend database or server-side persistence.
-*   **Future Data Storage:** A MySQL/MariaDB database will be implemented to persist data. PHP will be used to connect to and manage the database.
+*   **Database:** A MySQL/MariaDB database is used to persist data. PHP is used to connect to and manage the database.
 *   **Data Flow:**
-    1.  Currently, data is hardcoded in JavaScript.
-    2.  In the future, the client-side JavaScript will use the `fetch` API to make asynchronous requests to the PHP backend.
-    3.  The PHP backend will process these requests, interact with the database, and return data in JSON format.
+    1.  The client-side JavaScript will use the `fetch` API to make asynchronous requests to the PHP backend.
+    2.  The PHP backend will process these requests, interact with the database, and return data in JSON format.
+    3.  **Real-time Updates:** JavaScript will implement a polling mechanism using `setInterval` to periodically fetch updated data from dedicated PHP API endpoints. This will allow for real-time (or near real-time) updates of dashboard statistics, notifications, and other dynamic content across all relevant pages.
 
 ### 1.4. Development Environment
 
@@ -40,24 +39,76 @@ This document provides a technical overview of the CARELINK system.
     *   **MariaDB:** As the database server (compatible with MySQL).
     *   **PHP:** As the backend scripting language.
 
-## 2. Custom Interaction Instructions
+## 2. Database Schema
 
-To ensure consistency and maintainability, all future modifications and additions to the CARELINK system must adhere to the following rules:
+### `users` table
 
-1.  **Technology Stack:**
-    *   **Frontend:** All new features and pages must be implemented using only **HTML, CSS, and vanilla JavaScript**.
-    *   **Backend:** All server-side logic must be implemented using **PHP**.
-2.  **Styling and UI:**
-    *   All styling must conform to the existing visual identity.
-    *   Utilize the predefined CSS variables (e.g., `--primary`, `--secondary`, `--accent`) for all color definitions.
-3.  **JavaScript Implementation:**
-    *   All JavaScript code must be written within `<script>` tags at the end of the `<body>`.
-    *   Future JavaScript should transition from using hardcoded data to fetching data from the PHP backend using the `fetch()` API and handling JSON responses.
-4.  **PHP Development:**
-    *   PHP code should follow modern practices (e.g., using PDO for database connections, prepared statements to prevent SQL injection).
-    *   A clear and consistent file structure for the backend (e.g., separating database connection logic, API endpoints, and utility functions) must be maintained.
-5.  **Data Handling:** The system will be migrated from in-memory JavaScript arrays to a persistent database managed by PHP. All new features requiring data persistence must be built with this in mind.
-6.  **File and Directory Structure:**
-    *   Frontend files will remain as `.html` files.
-    *   Backend files will be `.php` files, organized into a logical structure (e.g., `/api`, `/includes`).
-7.  **Iconography:** Only use icons from the **Font Awesome** library to maintain visual consistency.
+| Column | Type | Modifiers | Description |
+| --- | --- | --- | --- |
+| id | INT(11) | NOT NULL, AUTO_INCREMENT, PRIMARY KEY | Unique identifier for each user |
+| username | VARCHAR(50) | NOT NULL, UNIQUE | User's login name |
+| password | VARCHAR(255) | NOT NULL | Hashed password for the user |
+| role | ENUM('barangay_staff', 'department_admin') | NOT NULL | Role of the user in the system |
+| first_name | VARCHAR(100) | NOT NULL | User's first name |
+| last_name | VARCHAR(100) | NOT NULL | User's last name |
+| email | VARCHAR(100) | NOT NULL, UNIQUE | User's email address |
+| barangay | VARCHAR(100) | DEFAULT NULL | Barangay the user belongs to |
+| display_name | VARCHAR(100) | DEFAULT NULL | User's display name |
+| phone | VARCHAR(20) | DEFAULT NULL | User's phone number |
+| created_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Timestamp of when the user was created |
+
+### `settings` table
+
+| Column | Type | Modifiers | Description |
+| --- | --- | --- | --- |
+| id | INT(11) | NOT NULL, AUTO_INCREMENT, PRIMARY KEY | Unique identifier for each setting |
+| user_id | INT(11) | NOT NULL, FOREIGN KEY | Foreign key to the `users` table |
+| theme | VARCHAR(50) | NOT NULL, DEFAULT 'light' | User's preferred theme (light, dark, auto) |
+| language | VARCHAR(50) | NOT NULL, DEFAULT 'en' | User's preferred language (en, fil) |
+| notifications | VARCHAR(50) | NOT NULL, DEFAULT 'all' | User's notification preferences (all, important, none) |
+
+### `notifications` table
+
+| Column | Type | Modifiers | Description |
+| --- | --- | --- | --- |
+| id | INT(11) | NOT NULL, AUTO_INCREMENT, PRIMARY KEY | Unique identifier for each notification |
+| message | TEXT | NOT NULL | Notification message |
+| type | VARCHAR(50) | NOT NULL | Type of notification (e.g., new_application, pending_verification) |
+| created_at | TIMESTAMP | DEFAULT CURRENT_TIMESTAMP | Timestamp of when the notification was created |
+
+## 3. File-Specific Instructions
+
+### `index.php`
+
+*   **Functionality:** This is the main entry point of the application. It allows users to select their role (Barangay Staff or Department Admin) and be redirected to the appropriate login page.
+*   **Remember Me:** If the user has previously logged in and selected "Remember Me", this page will automatically log them in and redirect them to their dashboard.
+
+### `pages/signup.php`
+
+*   **Functionality:** This page allows new users to register for an account.
+*   **Validation:** The page performs validation to ensure that all required fields are filled, the passwords match, the password is at least 8 characters long, and the email format is valid.
+*   **User Creation:** Upon successful validation, a new user is created in the `users` table, and a corresponding default entry is created in the `settings` table.
+
+### `pages/Barangay_Staff_LogInPage.php` and `pages/Department_Admin_LogIn_Page.php`
+
+*   **Functionality:** These pages allow users to log in to their accounts.
+*   **Validation:** The pages perform validation to ensure that all required fields are filled and that the user exists in the database.
+*   **Authentication:** Upon successful validation, the user is authenticated, and a session is created.
+*   **Remember Me:** Users can choose to be remembered, which sets a cookie to keep them logged in for 30 days.
+
+### `pages/Settings.php`
+
+*   **Functionality:** This page allows users to manage their profile, system, and security settings.
+*   **Profile Settings:** Users can edit their display name, email, and phone number.
+*   **System Settings:** Users can customize the theme, language, and notification preferences.
+*   **Security Settings:** Users can change their password by providing their current password and a new password.
+### `pages/edit_user.php`
+
+*   **Functionality:** This page allows administrators to edit existing user information.
+*   **Features:**
+    *   Edit user details such as username and email.
+    *   Display the user's current hashed password (for administrative reference, though direct display of plain text passwords is a security risk).
+    *   Option to change the user's password.
+*   **Security Note:** Displaying the raw password is a significant security vulnerability and is implemented here based on explicit user request. In a production environment, only password change functionality should be provided, without displaying the current password.
+
+im using cnn in verifying the documents

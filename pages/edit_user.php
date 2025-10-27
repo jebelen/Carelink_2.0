@@ -12,6 +12,13 @@ $user = null;
 $message = '';
 $error = '';
 
+// Generate CSRF token
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
+require_once '../includes/barangays_list.php';
+
 // Fetch user data if ID is provided
 if (isset($_GET['id'])) {
     $id = filter_var($_GET['id'], FILTER_SANITIZE_NUMBER_INT);
@@ -36,47 +43,78 @@ if (isset($_GET['id'])) {
 
 // Handle form submission for updating user
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updateUser'])) {
-    $id = filter_var($_POST['id'], FILTER_SANITIZE_NUMBER_INT);
-    $firstName = $_POST['firstName'];
-    $lastName = $_POST['lastName'];
-    $email = $_POST['email'];
-    $username = $_POST['username'];
-    $role = $_POST['role'];
-    $barangay = $_POST['barangay'];
-    $password = $_POST['password']; // New password, if provided
-
-    if (empty($firstName) || empty($lastName) || empty($email) || empty($username) || empty($role) || empty($barangay)) {
-        $error = 'Please fill in all required fields.';
+    // Verify CSRF token
+    if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+        $error = 'CSRF token validation failed.';
     } else {
-        try {
-            $sql = "UPDATE users SET first_name = :first_name, last_name = :last_name, email = :email, username = :username, role = :role, barangay = :barangay";
-            $params = [
-                'first_name' => $firstName,
-                'last_name' => $lastName,
-                'email' => $email,
-                'username' => $username,
-                'role' => $role,
-                'barangay' => $barangay,
-                'id' => $id
-            ];
+                $id = filter_var($_POST['id'], FILTER_SANITIZE_NUMBER_INT);
+                $firstName = $_POST['firstName'];
+                $lastName = $_POST['lastName'];
+                $email = $_POST['email'];
+                $username = $_POST['username'];
+                $role = $_POST['role'];
+                $barangay = $_POST['barangay'];
+                $newPassword = $_POST['newPassword'];
+                $confirmPassword = $_POST['confirmPassword'];
+        
+                if (empty($firstName) || empty($lastName) || empty($email) || empty($username) || empty($role) || empty($barangay)) {
+                    $error = 'Please fill in all required fields.';
+                } else {
+                    // Check for duplicate username (excluding current user)
+                    $stmt = $conn->prepare("SELECT COUNT(*) FROM users WHERE username = :username AND id != :id");
+                    $stmt->execute(['username' => $username, 'id' => $id]);
+                    if ($stmt->fetchColumn() > 0) {
+                        $error = 'Username already exists. Please choose a different one.';
+                    } else {
+                        // Check for duplicate email (excluding current user)
+                        $stmt = $conn->prepare("SELECT COUNT(*) FROM users WHERE email = :email AND id != :id");
+                        $stmt->execute(['email' => $email, 'id' => $id]);
+                        if ($stmt->fetchColumn() > 0) {
+                            $error = 'Email already exists. Please use a different one.';
+                        } else {
+                            // Password validation
+                            if (!empty($newPassword)) {
+                                if ($newPassword !== $confirmPassword) {
+                                    $error = 'New password and confirm password do not match.';
+                                }
+                            }
+        
+                            if (empty($error)) {
+                                try {
+                                    $sql = "UPDATE users SET first_name = :first_name, last_name = :last_name, email = :email, username = :username, role = :role, barangay = :barangay";
+                                    $params = [
+                                        'first_name' => $firstName,
+                                        'last_name' => $lastName,
+                                        'email' => $email,
+                                        'username' => $username,
+                                        'role' => $role,
+                                        'barangay' => $barangay,
+                                        'id' => $id
+                                    ];
 
-            if (!empty($password)) {
-                $sql .= ", password = :password";
-                $params['password'] = password_hash($password, PASSWORD_DEFAULT);
+                            if (!empty($newPassword)) {
+                                $sql .= ", password = :password";
+                                $params['password'] = password_hash($newPassword, PASSWORD_DEFAULT);
+                            }
+
+                            $sql .= " WHERE id = :id";
+                            $stmt = $conn->prepare($sql);
+                            $stmt->execute($params);
+
+                            $message = 'User updated successfully!';
+                            // Re-fetch user data to display updated info immediately
+                            $stmt = $conn->prepare('SELECT * FROM users WHERE id = :id');
+                            $stmt->execute(['id' => $id]);
+                            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+                            // Regenerate CSRF token after successful submission
+                            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+
+                        } catch (PDOException $e) {
+                            $error = "Error updating user: " . $e->getMessage();
+                        }
+                    }
+                }
             }
-
-            $sql .= " WHERE id = :id";
-            $stmt = $conn->prepare($sql);
-            $stmt->execute($params);
-
-            $message = 'User updated successfully!';
-            // Re-fetch user data to display updated info immediately
-            $stmt = $conn->prepare("SELECT * FROM users WHERE id = :id");
-            $stmt->execute(['id' => $id]);
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        } catch (PDOException $e) {
-            $error = "Error updating user: " . $e->getMessage();
         }
     }
 }
@@ -276,6 +314,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updateUser'])) {
             background: var(--accent);
             color: white;
         }
+
+        .password-input-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .password-input-container input[type="password"],
+        .password-input-container input[type="text"] {
+            padding-right: 40px; /* Space for the toggle button */
+        }
+
+        .password-input-container .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: var(--gray);
+        }
+
+        .password-input-container .toggle-password:hover {
+            color: var(--primary);
+        }
     </style>
 </head>
 <body>
@@ -322,10 +383,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updateUser'])) {
                 <div class="error"><?php echo $error; ?></div>
             <?php endif; ?>
 
-            <?php if ($user): ?>
             <div class="card">
-                <h3><i class="fas fa-user-edit"></i> Edit User: <?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></h3>
+                <?php if ($user): ?>
                 <form id="editUserForm" method="post" action="">
+                <h3><i class="fas fa-user-edit"></i> Edit User: <?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></h3>
+                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                     <input type="hidden" name="id" value="<?php echo htmlspecialchars($user['id']); ?>">
                     <div class="form-row">
                         <div class="form-group">
@@ -351,6 +413,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updateUser'])) {
                         <div class="form-group">
                             <label for="role">Role</label>
                             <select id="role" name="role" required>
+                                <option value="">Select role</option>
                                 <option value="department_admin" <?php echo ($user['role'] == 'department_admin') ? 'selected' : ''; ?>>Administrator</option>
                                 <option value="barangay_staff" <?php echo ($user['role'] == 'barangay_staff') ? 'selected' : ''; ?>>Barangay Staff</option>
                             </select>
@@ -358,29 +421,56 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updateUser'])) {
                         <div class="form-group">
                             <label for="barangay">Barangay</label>
                             <select id="barangay" name="barangay" required>
-                                <option value="Maybunga" <?php echo ($user['barangay'] == 'Maybunga') ? 'selected' : ''; ?>>Maybunga</option>
-                                <option value="Malinao" <?php echo ($user['barangay'] == 'Malinao') ? 'selected' : ''; ?>>Malinao</option>
-                                <option value="Sta. Lucia" <?php echo ($user['barangay'] == 'Sta. Lucia') ? 'selected' : ''; ?>>Sta. Lucia</option>
-                                <option value="Manggahan" <?php echo ($user['barangay'] == 'Manggahan') ? 'selected' : ''; ?>>Manggahan</option>
-                                <option value="Rosario" <?php echo ($user['barangay'] == 'Rosario') ? 'selected' : ''; ?>>Rosario</option>
+                                <option value="">Select barangay</option>
+                                <?php foreach ($barangays_list as $b): ?>
+                                    <option value="<?php echo htmlspecialchars($b); ?>" <?php echo ($user['barangay'] == $b) ? 'selected' : ''; ?>><?php echo htmlspecialchars($b); ?></option>
+                                <?php endforeach; ?>
                             </select>
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="password">New Password (leave blank to keep current)</label>
-                        <input type="password" id="password" name="password" placeholder="Enter new password">
+                        <label for="newPassword">New Password (leave blank to keep current)</label>
+                        <div class="password-input-container">
+                            <input type="password" id="newPassword" name="newPassword" placeholder="Enter new password">
+                            <span class="toggle-password" onclick="togglePasswordVisibility('newPassword')"><i class="fas fa-eye"></i></span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm New Password</label>
+                        <div class="password-input-container">
+                            <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm new password">
+                            <span class="toggle-password" onclick="togglePasswordVisibility('confirmPassword')"><i class="fas fa-eye"></i></span>
+                        </div>
                     </div>
                     <div class="actions">
                         <button type="submit" name="updateUser" class="btn btn-success">Update User</button>
                         <a href="User_Management.php" class="btn">Cancel</a>
                     </div>
                 </form>
+                <?php else: ?>
+                    <p>User not found or invalid ID.</p>
+                <?php endif; ?>
             </div>
-            <?php endif; ?>
         </div>
     </div>
 
     <script>
+        // Function to toggle password visibility
+        window.togglePasswordVisibility = function(fieldId) {
+            const passwordInput = document.getElementById(fieldId);
+            const icon = passwordInput.nextElementSibling.querySelector('i');
+
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        };
+
         document.addEventListener('DOMContentLoaded', function() {
             const welcomeMessage = document.querySelector('.welcome-message');
             const hour = new Date().getHours();

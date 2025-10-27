@@ -1,12 +1,21 @@
 <?php
 session_start();
+require_once '../includes/db_connect.php';
+
+// Redirect if not logged in or not barangay staff
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'barangay_staff') {
+    header('Location: ../index.php');
+    exit;
+}
+
+$barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Records - Barangay Pinagbuhatan</title>
+    <title>Records - Barangay <?php echo $barangayName; ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/barangay-sidebar.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -456,7 +465,7 @@ session_start();
         <div class="sidebar">
             <div class="logo">
                 <div class="logo-image">
-                    <img src="../images/LOGO.jpg" alt="Barangay Pinagbuhatan Logo" class="logo-image" onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex';">
+                    <img src="../images/LOGO.jpg" alt="Barangay <?php echo $barangayName; ?> Logo" class="logo-image" onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex';">
                 </div>
                 <h1>CARELINK</h1>
             </div>
@@ -464,7 +473,7 @@ session_start();
                 <li><a href="Barangay_Dash.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
                 <li><a href="Submit_Application.php"><i class="fas fa-user-plus"></i> Submit Application</a></li>
                 <li class="active"><a href="Barangay_Records.php"><i class="fas fa-database"></i> Records</a></li>
-                <li><a href="Settings.html"><i class="fas fa-cog"></i> Settings</a></li>
+                <li><a href="Settings.php"><i class="fas fa-cog"></i> Settings</a></li>
                 <li><a href="../index.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
         </div>
@@ -475,7 +484,7 @@ session_start();
             <div class="header">
                 <div class="header-content">
                     <div class="welcome-message">Welcome back, <strong><?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?></strong>!</div>
-                    <h1>Barangay Pinagbuhatan Records</h1>
+                    <h1>Barangay <?php echo $barangayName; ?> Records</h1>
                 </div>
                 <div class="header-actions">
                     <button class="btn"><i class="fas fa-bell"></i> Notifications</button>
@@ -681,7 +690,7 @@ session_start();
 
             <!-- Footer -->
             <div class="footer">
-                <p>Centralized Profiling and Record Authentication System | Barangay Pinagbuhatan &copy; 2024</p>
+                <p>Centralized Profiling and Record Authentication System | Barangay <?php echo $barangayName; ?> &copy; 2024</p>
             </div>
         </div>
     </div>

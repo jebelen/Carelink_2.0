@@ -1,3 +1,110 @@
+<?php
+session_start();
+require_once 'includes/db_connect.php';
+
+// Logout logic
+if (isset($_GET['logout']) && $_GET['logout'] == 'true') {
+    // Clear session variables
+    $_SESSION = array();
+    session_destroy();
+
+    // Clear remember me cookie and database token
+    if (isset($_COOKIE['remember_me'])) {
+        list($selector, $validator) = explode(':', $_COOKIE['remember_me']);
+        
+        // Delete token from database
+        $stmt = $conn->prepare("DELETE FROM remember_tokens WHERE selector = :selector");
+        $stmt->execute(['selector' => $selector]);
+
+        // Clear cookie
+        setcookie('remember_me', '', time() - 3600, "/");
+    }
+
+    header("Location: index.php");
+    exit;
+}
+
+// Check for remember me cookie (new secure one)
+if (!isset($_SESSION['user_id']) && isset($_COOKIE['remember_me'])) {
+    list($selector, $validator) = explode(':', $_COOKIE['remember_me']);
+
+    $stmt = $conn->prepare("SELECT * FROM remember_tokens WHERE selector = :selector AND expires > NOW()");
+    $stmt->execute(['selector' => $selector]);
+    $token = $stmt->fetch();
+
+    if ($token) {
+        if (hash_equals($token['validator_hash'], hash('sha256', $validator))) {
+            // Token is valid, log in the user
+            $stmt = $conn->prepare("SELECT * FROM users WHERE id = :id");
+            $stmt->execute(['id' => $token['user_id']]);
+            $user = $stmt->fetch();
+
+            if ($user) {
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['username'] = $user['username'];
+                $_SESSION['first_name'] = $user['first_name'];
+                $_SESSION['last_name'] = $user['last_name'];
+                $_SESSION['role'] = $user['role'];
+
+                // Regenerate token to prevent theft
+                $newValidator = bin2hex(random_bytes(32));
+                $newValidatorHash = hash('sha256', $newValidator);
+                $expiry = date('Y-m-d H:i:s', time() + (86400 * 30));
+
+                $stmt = $conn->prepare("UPDATE remember_tokens SET validator_hash = :validator_hash, expires = :expires WHERE id = :id");
+                $stmt->execute([
+                    'validator_hash' => $newValidatorHash,
+                    'expires' => $expiry,
+                    'id' => $token['id']
+                ]);
+
+                setcookie('remember_me', $selector . ':' . $newValidator, time() + (86400 * 30), "/", "", false, true);
+
+                if ($user['role'] === 'barangay_staff') {
+                    header("Location: pages/Barangay_Dash.php");
+                } else {
+                    header("Location: pages/Department_Dashboard.php");
+                }
+                exit;
+            }
+        }
+    }
+    // If token is invalid or expired, clear the cookie
+    setcookie('remember_me', '', time() - 3600, "/");
+}
+
+// Original remember_user cookie handling (to be removed or updated if still needed for old cookies)
+// This block should be removed if only the new remember_me cookie is used.
+// For now, I'm keeping it commented out to show the old logic.
+/*
+if (isset($_COOKIE['remember_user'])) {
+    $cookie_value = base64_decode($_COOKIE['remember_user']);
+    list($user_id, $username) = explode('|', $cookie_value);
+
+    if (!empty($user_id) && !empty($username)) {
+        $stmt = $conn->prepare("SELECT * FROM users WHERE id = :id AND username = :username");
+        $stmt->execute(['id' => $user_id, 'username' => $username]);
+        $user = $stmt->fetch();
+
+        if ($user) {
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['username'] = $user['username'];
+            $_SESSION['first_name'] = $user['first_name'];
+            $_SESSION['last_name'] = $user['last_name'];
+            $_SESSION['role'] = $user['role'];
+
+            if ($user['role'] === 'barangay_staff') {
+                header("Location: pages/Barangay_Dash.php");
+            } else {
+                header("Location: pages/Department_Dashboard.php");
+            }
+            exit;
+        }
+    }
+}
+*/
+
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,6 +112,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CARELINK - Centralized Profiling System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/loading-spinner.css">
     <style>
         * {
             margin: 0;
@@ -444,7 +552,8 @@
         <div class="about-content">
             <div class="about-header">
                 <h3>About CARELINK</h3>
-                <button class="close-btn">&times;</button>
+                <button class="close-btn">&times;
+                </button>
             </div>
             <div class="about-body">
                 <p>CARELINK is a Centralized Profiling and Record Authentication System designed specifically for Senior Citizens and Persons with Disabilities (PWD).</p>
@@ -476,7 +585,7 @@
         window.addEventListener('click', (e) => {
             if (e.target === aboutModal) {
                 aboutModal.style.display = 'none';
-            }
+            });
         });
 
         // Add hover effect to role cards
@@ -493,5 +602,6 @@
             });
         });
     </script>
+    <script src="assets/js/dynamic-loader.js"></script>
 </body>
 </html>

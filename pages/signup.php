@@ -1,43 +1,70 @@
 <?php
 require_once '../includes/db_connect.php';
+require_once '../includes/barangays_list.php';
 
 $success = '';
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $firstName = $_POST['firstName'];
-    $lastName = $_POST['lastName'];
-    $email = $_POST['email'];
-    $username = $_POST['username'];
+    $firstName = trim($_POST['firstName']);
+    $lastName = trim($_POST['lastName']);
+    $email = trim($_POST['email']);
+    $username = trim($_POST['username']);
     $password = $_POST['password'];
     $confirmPassword = $_POST['confirmPassword'];
     $role = $_POST['role'];
     $barangay = isset($_POST['barangay']) ? $_POST['barangay'] : null;
 
-    if ($password !== $confirmPassword) {
+    if (empty($firstName) || empty($lastName) || empty($email) || empty($username) || empty($password) || empty($confirmPassword) || empty($role)) {
+        $error = 'Please fill in all required fields.';
+    } else if ($password !== $confirmPassword) {
         $error = 'Passwords do not match.';
+    } else if (strlen($password) < 8) {
+        $error = 'Password must be at least 8 characters long.';
+    } else if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = 'Invalid email format.';
     } else {
-        // Check if username or email already exists
-        $stmt = $conn->prepare("SELECT * FROM users WHERE username = :username OR email = :email");
-        $stmt->execute(['username' => $username, 'email' => $email]);
-        if ($stmt->fetch()) {
-            $error = 'Username or email already exists.';
-        } else {
-            $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+        try {
+            // Check if username or email already exists
+            $stmt = $conn->prepare("SELECT * FROM users WHERE username = :username OR email = :email");
+            $stmt->execute(['username' => $username, 'email' => $email]);
+            if ($stmt->fetch()) {
+                $error = 'Username or email already exists.';
+            } else {
+                $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
-            $sql = "INSERT INTO users (first_name, last_name, email, username, password, role, barangay) VALUES (:first_name, :last_name, :email, :username, :password, :role, :barangay)";
-            $stmt = $conn->prepare($sql);
+                $conn->beginTransaction();
 
-            if ($stmt->execute(['first_name' => $firstName, 'last_name' => $lastName, 'email' => $email, 'username' => $username, 'password' => $hashedPassword, 'role' => $role, 'barangay' => $barangay])) {
+                $sql = "INSERT INTO users (first_name, last_name, email, username, password, role, barangay) VALUES (:first_name, :last_name, :email, :username, :password, :role, :barangay)";
+                $stmt = $conn->prepare($sql);
+                $stmt->execute([
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
+                    'email' => $email,
+                    'username' => $username,
+                    'password' => $hashedPassword,
+                    'role' => $role,
+                    'barangay' => $barangay
+                ]);
+
+                $user_id = $conn->lastInsertId();
+
+                // Create default settings for the new user
+                $stmt = $conn->prepare("INSERT INTO settings (user_id) VALUES (:user_id)");
+                $stmt->execute(['user_id' => $user_id]);
+
+                $conn->commit();
+
                 if ($role === 'barangay_staff') {
-                    $login_page = 'Barangay Staff LogIn Page.php';
+                    $login_page = 'Barangay_Staff_LogInPage.php';
                 } else {
-                    $login_page = 'Department Admin LogIn Page.php';
+                    $login_page = 'Department_Admin_LogIn_Page.php';
                 }
                 $success = "User registered successfully! You can now <a href='$login_page'>login</a>.";
-            } else {
-                $error = 'Failed to register user.';
             }
+        } catch (PDOException $e) {
+            $conn->rollBack();
+            $error = 'Failed to register user: ' . $e->getMessage();
         }
     }
 }
@@ -205,11 +232,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <label for="barangay">Barangay</label>
                     <select id="barangay" name="barangay" class="form-control">
                         <option value="">Select barangay</option>
-                        <option value="Maybunga">Maybunga</option>
-                        <option value="Malinao">Malinao</option>
-                        <option value="Sta. Lucia">Sta. Lucia</option>
-                        <option value="Manggahan">Manggahan</option>
-                        <option value="Rosario">Rosario</option>
+                        <?php foreach ($barangays_list as $b): ?>
+                            <option value="<?php echo htmlspecialchars($b); ?>"><?php echo htmlspecialchars($b); ?></option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
                 <button type="submit" class="btn">Sign Up</button>

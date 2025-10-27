@@ -12,35 +12,79 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'department_admin') {
 $message = '';
 $error = '';
 
+// Generate CSRF token
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
+require_once '../includes/barangays_list.php';
+
 // Handle Add User Form Submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['addUser'])) {
-    $firstName = $_POST['firstName'];
-    $lastName = $_POST['lastName'];
-    $email = $_POST['email'];
-    $username = $_POST['username'];
-    $role = $_POST['role'];
-    $barangay = $_POST['barangay']; // Assuming barangay is selected from a form
-    $password = password_hash($_POST['password'], PASSWORD_DEFAULT); // Hash the password
-
-    if (empty($firstName) || empty($lastName) || empty($email) || empty($username) || empty($role) || empty($barangay) || empty($_POST['password'])) {
-        $error = 'Please fill in all fields.';
+    // Verify CSRF token
+    if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+        $error = 'CSRF token validation failed.';
     } else {
-        try {
-            $stmt = $conn->prepare("INSERT INTO users (first_name, last_name, email, username, role, barangay, password) VALUES (:first_name, :last_name, :email, :username, :role, :barangay, :password)");
-            $stmt->execute([
-                'first_name' => $firstName,
-                'last_name' => $lastName,
-                'email' => $email,
-                'username' => $username,
-                'role' => $role,
-                'barangay' => $barangay,
-                'password' => $password
-            ]);
-            $message = 'User added successfully!';
-        } catch (PDOException $e) {
-            $error = "Error: " . $e->getMessage();
+        $firstName = $_POST['firstName'];
+        $lastName = $_POST['lastName'];
+        $email = $_POST['email'];
+        $username = $_POST['username'];
+        $role = $_POST['role'];
+        $barangay = $_POST['barangay']; // Assuming barangay is selected from a form
+        $password = $_POST['password'];
+
+        if (empty($firstName) || empty($lastName) || empty($email) || empty($username) || empty($role) || empty($barangay) || empty($password)) {
+            $error = 'Please fill in all fields.';
+        } else {
+            // Validate role
+            $allowedRoles = ['department_admin', 'barangay_staff'];
+            if (!in_array($role, $allowedRoles)) {
+                $error = 'Invalid role selected.';
+            }
+
+            // Validate barangay
+            if (!in_array($barangay, $barangays_list)) {
+                $error = 'Invalid barangay selected.';
+            }
+
+            if (empty($error)) {
+                // Hash the password
+                $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+
+            // Check for duplicate username
+            $stmt = $conn->prepare("SELECT COUNT(*) FROM users WHERE username = :username");
+            $stmt->execute(['username' => $username]);
+            if ($stmt->fetchColumn() > 0) {
+                $error = 'Username already exists. Please choose a different one.';
+            } else {
+                // Check for duplicate email
+                $stmt = $conn->prepare("SELECT COUNT(*) FROM users WHERE email = :email");
+                $stmt->execute(['email' => $email]);
+                if ($stmt->fetchColumn() > 0) {
+                    $error = 'Email already exists. Please use a different one.';
+                } else {
+                    try {
+                        $stmt = $conn->prepare("INSERT INTO users (first_name, last_name, email, username, role, barangay, password) VALUES (:first_name, :last_name, :email, :username, :role, :barangay, :password)");
+                        $stmt->execute([
+                            'first_name' => $firstName,
+                            'last_name' => $lastName,
+                            'email' => $email,
+                            'username' => $username,
+                            'role' => $role,
+                            'barangay' => $barangay,
+                            'password' => $hashedPassword
+                        ]);
+                        $message = 'User added successfully!';
+                        // Regenerate CSRF token after successful submission
+                        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+                    } catch (PDOException $e) {
+                        $error = "Error: " . $e->getMessage();
+                    }
+                }
+            }
         }
     }
+}
 }
 
 // Fetch users from the database
@@ -257,6 +301,29 @@ try {
             background: var(--accent);
             color: white;
         }
+
+        .password-input-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .password-input-container input[type="password"],
+        .password-input-container input[type="text"] {
+            padding-right: 40px; /* Space for the toggle button */
+        }
+
+        .password-input-container .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: var(--gray);
+        }
+
+        .password-input-container .toggle-password:hover {
+            color: var(--primary);
+        }
     </style>
 </head>
 <body>
@@ -286,7 +353,7 @@ try {
             <!-- Header -->
             <div class="header">
                 <div class="header-content">
-                    <div class="welcome-message" data-first-name="<?php echo htmlspecialchars($_SESSION['first_name']); ?>" data-last-name="<?php echo htmlspecialchars($_SESSION['last_name']); ?>" data-role="<?php echo htmlspecialchars($_SESSION['role']); ?>"></div>
+                    <div class="welcome-message" data-first-name="<?php echo isset($_SESSION['first_name']) ? htmlspecialchars($_SESSION['first_name']) : ''; ?>" data-last-name="<?php echo isset($_SESSION['last_name']) ? htmlspecialchars($_SESSION['last_name']) : ''; ?>" data-role="<?php echo isset($_SESSION['role']) ? htmlspecialchars($_SESSION['role']) : ''; ?>"></div>
                     <h1>User Management</h1>
                 </div>
                 <div class="user-info">
@@ -306,6 +373,7 @@ try {
             <div class="card">
                 <h3><i class="fas fa-user-plus"></i> Add New User</h3>
                 <form id="addUserForm" method="post" action="">
+                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                     <div class="form-row">
                         <div class="form-group">
                             <label for="firstName">First Name</label>
@@ -329,7 +397,10 @@ try {
                     <div class="form-row">
                         <div class="form-group">
                             <label for="password">Password</label>
-                            <input type="password" id="password" name="password" placeholder="Create a password" required>
+                            <div class="password-input-container">
+                                <input type="password" id="password" name="password" placeholder="Create a password" required>
+                                <span class="toggle-password"><i class="fas fa-eye"></i></span>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="role">Role</label>
@@ -345,11 +416,9 @@ try {
                             <label for="barangay">Barangay</label>
                             <select id="barangay" name="barangay" required>
                                 <option value="">Select barangay</option>
-                                <option value="Maybunga">Maybunga</option>
-                                <option value="Malinao">Malinao</option>
-                                <option value="Sta. Lucia">Sta. Lucia</option>
-                                <option value="Manggahan">Manggahan</option>
-                                <option value="Rosario">Rosario</option>
+                                <?php foreach ($barangays_list as $b): ?>
+                                    <option value="<?php echo htmlspecialchars($b); ?>"><?php echo htmlspecialchars($b); ?></option>
+                                <?php endforeach; ?>
                             </select>
                         </div>
                     </div>
@@ -401,6 +470,8 @@ try {
     </div>
 
     <script>
+
+
         document.addEventListener('DOMContentLoaded', function() {
             const welcomeMessage = document.querySelector('.welcome-message');
             const firstName = welcomeMessage.dataset.firstName;
@@ -416,6 +487,16 @@ try {
                 greeting = "Good evening";
             }
             welcomeMessage.innerHTML = `${greeting}, <strong>${firstName} ${lastName}</strong>!`;
+
+            const togglePassword = document.querySelector('.toggle-password');
+            const passwordInput = document.querySelector('#password');
+
+            togglePassword.addEventListener('click', function () {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                this.querySelector('i').classList.toggle('fa-eye');
+                this.querySelector('i').classList.toggle('fa-eye-slash');
+            });
         });
     </script>
 </body>
