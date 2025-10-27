@@ -226,6 +226,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             transition: all 0.3s;
         }
 
+        /* Make select dropdowns clearly visible against the dark background */
+        select.form-control {
+            background: #ffffff; /* opaque white */
+            color: #222; /* dark text for readability */
+            -webkit-appearance: menulist;
+            appearance: menulist;
+            padding-right: 36px; /* room for dropdown arrow */
+        }
+
+        /* Better focus state for selects */
+        select.form-control:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.08);
+            background: #fff;
+        }
+
         .form-control:focus {
             outline: none;
             border-color: #4CAF50;
