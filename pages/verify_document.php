@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once '../includes/db_connect.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -231,96 +232,57 @@ session_start();
             color: var(--accent);
         }
 
-        /* Form */
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 14px;
-            color: var(--primary);
-            margin-bottom: 5px;
-            font-weight: 500;
-        }
-
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 14px;
-            transition: border-color 0.3s;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            overflow-y: auto;
         }
 
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: var(--secondary);
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-
-        /* Actions */
-        .actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        /* Stats Cards */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .stat-card {
-            background: white;
+        .modal-content {
+            background-color: white;
+            margin: 50px auto;
+            width: 90%;
+            max-width: 900px;
             border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            position: relative;
         }
 
-        .stat-card h4 {
-            font-size: 2rem;
-            color: var(--secondary);
-            margin-bottom: 5px;
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            border-bottom: 1px solid #e0e0e0;
         }
 
-        .stat-card p {
+        .modal-header h2 {
+            color: var(--primary);
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
             color: var(--gray);
-            font-size: 14px;
         }
 
-        /* Responsive */
-        @media (max-width: 768px) {
-            .header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 15px;
-            }
-            
-            .header-actions {
-                align-self: flex-end;
-            }
-            
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-            
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
+        .close-modal:hover {
+            color: var(--accent);
+        }
+
+        .modal-body {
+            padding: 30px;
+            max-height: 70vh;
+            overflow-y: auto;
         }
     </style>
 </head>
@@ -369,63 +331,6 @@ session_start();
                 </div>
             </div>
 
-            <!-- Stats Cards -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <h4>24</h4>
-                    <p>Pending Verification</p>
-                        </div>
-                <div class="stat-card">
-                    <h4>156</h4>
-                    <p>Verified Today</p>
-                    </div>
-                <div class="stat-card">
-                    <h4>8</h4>
-                    <p>Rejected</p>
-                </div>
-                <div class="stat-card">
-                    <h4>98.5%</h4>
-                    <p>Success Rate</p>
-                        </div>
-                    </div>
-                    
-            <!-- Verification Form -->
-            <div class="card">
-                <h3><i class="fas fa-search"></i> Document Verification</h3>
-                <form id="verifyForm">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="documentId">Document ID</label>
-                            <input type="text" id="documentId" placeholder="Enter document ID" required>
-                            </div>
-                        <div class="form-group">
-                            <label for="applicantName">Applicant Name</label>
-                            <input type="text" id="applicantName" placeholder="Enter applicant name" required>
-                            </div>
-                            </div>
-                    <div class="form-group">
-                        <label for="documentType">Document Type</label>
-                        <select id="documentType" required>
-                            <option value="">Select document type</option>
-                            <option value="id">Government ID</option>
-                            <option value="birth">Birth Certificate</option>
-                            <option value="marriage">Marriage Certificate</option>
-                            <option value="death">Death Certificate</option>
-                            <option value="other">Other</option>
-                        </select>
-                            </div>
-                    <div class="form-group">
-                        <label for="verificationNotes">Verification Notes</label>
-                        <textarea id="verificationNotes" rows="3" placeholder="Enter verification notes"></textarea>
-                            </div>
-                    <div class="actions">
-                        <button type="button" class="btn btn-success" onclick="verifyDocument('approved')">Approve</button>
-                        <button type="button" class="btn btn-danger" onclick="verifyDocument('rejected')">Reject</button>
-                        <button type="reset" class="btn btn-secondary">Reset</button>
-                        </div>
-                </form>
-                        </div>
-                        
             <!-- Documents List -->
             <div class="card">
                 <h3><i class="fas fa-file-alt"></i> Documents Queue</h3>
@@ -433,64 +338,78 @@ session_start();
                     <table class="table">
                         <thead>
                             <tr>
-                                <th>Document ID</th>
-                                <th>Applicant</th>
+                                <th>ID</th>
+                                <th>Applicant Name</th>
                                 <th>Type</th>
+                                <th>Barangay</th>
+                                <th>Date Submitted</th>
                                 <th>Status</th>
-                                <th>Submitted</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>DOC-001</td>
-                                <td>John Doe</td>
-                                <td>Government ID</td>
-                                <td><span class="status-badge status-pending">Pending</span></td>
-                                <td>2024-01-15</td>
-                                <td>
-                                    <button class="btn btn-small btn-success">Verify</button>
-                                    <button class="btn btn-small btn-warning">View</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>DOC-002</td>
-                                <td>Jane Smith</td>
-                                <td>Birth Certificate</td>
-                                <td><span class="status-badge status-verified">Verified</span></td>
-                                <td>2024-01-14</td>
-                                <td>
-                                    <button class="btn btn-small btn-warning">View</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>DOC-003</td>
-                                <td>Mike Johnson</td>
-                                <td>Marriage Certificate</td>
-                                <td><span class="status-badge status-rejected">Rejected</span></td>
-                                <td>2024-01-13</td>
-                                <td>
-                                    <button class="btn btn-small btn-warning">View</button>
-                                </td>
-                            </tr>
+                            <?php
+                            $sql = "SELECT * FROM applications";
+                            $stmt = $conn->prepare($sql);
+                            $stmt->execute();
+                            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                            foreach ($result as $row) {
+                                echo "<tr>";
+                                echo "<td>" . htmlspecialchars($row['id']) . "</td>";
+                                echo "<td>" . htmlspecialchars($row['full_name']) . "</td>";
+                                echo "<td>" . htmlspecialchars($row['application_type']) . "</td>";
+                                echo "<td>" . htmlspecialchars($row['barangay']) . "</td>";
+                                echo "<td>" . htmlspecialchars($row['date_submitted']) . "</td>";
+                                echo "<td><span class=\"status-badge status-" . htmlspecialchars($row['status']) . "\">" . htmlspecialchars($row['status']) . "</span></td>";
+                                echo "<td><button class=\"btn btn-small btn-primary view-details-btn\" data-id=\"" . htmlspecialchars($row['id']) . "\">View Details</button></td>";
+                                echo "</tr>";
+                            }
+                            ?>
                         </tbody>
                     </table>
-                                </div>
-                            </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Detail Modal -->
+    <div id="applicationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Application Details</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Application details will be loaded here -->
+            </div>
         </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Add click event to navigation items
-            const navItems = document.querySelectorAll('.sidebar-menu li');
-            navItems.forEach(item => {
+            const menuItems = document.querySelectorAll('.sidebar-menu li');
+            menuItems.forEach(item => {
                 item.addEventListener('click', function() {
-                    navItems.forEach(i => i.classList.remove('active'));
+                    menuItems.forEach(i => i.classList.remove('active'));
                     this.classList.add('active');
                 });
             });
-            
+
+            // Event delegation for View Details buttons
+            const tableBody = document.querySelector('.table tbody');
+            tableBody.addEventListener('click', function(event) {
+                if (event.target.classList.contains('view-details-btn')) {
+                    const appId = event.target.dataset.id;
+                    openApplicationModal(appId);
+                }
+            });
+
+            const closeModalBtn = document.querySelector('#applicationModal .close-modal');
+            closeModalBtn.addEventListener('click', () => {
+                document.getElementById('applicationModal').style.display = 'none';
+            });
+
             // Update welcome message based on time of day
             const welcomeMessage = document.querySelector('.welcome-message');
             const firstName = welcomeMessage.dataset.firstName;
@@ -510,18 +429,76 @@ session_start();
             welcomeMessage.innerHTML = `${greeting}, <strong>${firstName} ${lastName}</strong>!`;
         });
 
-        function verifyDocument(status) {
-            const documentId = document.getElementById('documentId').value;
-            const applicantName = document.getElementById('applicantName').value;
-            
-            if (!documentId || !applicantName) {
-                alert('Please fill in Document ID and Applicant Name');
-                return;
+        function openApplicationModal(appId) {
+            const modalBody = document.querySelector('#applicationModal .modal-body');
+            modalBody.innerHTML = '<p>Loading...</p>';
+            document.getElementById('applicationModal').style.display = 'block';
+
+            fetch(`../api/get_application_details.php?id=${appId}`)
+                .then(response => response.json())
+                .then(application => {
+                    if (application.error) {
+                        modalBody.innerHTML = `<p>Error: ${application.error}</p>`;
+                        return;
+                    }
+
+                    if (!application) {
+                        modalBody.innerHTML = '<p>Error loading application details.</p>';
+                        return;
+                    }
+
+                    let documentsHtml = '';
+                    if (application.has_birth_certificate) documentsHtml += `<li><a href="../api/get_document.php?id=${appId}&doc_type=birth_certificate" target="_blank">Birth Certificate</a></li>`;
+                    if (application.has_medical_certificate) documentsHtml += `<li><a href="../api/get_document.php?id=${appId}&doc_type=medical_certificate" target="_blank">Medical Certificate</a></li>`;
+                    if (application.has_client_identification) documentsHtml += `<li><a href="../api/get_document.php?id=${appId}&doc_type=client_identification" target="_blank">Client Identification</a></li>`;
+                    if (application.has_proof_of_address) documentsHtml += `<li><a href="../api/get_document.php?id=${appId}&doc_type=proof_of_address" target="_blank">Proof of Address</a></li>`;
+                    if (application.has_id_image) documentsHtml += `<li><a href="../api/get_document.php?id=${appId}&doc_type=id_image" target="_blank">ID Image</a></li>`;
+
+                    modalBody.innerHTML = `
+                        <div class="card">
+                            <h3><i class="fas fa-user"></i> Applicant Information</h3>
+                            <p><strong>Full Name:</strong> ${application.full_name}</p>
+                            <p><strong>Application Type:</strong> ${application.application_type}</p>
+                            <p><strong>Birth Date:</strong> ${application.birth_date}</p>
+                            <p><strong>Contact Number:</strong> ${application.contact_number}</p>
+                            <p><strong>Address:</strong> ${application.complete_address}</p>
+                        </div>
+                        <div class="card">
+                            <h3><i class="fas fa-file-alt"></i> Uploaded Documents</h3>
+                            <ul>${documentsHtml}</ul>
+                        </div>
+                        <div class="card">
+                            <h3><i class="fas fa-check-circle"></i> Verification</h3>
+                            <div class="actions">
+                                <button type="button" class="btn btn-success" onclick="updateStatus(${appId}, 'approved')">Approve</button>
+                                <button type="button" class="btn btn-danger" onclick="updateStatus(${appId}, 'rejected')">Reject</button>
+                            </div>
+                        </div>
+                    `;
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);
+                    modalBody.innerHTML = '<p>Error loading application details. Please check the console for more information.</p>';
+                });
+        }
+
+        function updateStatus(appId, status) {
+            if (confirm(`Are you sure you want to ${status} this application?`)) {
+                fetch(`../api/admin_${status}_application.php`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `id=${appId}`,
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(`Application ${status} successfully!`);
+                        location.reload();
+                    }
+                });
             }
-            
-            const action = status === 'approved' ? 'approved' : 'rejected';
-            alert(`Document ${action} successfully!`);
-            document.getElementById('verifyForm').reset();
         }
     </script>
 </body>

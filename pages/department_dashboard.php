@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once '../includes/db_connect.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -405,79 +406,7 @@ session_start();
                 </div>
             </div>
             
-            <!-- All Applications Section -->
-            <div class="dashboard-section">
-                <div class="section-header">
-                    <h2>All Applications from Barangays</h2>
-                    <div class="section-actions">
-                        <button class="btn btn-primary"><i class="fas fa-filter"></i> Filter</button>
-                        <button class="btn btn-success"><i class="fas fa-download"></i> Export</button>
-                    </div>
-                </div>
-                
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Applicant Name</th>
-                                <th>Type</th>
-                                <th>Barangay</th>
-                                <th>Date Submitted</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>001</td>
-                                <td>Maria Santos</td>
-                                <td>Senior Citizen</td>
-                                <td>Barangay Rosario</td>
-                                <td>1/15/2024</td>
-                                <td><span class="status status-pending">pending</span></td>
-                                <td><button class="btn btn-primary">View Details</button></td>
-                            </tr>
-                            <tr>
-                                <td>002</td>
-                                <td>Juan Dela Cruz</td>
-                                <td>PWD</td>
-                                <td>Barangay Malinac</td>
-                                <td>1/14/2024</td>
-                                <td><span class="status status-verified">verified</span></td>
-                                <td><button class="btn btn-primary">View Details</button></td>
-                            </tr>
-                            <tr>
-                                <td>003</td>
-                                <td>Ana Rodriguez</td>
-                                <td>Senior Citizen</td>
-                                <td>Barangay Ugong</td>
-                                <td>1/13/2024</td>
-                                <td><span class="status status-verified">verified</span></td>
-                                <td><button class="btn btn-primary">View Details</button></td>
-                            </tr>
-                            <tr>
-                                <td>004</td>
-                                <td>Carlos Mendoza</td>
-                                <td>PWD</td>
-                                <td>Barangay Phagbuhatan</td>
-                                <td>1/12/2024</td>
-                                <td><span class="status status-rejected">rejected</span></td>
-                                <td><button class="btn btn-primary">View Details</button></td>
-                            </tr>
-                            <tr>
-                                <td>005</td>
-                                <td>Elena Garcia</td>
-                                <td>Both Senior Citizen and PWD</td>
-                                <td>Barangay Maybunga</td>
-                                <td>1/11/2024</td>
-                                <td><span class="status status-verified">verified</span></td>
-                                <td><button class="btn btn-primary">View Details</button></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+
 
     <script>
         // Simple JavaScript for interactivity
