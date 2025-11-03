@@ -629,7 +629,6 @@ require_once '../includes/db_connect.php';
                 <div class="header-actions">
                     <button class="btn"><i class="fas fa-bell"></i> Notifications</button>
                     <a href="new_application.php" class="btn"><i class="fas fa-plus"></i> Add Application</a>
-                    <button class="btn" id="importBtn"><i class="fas fa-upload"></i> Import Applications</button>
                     <div class="user-info">
                         <div class="user-avatar">
                             <i class="fas fa-user"></i>
@@ -711,34 +710,6 @@ require_once '../includes/db_connect.php';
         </div>
     </div>
 
-    <!-- Import Applications Modal -->
-    <div id="importModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Import Applications from CSV</h2>
-                <button class="close-modal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <p>Download the responses from your Google Form as a CSV file and and upload it here to import the applications.</p>
-                <div class="message">
-                    <?php 
-                        if (isset($_SESSION['import_message'])) {
-                            echo $_SESSION['import_message'];
-                            unset($_SESSION['import_message']);
-                        }
-                    ?>
-                </div>
-                <form action="../api/import_applications.php" method="post" enctype="multipart/form-data">
-                    <div class="form-group">
-                        <label for="csv_file">Select CSV File</label>
-                        <input type="file" name="csv_file" id="csv_file" accept=".csv" required>
-                    </div>
-                    <button type="submit" class="btn">Import Applications</button>
-                </form>
-            </div>
-        </div>
-    </div>
-
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -761,17 +732,9 @@ require_once '../includes/db_connect.php';
                 }
             });
 
-            const closeModalBtns = document.querySelectorAll('.close-modal');
-            closeModalBtns.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.getElementById('applicationModal').style.display = 'none';
-                    document.getElementById('importModal').style.display = 'none';
-                });
-            });
-
-            const importBtn = document.getElementById('importBtn');
-            importBtn.addEventListener('click', () => {
-                document.getElementById('importModal').style.display = 'block';
+            const closeModalBtn = document.querySelector('#applicationModal .close-modal');
+            closeModalBtn.addEventListener('click', () => {
+                document.getElementById('applicationModal').style.display = 'none';
             });
 
             // Update welcome message based on time of day
@@ -831,13 +794,6 @@ require_once '../includes/db_connect.php';
                         <div class="card">
                             <h3><i class="fas fa-file-alt"></i> Uploaded Documents</h3>
                             <ul>${documentsHtml}</ul>
-                        </div>
-                        <div class="card">
-                            <h3><i class="fas fa-check-circle"></i> Verification</h3>
-                            <div class="actions">
-                                <button type="button" class="btn btn-success" onclick="updateStatus(${appId}, 'approved')">Approve</button>
-                                <button type="button" class="btn btn-danger" onclick="updateStatus(${appId}, 'rejected')">Reject</button>
-                            </div>
                         </div>
                     `;
                 })
@@ -922,7 +878,7 @@ require_once '../includes/db_connect.php';
                                     <td>${app.date_submitted}</td>
                                     <td><span class="status-badge status-${app.status}">${app.status}</span></td>
                                     <td>${app.complete_address}</td>
-                                    <td><button class="btn btn-danger btn-small" onclick="deleteApplication(${app.id})">Delete</button></td>
+                                    <td><class="btn btn-danger btn-small" onclick="deleteApplication(${app.id})">Delete</button></td>
                                 </tr>
                             `;
                             tableBody.innerHTML += row;
