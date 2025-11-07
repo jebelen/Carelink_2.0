@@ -233,6 +233,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
         }
 
+        /* Specific style for select element to make text visible */
+        select.form-control {
+            color: #333; /* Darker color for visibility */
+            background: white; /* Solid white background for better contrast */
+        }
+
+        select.form-control option {
+            color: #333; /* Ensure options text is also dark */
+            background: white; /* Ensure options background is white */
+        }
+
         .password-container {
             position: relative;
             width: 100%;

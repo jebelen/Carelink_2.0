@@ -192,27 +192,7 @@ session_start();
 </head>
 <body>
    <div class="container">
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <div class="logo">
-                    <!-- Logo image with fallback -->
-                    <img src="../images/LOGO.jpg" alt="Barangay Pinagbuhatan Logo" class="logo-image" onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex';">
-                    <div id="fallback-logo" class="logo-image" style="display: none; background: var(--secondary); width: 40px; height: 40px; border-radius: 8px; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 0.9rem;">BP</div>
-                    <h1 class="logo-text">CARELINK</h1>
-                </div>
-            </div>
-            <div class="sidebar-menu">
-                <ul>
-                    <li><a href="Department_Dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-                    <li><a href="User_Management.php"><i class="fas fa-user-cog"></i> User Management</a></li>
-                    <li class="active"><a href="Department_Records.php"><i class="fas fa-database"></i> Records</a></li>
-                    <li><a href="Verify_Document.php"><i class="fas fa-check-circle"></i> Verify Documents</a></li>
-                    <li><a href="System_Settings.php"><i class="fas fa-cog"></i> System Settings</a></li>
-                    <li><a href="../index.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-                </ul>
-            </div>
-        </div>
+        <?php include '../partials/department_sidebar.php'; ?>
 
         <!-- Main Content -->
         <div class="main-content">
