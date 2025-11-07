@@ -328,25 +328,7 @@ try {
 </head>
 <body>
    <div class="container">
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <div class="logo">
-                    <img src="../images/LOGO.jpg" alt="Logo" class="logo-image">
-                    <h1 class="logo-text">CARELINK</h1>
-                </div>
-            </div>
-            <div class="sidebar-menu">
-                <ul>
-                    <li><a href="Department_Dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-                    <li class="active"><a href="User_Management.php"><i class="fas fa-user-cog"></i> User Management</a></li>
-                    <li><a href="Department_Records.php"><i class="fas fa-database"></i> Records</a></li>
-                    <li><a href="Verify_Document.php"><i class="fas fa-check-circle"></i> Verify Documents</a></li>
-                    <li><a href="System_Settings.php"><i class="fas fa-cog"></i> System Settings</a></li>
-                    <li><a href="../index.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-                </ul>
-            </div>
-        </div>
+        <?php include '../partials/department_sidebar.php'; ?>
 
         <!-- Main Content -->
         <div class="main-content">
