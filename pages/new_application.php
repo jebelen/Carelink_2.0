@@ -413,6 +413,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </div>
         </div>
     </div>
+    <script src="../assets/js/sidebar-toggle.js"></script>
 </body>
 <script>
     document.getElementById('applicationType').addEventListener('change', function () {

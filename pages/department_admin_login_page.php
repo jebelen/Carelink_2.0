@@ -70,6 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $_SESSION['last_name'] = $user['last_name'];
                 $_SESSION['role'] = $user['role'];
                 $_SESSION['barangay'] = $user['barangay'];
+                $_SESSION['profile_picture'] = $user['profile_picture'];
 
                 if ($remember) {
                     // Generate a secure "remember me" token
@@ -132,10 +133,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             width: 100%;
             height: 100%;
             z-index: -1;
-            background-image: url('../images/LOGO_1.png');
+            background-image: url('../images/system_background.png');
             background-size: cover;
             background-position: center;
             opacity: 0.3;
+            animation: kenburns 30s ease-in-out infinite;
+        }
+
+        @keyframes kenburns {
+            0% {
+                transform: scale(1) translate(0, 0);
+                opacity: 0.3;
+            }
+            50% {
+                transform: scale(1.2) translate(-5%, 5%);
+                opacity: 0.4;
+            }
+            100% {
+                transform: scale(1) translate(0, 0);
+                opacity: 0.3;
+            }
         }
 
         .login-container {
@@ -219,8 +236,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             padding: 12px 15px;
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
+            color: black !important;
             font-size: 1rem;
             transition: all 0.3s;
         }
@@ -230,6 +246,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             border-color: #4CAF50;
             background: rgba(255, 255, 255, 0.15);
             box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+        }
+
+        .form-control::placeholder { /* For Chrome, Firefox, Opera, Safari 10.1+ */
+            color: rgba(0, 0, 0, 0.7) !important;
+            opacity: 1; /* Firefox */
+        }
+
+        .form-control:-ms-input-placeholder { /* Internet Explorer 10-11 */
+            color: rgba(0, 0, 0, 0.7) !important;
+        }
+
+        .form-control::-ms-input-placeholder { /* Microsoft Edge */
+            color: rgba(0, 0, 0, 0.7) !important;
         }
 
         .password-container {

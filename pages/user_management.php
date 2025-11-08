@@ -30,11 +30,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['addUser'])) {
         $email = $_POST['email'];
         $username = $_POST['username'];
         $role = $_POST['role'];
-        $barangay = $_POST['barangay']; // Assuming barangay is selected from a form
+        $barangay = isset($_POST['barangay']) ? $_POST['barangay'] : null;
+        error_log("DEBUG: POST[barangay] = " . print_r($_POST['barangay'], true));
+        error_log("DEBUG: Initial \$barangay = " . print_r($barangay, true));
         $password = $_POST['password'];
+        $profilePicture = 'default.jpg'; // Default profile picture
 
-        if (empty($firstName) || empty($lastName) || empty($email) || empty($username) || empty($role) || empty($barangay) || empty($password)) {
-            $error = 'Please fill in all fields.';
+        if (empty($firstName) || empty($lastName) || empty($email) || empty($username) || empty($role) || empty($password)) {
+            $error = 'Please fill in all required fields.';
         } else {
             // Validate role
             $allowedRoles = ['department_admin', 'barangay_staff'];
@@ -42,49 +45,86 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['addUser'])) {
                 $error = 'Invalid role selected.';
             }
 
-            // Validate barangay
-            if (!in_array($barangay, $barangays_list)) {
-                $error = 'Invalid barangay selected.';
+            // Validate barangay based on the selected role
+            if ($role === 'barangay_staff') {
+                if (empty($barangay)) {
+                    $error = 'Barangay is required for Barangay Staff.';
+                } elseif (!in_array($barangay, $barangays_list)) {
+                    $error = 'Invalid barangay selected.';
+                }
+            } else { // role is department_admin
+                $barangay = null; // Ensure barangay is null for department admins
             }
 
             if (empty($error)) {
-                // Hash the password
-                $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+                // Handle profile picture upload
+                if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] == UPLOAD_ERR_OK) {
+                    $fileTmpPath = $_FILES['profile_picture']['tmp_name'];
+                    $fileName = $_FILES['profile_picture']['name'];
+                    $fileSize = $_FILES['profile_picture']['size'];
+                    $fileType = $_FILES['profile_picture']['type'];
+                    $fileNameCmps = explode(".", $fileName);
+                    $fileExtension = strtolower(end($fileNameCmps));
 
-            // Check for duplicate username
-            $stmt = $conn->prepare("SELECT COUNT(*) FROM users WHERE username = :username");
-            $stmt->execute(['username' => $username]);
-            if ($stmt->fetchColumn() > 0) {
-                $error = 'Username already exists. Please choose a different one.';
-            } else {
-                // Check for duplicate email
-                $stmt = $conn->prepare("SELECT COUNT(*) FROM users WHERE email = :email");
-                $stmt->execute(['email' => $email]);
-                if ($stmt->fetchColumn() > 0) {
-                    $error = 'Email already exists. Please use a different one.';
-                } else {
-                    try {
-                        $stmt = $conn->prepare("INSERT INTO users (first_name, last_name, email, username, role, barangay, password) VALUES (:first_name, :last_name, :email, :username, :role, :barangay, :password)");
-                        $stmt->execute([
-                            'first_name' => $firstName,
-                            'last_name' => $lastName,
-                            'email' => $email,
-                            'username' => $username,
-                            'role' => $role,
-                            'barangay' => $barangay,
-                            'password' => $hashedPassword
-                        ]);
-                        $message = 'User added successfully!';
-                        // Regenerate CSRF token after successful submission
-                        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-                    } catch (PDOException $e) {
-                        $error = "Error: " . $e->getMessage();
+                    $allowedfileExtensions = array('jpg', 'gif', 'png', 'jpeg');
+                    if (in_array($fileExtension, $allowedfileExtensions)) {
+                        $uploadFileDir = '../images/profile_pictures/';
+                        if (!is_dir($uploadFileDir)) {
+                            mkdir($uploadFileDir, 0777, true);
+                        }
+                        $newFileName = md5(time() . $fileName) . '.' . $fileExtension;
+                        $dest_path = $uploadFileDir . $newFileName;
+
+                        if(move_uploaded_file($fileTmpPath, $dest_path)) {
+                            $profilePicture = $newFileName;
+                        } else {
+                            $error = "There was an error moving the uploaded profile picture file.";
+                        }
+                    } else {
+                        $error = "Invalid profile picture file type. Only JPG, JPEG, PNG, GIF are allowed.";
+                    }
+                }
+
+                if (empty($error)) {
+                    // Hash the password
+                    $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+
+                    // Check for duplicate username
+                    $stmt = $conn->prepare("SELECT COUNT(*) FROM users WHERE username = :username");
+                    $stmt->execute(['username' => $username]);
+                    if ($stmt->fetchColumn() > 0) {
+                        $error = 'Username already exists. Please choose a different one.';
+                    } else {
+                        // Check for duplicate email
+                        $stmt = $conn->prepare("SELECT COUNT(*) FROM users WHERE email = :email");
+                        $stmt->execute(['email' => $email]);
+                        if ($stmt->fetchColumn() > 0) {
+                            $error = 'Email already exists. Please use a different one.';
+                        } else {
+                            try {
+                                $stmt = $conn->prepare("INSERT INTO users (first_name, last_name, email, username, role, barangay, password, profile_picture) VALUES (:first_name, :last_name, :email, :username, :role, :barangay, :password, :profile_picture)");
+                                $stmt->execute([
+                                    'first_name' => $firstName,
+                                    'last_name' => $lastName,
+                                    'email' => $email,
+                                    'username' => $username,
+                                    'role' => $role,
+                                    'barangay' => $barangay,
+                                    'password' => $hashedPassword,
+                                    'profile_picture' => $profilePicture
+                                ]);
+                                $message = 'User added successfully!';
+                                // Regenerate CSRF token after successful submission
+                                $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+                            } catch (PDOException $e) {
+                                $error = "Error: " . $e->getMessage();
+                            }
+                        }
                     }
                 }
             }
         }
     }
-}
 }
 
 // Fetch users from the database
@@ -93,10 +133,10 @@ try {
     $barangayFilter = isset($_GET['barangay']) ? $_GET['barangay'] : 'all';
     
     if ($barangayFilter === 'all') {
-        $stmt = $conn->prepare("SELECT * FROM users");
+        $stmt = $conn->prepare("SELECT id, first_name, last_name, email, role, barangay, profile_picture FROM users");
         $stmt->execute();
     } else {
-        $stmt = $conn->prepare("SELECT * FROM users WHERE barangay = :barangay");
+        $stmt = $conn->prepare("SELECT id, first_name, last_name, email, role, barangay, profile_picture FROM users WHERE barangay = :barangay");
         $stmt->execute(['barangay' => $barangayFilter]);
     }
     
@@ -196,6 +236,7 @@ try {
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             padding: 20px;
             margin-bottom: 20px;
+            height: auto;
         }
 
         .card h3 {
@@ -324,6 +365,15 @@ try {
         .password-input-container .toggle-password:hover {
             color: var(--primary);
         }
+
+        .profile-picture-preview {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-top: 10px;
+            border: 2px solid #ddd;
+        }
     </style>
 </head>
 <body>
@@ -335,12 +385,24 @@ try {
             <!-- Header -->
             <div class="header">
                 <div class="header-content">
-                    <div class="welcome-message" data-first-name="<?php echo isset($_SESSION['first_name']) ? htmlspecialchars($_SESSION['first_name']) : ''; ?>" data-last-name="<?php echo isset($_SESSION['last_name']) ? htmlspecialchars($_SESSION['last_name']) : ''; ?>" data-role="<?php echo isset($_SESSION['role']) ? htmlspecialchars($_SESSION['role']) : ''; ?>"></div>
+                    <div class="welcome-message" data-first-name="<?php echo isset($_SESSION['first_name']) ? htmlspecialchars($_SESSION['first_name']) : ''; ?>" data-last-name="<?php echo htmlspecialchars($_SESSION['last_name']) ? htmlspecialchars($_SESSION['last_name']) : ''; ?>" data-role="<?php echo isset($_SESSION['role']) ? htmlspecialchars($_SESSION['role']) : ''; ?>"></div>
                     <h1>User Management</h1>
                 </div>
                 <div class="user-info">
-                    <div class="user-avatar">AD</div>
-                    <span>Administrator</span>
+                    <div class="user-avatar">
+                        <?php
+                            $profilePic = isset($_SESSION['profile_picture']) ? $_SESSION['profile_picture'] : 'default.jpg';
+                            $profilePicPath = '../images/profile_pictures/' . $profilePic;
+                            if (!file_exists($profilePicPath) || is_dir($profilePicPath)) {
+                                $profilePicPath = '../images/profile_pictures/default.jpg'; // Fallback to default if file doesn't exist
+                            }
+                        ?>
+                        <img src="<?php echo $profilePicPath; ?>" alt="Profile Picture" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                    </div>
+                    <div class="user-details">
+                        <h2><?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?></h2>
+                        <p><?php echo htmlspecialchars(ucwords(str_replace('_', ' ', $_SESSION['role']))); ?></p>
+                    </div>
                 </div>
             </div>
 
@@ -354,8 +416,9 @@ try {
             <!-- Add User Card -->
             <div class="card">
                 <h3><i class="fas fa-user-plus"></i> Add New User</h3>
-                <form id="addUserForm" method="post" action="">
-                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                <form id="addUserForm" method="post" action="" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; 
+?>">
                     <div class="form-row">
                         <div class="form-group">
                             <label for="firstName">First Name</label>
@@ -396,12 +459,17 @@ try {
                     <div class="form-row">
                         <div class="form-group">
                             <label for="barangay">Barangay</label>
-                            <select id="barangay" name="barangay" required>
+                            <select id="barangay" name="barangay">
                                 <option value="">Select barangay</option>
                                 <?php foreach ($barangays_list as $b): ?>
                                     <option value="<?php echo htmlspecialchars($b); ?>"><?php echo htmlspecialchars($b); ?></option>
                                 <?php endforeach; ?>
                             </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="profile_picture">Profile Picture (optional)</label>
+                            <input type="file" id="profile_picture" name="profile_picture" accept="image/*">
+                            <img id="profile_picture_preview" class="profile-picture-preview" src="../images/profile_pictures/default.jpg" alt="Profile Picture Preview">
                         </div>
                     </div>
                     <div class="actions">
@@ -418,6 +486,7 @@ try {
                     <table class="table">
                         <thead>
                             <tr>
+                                <th></th>
                                 <th>Name</th>
                                 <th>Email</th>
                                 <th>Role</th>
@@ -428,11 +497,21 @@ try {
                         <tbody>
                             <?php if (empty($users)): ?>
                                 <tr>
-                                    <td colspan="5" style="text-align:center;">No users found.</td>
+                                    <td colspan="6" style="text-align:center;">No users found.</td>
                                 </tr>
                             <?php else: ?>
                                 <?php foreach ($users as $user): ?>
                                     <tr>
+                                        <td>
+                                            <?php
+                                                $userProfilePic = isset($user['profile_picture']) ? $user['profile_picture'] : 'default.jpg';
+                                                $userProfilePicPath = '../images/profile_pictures/' . $userProfilePic;
+                                                if (!file_exists($userProfilePicPath) || is_dir($userProfilePicPath)) {
+                                                    $userProfilePicPath = '../images/profile_pictures/default.jpg'; // Fallback to default if file doesn't exist
+                                                }
+                                            ?>
+                                            <img src="<?php echo $userProfilePicPath; ?>" alt="Profile Picture" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;">
+                                        </td>
                                         <td><?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></td>
                                         <td><?php echo htmlspecialchars($user['email']); ?></td>
                                         <td><?php echo htmlspecialchars(str_replace('_', ' ', ucwords($user['role']))); ?></td>
@@ -451,6 +530,7 @@ try {
         </div>
     </div>
 
+    <script src="../assets/js/sidebar-toggle.js"></script>
     <script>
 
 
@@ -465,7 +545,8 @@ try {
                 greeting = "Good morning";
             } else if (hour < 18) {
                 greeting = "Good afternoon";
-            } else {
+            }
+            else {
                 greeting = "Good evening";
             }
             welcomeMessage.innerHTML = `${greeting}, <strong>${firstName} ${lastName}</strong>!`;
@@ -478,6 +559,23 @@ try {
                 passwordInput.setAttribute('type', type);
                 this.querySelector('i').classList.toggle('fa-eye');
                 this.querySelector('i').classList.toggle('fa-eye-slash');
+            });
+
+            // Profile picture preview
+            const profilePictureInput = document.getElementById('profile_picture');
+            const profilePicturePreview = document.getElementById('profile_picture_preview');
+
+            profilePictureInput.addEventListener('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        profilePicturePreview.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    profilePicturePreview.src = '../images/profile_pictures/default.jpg';
+                }
             });
         });
     </script>

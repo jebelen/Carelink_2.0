@@ -196,6 +196,77 @@ $barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
             font-size: 12px;
         }
 
+        .calendar-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px; /* Space between calendar and notifications */
+        }
+
+        .calendar-card h3 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .calendar-header button {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: var(--primary);
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .calendar-header .month-year {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .calendar-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: center;
+        }
+
+        .calendar-table th, .calendar-table td {
+            padding: 8px;
+            border: 1px solid #eee;
+        }
+
+        .calendar-table th {
+            background: var(--light);
+            color: var(--dark);
+            font-weight: 500;
+        }
+
+        .calendar-table td {
+            color: var(--primary);
+        }
+
+        .calendar-table td.inactive {
+            color: var(--gray);
+        }
+
+        .calendar-table td.today {
+            background: var(--secondary);
+            color: white;
+            border-radius: 50%;
+            font-weight: bold;
+        }
+
 
         .btn {
             display: inline-block;
@@ -752,7 +823,14 @@ $barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
                 <div class="header-actions">
                     <div class="user-info">
                         <div class="user-avatar">
-                            <i class="fas fa-user"></i>
+                            <?php
+                                $profilePic = isset($_SESSION['profile_picture']) ? $_SESSION['profile_picture'] : 'default.jpg';
+                                $profilePicPath = '../images/profile_pictures/' . $profilePic;
+                                if (!file_exists($profilePicPath) || is_dir($profilePicPath)) {
+                                    $profilePicPath = '../images/profile_pictures/default.jpg'; // Fallback to default if file doesn't exist
+                                }
+                            ?>
+                            <img src="<?php echo $profilePicPath; ?>" alt="Profile Picture" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
                         </div>
                         <div class="user-details">
                             <h2><?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?></h2>
@@ -787,6 +865,76 @@ $barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
 
                 <!-- Right Panel - Notifications -->
                 <div class="right-panel">
+                    <div class="calendar-card">
+                        <h3><i class="fas fa-calendar-alt"></i> Calendar</h3>
+                        <div class="calendar-body">
+                            <div class="calendar-header">
+                                <button class="prev-month"><i class="fas fa-chevron-left"></i></button>
+                                <span class="month-year">November 2025</span>
+                                <button class="next-month"><i class="fas fa-chevron-right"></i></button>
+                            </div>
+                            <table class="calendar-table">
+                                <thead>
+                                    <tr>
+                                        <th>Sun</th>
+                                        <th>Mon</th>
+                                        <th>Tue</th>
+                                        <th>Wed</th>
+                                        <th>Thu</th>
+                                        <th>Fri</th>
+                                        <th>Sat</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="inactive">27</td>
+                                        <td class="inactive">28</td>
+                                        <td class="inactive">29</td>
+                                        <td class="inactive">30</td>
+                                        <td class="inactive">31</td>
+                                        <td>1</td>
+                                        <td>2</td>
+                                    </tr>
+                                    <tr>
+                                        <td>3</td>
+                                        <td>4</td>
+                                        <td>5</td>
+                                        <td>6</td>
+                                        <td class="today">7</td>
+                                        <td>8</td>
+                                        <td>9</td>
+                                    </tr>
+                                    <tr>
+                                        <td>10</td>
+                                        <td>11</td>
+                                        <td>12</td>
+                                        <td>13</td>
+                                        <td>14</td>
+                                        <td>15</td>
+                                        <td>16</td>
+                                    </tr>
+                                    <tr>
+                                        <td>17</td>
+                                        <td>18</td>
+                                        <td>19</td>
+                                        <td>20</td>
+                                        <td>21</td>
+                                        <td>22</td>
+                                        <td>23</td>
+                                    </tr>
+                                    <tr>
+                                        <td>24</td>
+                                        <td>25</td>
+                                        <td>26</td>
+                                        <td>27</td>
+                                        <td>28</td>
+                                        <td>29</td>
+                                        <td>30</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                     <div class="notifications-card">
                         <div class="notifications-header">
                             <h3><i class="fas fa-bell"></i> Department Notifications</h3>
@@ -1044,6 +1192,7 @@ $barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
             });
         }
     </script>
+    <script src="../assets/js/sidebar-toggle.js"></script>
 </body>
 </html>
 

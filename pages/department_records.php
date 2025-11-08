@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once '../includes/db_connect.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -202,10 +203,22 @@ session_start();
                     <div class="welcome-message" data-first-name="<?php echo htmlspecialchars($_SESSION['first_name']); ?>" data-last-name="<?php echo htmlspecialchars($_SESSION['last_name']); ?>" data-role="<?php echo htmlspecialchars($_SESSION['role']); ?>"></div>
                     <h1>Department Records</h1>
                 </div>
-                <div class="user-info">
-                    <div class="user-avatar">AD</div>
-                    <span><?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?></span>
-                    <span><?php echo htmlspecialchars(ucwords(str_replace('_', ' ', $_SESSION['role']))); ?></span>
+                <div class="header-actions">
+                    <div class="user-info">
+                                            <div class="user-avatar">
+                                                <?php
+                                                    $profilePic = isset($_SESSION['profile_picture']) ? $_SESSION['profile_picture'] : 'default.jpg';
+                                                    $profilePicPath = '../images/profile_pictures/' . $profilePic;
+                                                    if (!file_exists($profilePicPath) || is_dir($profilePicPath)) {
+                                                        $profilePicPath = '../images/profile_pictures/default.jpg'; // Fallback to default if file doesn't exist
+                                                    }
+                                                ?>
+                                                <img src="<?php echo $profilePicPath; ?>" alt="Profile Picture" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                                            </div>                        <div class="user-details">
+                            <h2><?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?></h2>
+                            <p><?php echo htmlspecialchars(ucwords(str_replace('_', ' ', $_SESSION['role']))); ?></p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -300,6 +313,7 @@ session_start();
             </div>
         </div>
     </div>
+    <script src="../assets/js/sidebar-toggle.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const welcomeMessage = document.querySelector('.welcome-message');

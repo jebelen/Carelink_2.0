@@ -17,7 +17,9 @@ if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
-require_once '../includes/barangays_list.php';
+if ($_SESSION['role'] !== 'department_admin') {
+    require_once '../includes/barangays_list.php';
+}
 
 // Fetch user data if ID is provided
 if (isset($_GET['id'])) {
@@ -53,13 +55,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updateUser'])) {
                 $email = $_POST['email'];
                 $username = $_POST['username'];
                 $role = $_POST['role'];
-                $barangay = $_POST['barangay'];
+                $barangay = isset($_POST['barangay']) ? $_POST['barangay'] : null;
                 $newPassword = $_POST['newPassword'];
                 $confirmPassword = $_POST['confirmPassword'];
+                $profilePicture = $user['profile_picture']; // Keep existing if not updated
         
-                if (empty($firstName) || empty($lastName) || empty($email) || empty($username) || empty($role) || empty($barangay)) {
+                if (empty($firstName) || empty($lastName) || empty($email) || empty($username) || empty($role)) {
                     $error = 'Please fill in all required fields.';
                 } else {
+                    // Validate barangay only if the current user is not a department_admin and a barangay is provided
+                    if ($_SESSION['role'] !== 'department_admin' && !empty($barangay)) {
+                        if (!in_array($barangay, $barangays_list)) {
+                            $error = 'Invalid barangay selected.';
+                        }
+                    } else if ($_SESSION['role'] !== 'department_admin' && empty($barangay) && $role === 'barangay_staff') {
+                        $error = 'Barangay is required for Barangay Staff.';
+                    } else if ($_SESSION['role'] === 'department_admin') {
+                        $barangay = null; // Set barangay to null for department admins
+                    }
                     // Check for duplicate username (excluding current user)
                     $stmt = $conn->prepare("SELECT COUNT(*) FROM users WHERE username = :username AND id != :id");
                     $stmt->execute(['username' => $username, 'id' => $id]);
@@ -77,50 +90,78 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updateUser'])) {
                                 if ($newPassword !== $confirmPassword) {
                                     $error = 'New password and confirm password do not match.';
                                 }
+                            } // Closes if ($newPassword !== $confirmPassword)
+                        } // Closes if (!empty($newPassword))
+
+                        // Handle profile picture upload only if no other errors yet
+                        if (empty($error) && isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] == UPLOAD_ERR_OK) {
+                            $fileTmpPath = $_FILES['profile_picture']['tmp_name'];
+                            $fileName = $_FILES['profile_picture']['name'];
+                            $fileSize = $_FILES['profile_picture']['size'];
+                            $fileType = $_FILES['profile_picture']['type'];
+                            $fileNameCmps = explode(".", $fileName);
+                            $fileExtension = strtolower(end($fileNameCmps));
+
+                            $allowedfileExtensions = array('jpg', 'gif', 'png', 'jpeg');
+                            if (in_array($fileExtension, $allowedfileExtensions)) {
+                                $uploadFileDir = '../images/profile_pictures/';
+                                if (!is_dir($uploadFileDir)) {
+                                    mkdir($uploadFileDir, 0777, true);
+                                }
+                                $newFileName = md5(time() . $fileName) . '.' . $fileExtension;
+                                $dest_path = $uploadFileDir . $newFileName;
+
+                                if(move_uploaded_file($fileTmpPath, $dest_path)) {
+                                    $profilePicture = $newFileName;
+                                } else {
+                                    $error = "There was an error moving the uploaded profile picture file.";
+                                }
+                            } else {
+                                $error = "Invalid profile picture file type. Only JPG, JPEG, PNG, GIF are allowed.";
                             }
-        
-                            if (empty($error)) {
-                                try {
-                                    $sql = "UPDATE users SET first_name = :first_name, last_name = :last_name, email = :email, username = :username, role = :role, barangay = :barangay";
-                                    $params = [
-                                        'first_name' => $firstName,
-                                        'last_name' => $lastName,
-                                        'email' => $email,
-                                        'username' => $username,
-                                        'role' => $role,
-                                        'barangay' => $barangay,
-                                        'id' => $id
-                                    ];
-
-                            if (!empty($newPassword)) {
-                                $sql .= ", password = :password";
-                                $params['password'] = password_hash($newPassword, PASSWORD_DEFAULT);
-                            }
-
-                            $sql .= " WHERE id = :id";
-                            $stmt = $conn->prepare($sql);
-                            $stmt->execute($params);
-
-                            $message = 'User updated successfully!';
-                            // Re-fetch user data to display updated info immediately
-                            $stmt = $conn->prepare('SELECT * FROM users WHERE id = :id');
-                            $stmt->execute(['id' => $id]);
-                            $user = $stmt->fetch(PDO::FETCH_ASSOC);
-                            // Regenerate CSRF token after successful submission
-                            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-
-                        } catch (PDOException $e) {
-                            $error = "Error updating user: " . $e->getMessage();
                         }
-                    }
-                }
-            }
-        }
-    }
-}
 
-?>
-<!DOCTYPE html>
+                        // Proceed with database update only if no errors
+                        if (empty($error)) {
+                            try {
+                                $sql = "UPDATE users SET first_name = :first_name, last_name = :last_name, email = :email, username = :username, role = :role, barangay = :barangay, profile_picture = :profile_picture";
+                                $params = [
+                                    'first_name' => $firstName,
+                                    'last_name' => $lastName,
+                                    'email' => $email,
+                                    'username' => $username,
+                                    'role' => $role,
+                                    'barangay' => $barangay,
+                                    'profile_picture' => $profilePicture,
+                                    'id' => $id
+                                ];
+
+                                if (!empty($newPassword)) {
+                                    $sql .= ", password = :password";
+                                    $params['password'] = password_hash($newPassword, PASSWORD_DEFAULT);
+                                }
+
+                                $sql .= " WHERE id = :id";
+                                $stmt = $conn->prepare($sql);
+                                $stmt->execute($params);
+
+                                $message = 'User updated successfully!';
+                                // Re-fetch user data to display updated info immediately
+                                $stmt = $conn->prepare('SELECT * FROM users WHERE id = :id');
+                                $stmt->execute(['id' => $id]);
+                                $user = $stmt->fetch(PDO::FETCH_ASSOC);
+                                // Regenerate CSRF token after successful submission
+                                $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+
+                            } catch (PDOException $e) {
+                                $error = "Error updating user: " . $e->getMessage();
+                            }
+                        }
+                    } 
+                            } 
+                        } 
+                    }
+                ?><!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -337,6 +378,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updateUser'])) {
         .password-input-container .toggle-password:hover {
             color: var(--primary);
         }
+
+        .profile-picture-preview {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-top: 10px;
+            border: 2px solid #ddd;
+        }
     </style>
 </head>
 <body>
@@ -352,9 +402,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updateUser'])) {
                     <h1>Edit User</h1>
                 </div>
                 <div class="user-info">
-                    <div class="user-avatar">AD</div>
-                    <span><?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?></span>
-                    <span><?php echo htmlspecialchars(ucwords(str_replace('_', ' ', $_SESSION['role']))); ?></span>
+                    <div class="user-avatar">
+                        <?php
+                            $profilePic = isset($_SESSION['profile_picture']) ? $_SESSION['profile_picture'] : 'default.jpg';
+                            $profilePicPath = '../images/profile_pictures/' . $profilePic;
+                            if (!file_exists($profilePicPath) || is_dir($profilePicPath)) {
+                                $profilePicPath = '../images/profile_pictures/default.jpg'; // Fallback to default if file doesn't exist
+                            }
+                        ?>
+                        <img src="<?php echo $profilePicPath; ?>" alt="Profile Picture" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                    </div>
+                    <div class="user-details">
+                        <h2><?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?></h2>
+                        <p><?php echo htmlspecialchars(ucwords(str_replace('_', ' ', $_SESSION['role']))); ?></p>
+                    </div>
                 </div>
             </div>
 
@@ -367,7 +428,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updateUser'])) {
 
             <div class="card">
                 <?php if ($user): ?>
-                <form id="editUserForm" method="post" action="">
+                <form id="editUserForm" method="post" action="" enctype="multipart/form-data">
                 <h3><i class="fas fa-user-edit"></i> Edit User: <?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></h3>
                     <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                     <input type="hidden" name="id" value="<?php echo htmlspecialchars($user['id']); ?>">
@@ -400,6 +461,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updateUser'])) {
                                 <option value="barangay_staff" <?php echo ($user['role'] == 'barangay_staff') ? 'selected' : ''; ?>>Barangay Staff</option>
                             </select>
                         </div>
+                        <?php if ($_SESSION['role'] !== 'department_admin'): ?>
                         <div class="form-group">
                             <label for="barangay">Barangay</label>
                             <select id="barangay" name="barangay" required>
@@ -409,6 +471,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updateUser'])) {
                                 <?php endforeach; ?>
                             </select>
                         </div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="form-group">
+                        <label for="profile_picture">Profile Picture (optional)</label>
+                        <input type="file" id="profile_picture" name="profile_picture" accept="image/*">
+                        <?php
+                            $currentProfilePic = isset($user['profile_picture']) ? $user['profile_picture'] : 'default.jpg';
+                            $currentProfilePicPath = '../images/profile_pictures/' . $currentProfilePic;
+                            if (!file_exists($currentProfilePicPath) || is_dir($currentProfilePicPath)) {
+                                $currentProfilePicPath = '../images/profile_pictures/default.jpg'; // Fallback to default if file doesn't exist
+                            }
+                        ?>
+                        <img id="profile_picture_preview" class="profile-picture-preview" src="<?php echo $currentProfilePicPath; ?>" alt="Profile Picture Preview">
                     </div>
                     <div class="form-group">
                         <label for="newPassword">New Password (leave blank to keep current)</label>
@@ -461,11 +536,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updateUser'])) {
                 greeting = "Good morning";
             } else if (hour < 18) {
                 greeting = "Good afternoon";
-            } else {
+            }
+            else {
                 greeting = "Good evening";
             }
             welcomeMessage.innerHTML = `${greeting}, <strong><?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?></strong>!`;
+
+            // Profile picture preview for edit user
+            const profilePictureInput = document.getElementById('profile_picture');
+            const profilePicturePreview = document.getElementById('profile_picture_preview');
+
+            profilePictureInput.addEventListener('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        profilePicturePreview.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    // If no file is selected, revert to the current profile picture or default
+                    profilePicturePreview.src = '<?php echo $currentProfilePicPath; ?>';
+                }
+            });
         });
     </script>
+    <script src="../assets/js/sidebar-toggle.js"></script>
 </body>
 </html>

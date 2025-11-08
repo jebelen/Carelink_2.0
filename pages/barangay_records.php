@@ -476,11 +476,18 @@ $barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
                     <button class="btn"><i class="fas fa-bell"></i> Notifications</button>
                     <div class="user-info">
                         <div class="user-avatar">
-                            <i class="fas fa-user"></i>
+                            <?php
+                                $profilePic = isset($_SESSION['profile_picture']) ? $_SESSION['profile_picture'] : 'default.jpg';
+                                $profilePicPath = '../images/profile_pictures/' . $profilePic;
+                                if (!file_exists($profilePicPath) || is_dir($profilePicPath)) {
+                                    $profilePicPath = '../images/profile_pictures/default.jpg'; // Fallback to default if file doesn't exist
+                                }
+                            ?>
+                            <img src="<?php echo $profilePicPath; ?>" alt="Profile Picture" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
                         </div>
                         <div class="user-details">
                             <h2><?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?></h2>
-                            <p><?php echo htmlspecialchars(ucwords(str_replace('_', ' ', $_SESSION['role']))); ?></p>
+                            <p><?php echo htmlspecialchars(ucwords(str_replace('_', ' ', $_SESSION['role']))) . ' • ' . htmlspecialchars($_SESSION['barangay']); ?></p>
                         </div>
                     </div>
                 </div>
@@ -681,6 +688,7 @@ $barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
         </div>
     </div>
 
+    <script src="../assets/js/sidebar-toggle.js"></script>
     <script>
         // Simple script for interactive elements
         document.addEventListener('DOMContentLoaded', function() {

@@ -232,6 +232,70 @@ require_once '../includes/db_connect.php';
             color: var(--accent);
         }
 
+        .form-section {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .form-section:last-of-type {
+            border-bottom: none;
+        }
+
+        .form-section h3 {
+            font-size: 20px;
+            color: var(--primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .form-section h3 i {
+            margin-right: 10px;
+            color: var(--secondary);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--primary);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: var(--secondary);
+            outline: none;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
         /* Modal Styles */
         .modal {
             display: none;
@@ -301,7 +365,14 @@ require_once '../includes/db_connect.php';
                 <div class="header-actions">
                     <div class="user-info">
                         <div class="user-avatar">
-                            <i class="fas fa-user"></i>
+                            <?php
+                                $profilePic = isset($_SESSION['profile_picture']) ? $_SESSION['profile_picture'] : 'default.jpg';
+                                $profilePicPath = '../images/profile_pictures/' . $profilePic;
+                                if (!file_exists($profilePicPath) || is_dir($profilePicPath)) {
+                                    $profilePicPath = '../images/profile_pictures/default.jpg'; // Fallback to default if file doesn't exist
+                                }
+                            ?>
+                            <img src="<?php echo $profilePicPath; ?>" alt="Profile Picture" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
                         </div>
                         <div class="user-details">
                             <h2><?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?></h2>
@@ -592,7 +663,8 @@ require_once '../includes/db_connect.php';
                         </div>
                     </div>
                     <div class="form-actions">
-                        <button type="submit" class="btn"><i class="fas fa-save"></i> Save Changes</button>
+                        <button type="button" class="btn btn-success" onclick="updateStatus(document.getElementById('applicationId').value, 'approved')"><i class="fas fa-check"></i> Approve</button>
+                        <button type="button" class="btn btn-danger" onclick="updateStatus(document.getElementById('applicationId').value, 'rejected')"><i class="fas fa-times"></i> Reject</button>
                         <button type="button" class="btn btn-accent" onclick="exportApplicationDetails(document.getElementById('applicationId').value)"><i class="fas fa-download"></i> Export</button>
                     </div>
                 </form>
@@ -600,6 +672,7 @@ require_once '../includes/db_connect.php';
         </div>
     </div>
 
+    <script src="../assets/js/sidebar-toggle.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Add click event to navigation items
@@ -897,7 +970,8 @@ require_once '../includes/db_connect.php';
                                 </div>
                             </div>
                             <div class="form-actions">
-                                <button type="submit" class="btn"><i class="fas fa-save"></i> Save Changes</button>
+                                <button type="button" class="btn btn-success" onclick="updateStatus(${appId}, 'approved')"><i class="fas fa-check"></i> Approve</button>
+                                <button type="button" class="btn btn-danger" onclick="updateStatus(${appId}, 'rejected')"><i class="fas fa-times"></i> Reject</button>
                                 <button type="button" class="btn btn-accent" onclick="exportApplicationDetails(${appId})"><i class="fas fa-download"></i> Export</button>
                             </div>
                         </form>
@@ -949,7 +1023,8 @@ require_once '../includes/db_connect.php';
         }
 
         function updateStatus(appId, status) {
-            if (confirm(`Are you sure you want to ${status} this application?`)) {
+            const verb = status === 'approved' ? 'approve' : 'reject';
+            if (confirm(`Are you sure you want to ${verb} this application?`)) {
                 fetch(`../api/admin_${status}_application.php`, {
                     method: 'POST',
                     headers: {
