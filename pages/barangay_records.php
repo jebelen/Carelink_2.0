@@ -9,6 +9,20 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'barangay_staff') {
 }
 
 $barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
+error_log("DEBUG: Logged-in barangay: " . $_SESSION['barangay']);
+
+// Fetch applications from the database for the logged-in barangay
+$applications = [];
+try {
+    $stmt = $conn->prepare("SELECT id, full_name, application_type, date_submitted, status FROM applications WHERE barangay = :barangay ORDER BY date_submitted DESC");
+    $stmt->execute(['barangay' => $_SESSION['barangay']]);
+    $applications = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    // Log the error or display a user-friendly message
+    error_log("Error fetching applications: " . $e->getMessage());
+    // Optionally, set an error message for the user
+    $_SESSION['error_message'] = "Error loading applications. Please try again later.";
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -252,7 +266,7 @@ $barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
 
         .table-header {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr 1fr 1fr; /* Changed from 6 to 5 columns */
             padding: 15px 20px;
             background: var(--primary);
             color: white;
@@ -264,7 +278,7 @@ $barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
 
         .table-row {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr 1fr 1fr; /* Changed from 6 to 5 columns */
             padding: 15px 20px;
             border-bottom: 1px solid #e0e0e0;
             transition: background 0.3s;
@@ -420,16 +434,11 @@ $barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
             }
             
             .table-header, .table-row {
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns: 1fr 1fr; /* Adjusted for 5 columns, showing first two */
                 font-size: 14px;
             }
             
-            .table-header div:nth-child(3),
-            .table-header div:nth-child(4),
-            .table-row div:nth-child(3),
-            .table-row div:nth-child(4) {
-                display: none;
-            }
+            /* Removed specific nth-child(3) and (4) as ID Number is gone and columns shifted */
             
             .header {
                 flex-direction: column;
@@ -529,10 +538,6 @@ $barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
                 <!-- Filter Section -->
                 <div class="filter-section">
                     <div class="filter-group">
-                        <label for="id-filter">ID Number</label>
-                        <input type="text" id="id-filter" placeholder="Enter ID number...">
-                    </div>
-                    <div class="filter-group">
                         <label for="type-filter">Application Type</label>
                         <select id="type-filter">
                             <option value="all">All Types</option>
@@ -562,120 +567,46 @@ $barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
                             <div>Application Type</div>
                             <div>Date Submitted</div>
                             <div>Status</div>
-                            <div>ID Number</div>
                             <div>Actions</div>
                         </div>
                         
                         <div class="table-data">
-                            <div class="table-row">
-                                <div>Carlos Mendoza</div>
-                                <div>PWD</div>
-                                <div>01/05/2024</div>
-                                <div><span class="application-status status-rejected">Rejected</span></div>
-                                <div>PWD-004</div>
-                                <div>
-                                    <button class="btn btn-small"><i class="fas fa-eye"></i> View</button>
-                                </div>
-                            </div>
-                            
-                            <div class="table-row">
-                                <div>Maria Santos</div>
-                                <div>Senior Citizen</div>
-                                <div>01/08/2024</div>
-                                <div><span class="application-status status-pending">Pending</span></div>
-                                <div>SC-012</div>
-                                <div>
-                                    <button class="btn btn-small"><i class="fas fa-eye"></i> View</button>
-                                </div>
-                            </div>
-                            
-                            <div class="table-row">
-                                <div>Juan Dela Cruz</div>
-                                <div>PWD</div>
-                                <div>01/10/2024</div>
-                                <div><span class="application-status status-sent">Sent to City Hall</span></div>
-                                <div>PWD-007</div>
-                                <div>
-                                    <button class="btn btn-small"><i class="fas fa-eye"></i> View</button>
-                                </div>
-                            </div>
-                            
-                            <div class="table-row">
-                                <div>Elena Garcia</div>
-                                <div>Senior Citizen</div>
-                                <div>01/12/2024</div>
-                                <div><span class="application-status status-verified">Verified</span></div>
-                                <div>SC-015</div>
-                                <div>
-                                    <button class="btn btn-small"><i class="fas fa-eye"></i> View</button>
-                                </div>
-                            </div>
-                            
-                            <div class="table-row">
-                                <div>Roberto Santos</div>
-                                <div>PWD</div>
-                                <div>01/15/2024</div>
-                                <div><span class="application-status status-pending">Pending</span></div>
-                                <div>PWD-021</div>
-                                <div>
-                                    <button class="btn btn-small"><i class="fas fa-eye"></i> View</button>
-                                </div>
-                            </div>
-                            
-                            <div class="table-row">
-                                <div>Ana Reyes</div>
-                                <div>Solo Parent</div>
-                                <div>01/18/2024</div>
-                                <div><span class="application-status status-verified">Verified</span></div>
-                                <div>SP-008</div>
-                                <div>
-                                    <button class="btn btn-small"><i class="fas fa-eye"></i> View</button>
-                                </div>
-                            </div>
-                            
-                            <div class="table-row">
-                                <div>Luis Cruz</div>
-                                <div>4Ps</div>
-                                <div>01/20/2024</div>
-                                <div><span class="application-status status-rejected">Rejected</span></div>
-                                <div>4PS-003</div>
-                                <div>
-                                    <button class="btn btn-small"><i class="fas fa-eye"></i> View</button>
-                                </div>
-                            </div>
-                            
-                            <div class="table-row">
-                                <div>Carmen Lopez</div>
-                                <div>Senior Citizen</div>
-                                <div>01/22/2024</div>
-                                <div><span class="application-status status-sent">Sent to City Hall</span></div>
-                                <div>SC-019</div>
-                                <div>
-                                    <button class="btn btn-small"><i class="fas fa-eye"></i> View</button>
-                                </div>
-                            </div>
-                            
-                            <div class="table-row">
-                                <div>Pedro Gonzales</div>
-                                <div>PWD</div>
-                                <div>01/25/2024</div>
-                                <div><span class="application-status status-pending">Pending</span></div>
-                                <div>PWD-025</div>
-                                <div>
-                                    <button class="btn btn-small"><i class="fas fa-eye"></i> View</button>
-                                </div>
-                            </div>
-                            
-                            <div class="table-row">
-                                <div>Sofia Ramirez</div>
-                                <div>Others</div>
-                                <div>01/28/2024</div>
-                                <div><span class="application-status status-verified">Verified</span></div>
-                                <div>OTH-002</div>
-                                <div>
-                                    <button class="btn btn-small"><i class="fas fa-eye"></i> View</button>
-                                </div>
-                            </div>
+                            <?php if (empty($applications)): ?>
+                                <div class="no-results">No applications found for Barangay <?php echo $barangayName; ?>.</div>
+                            <?php else: ?>
+                                <?php foreach ($applications as $app): ?>
+                                    <div class="table-row">
+                                        <div><?php echo htmlspecialchars($app['full_name']); ?></div>
+                                        <div><?php echo htmlspecialchars($app['application_type']); ?></div>
+                                        <div><?php echo htmlspecialchars(date('m/d/Y', strtotime($app['date_submitted']))); ?></div>
+                                        <div>
+                                            <?php
+                                                $statusClass = '';
+                                                switch ($app['status']) {
+                                                    case 'pending':
+                                                        $statusClass = 'status-pending';
+                                                        break;
+                                                    case 'verified':
+                                                        $statusClass = 'status-verified';
+                                                        break;
+                                                    case 'rejected':
+                                                        $statusClass = 'status-rejected';
+                                                        break;
+                                                    case 'sent':
+                                                        $statusClass = 'status-sent';
+                                                        break;
+                                                    default:
+                                                        $statusClass = '';
+                                                }
+                                            ?>
+                                            <span class="application-status <?php echo $statusClass; ?>"><?php echo htmlspecialchars(ucfirst($app['status'])); ?></span>
+                                        </div>
+                                        <div>
+                                            <button class="btn btn-small view-application-btn" data-id="<?php echo $app['id']; ?>"><i class="fas fa-eye"></i> View</button>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -732,13 +663,13 @@ $barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
                 });
             });
             
-            // Auto-filter functionality
-            const idFilter = document.getElementById('id-filter');
+            // Auto-filter functionality (client-side filtering for now)
+            // const idFilter = document.getElementById('id-filter'); // Removed ID filter
             const typeFilter = document.getElementById('type-filter');
             const statusFilter = document.getElementById('status-filter');
             
             // Add event listeners for automatic filtering
-            idFilter.addEventListener('input', applyFilters);
+            // idFilter.addEventListener('input', applyFilters); // Removed ID filter event listener
             typeFilter.addEventListener('change', applyFilters);
             statusFilter.addEventListener('change', applyFilters);
             
@@ -775,31 +706,39 @@ $barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
         }
 
         function applyFilters() {
-            const idFilterValue = document.getElementById('id-filter').value.toLowerCase();
+            // const idFilterValue = document.getElementById('id-filter').value.toLowerCase(); // Removed ID filter
             const typeFilterValue = document.getElementById('type-filter').value;
             const statusFilterValue = document.getElementById('status-filter').value;
-            const tableRows = document.querySelectorAll('.table-row');
+            const tableRows = document.querySelectorAll('.table-data .table-row');
             
+            let hasResults = false;
+
             tableRows.forEach(row => {
-                const idCell = row.children[4].textContent.toLowerCase();
-                const typeCell = row.children[1].textContent;
-                const statusCell = row.children[3].textContent;
+                const fullName = row.children[0].textContent.toLowerCase(); // Using full_name for general search
+                const applicationType = row.children[1].textContent;
+                const status = row.children[3].textContent.toLowerCase(); // Status is now at index 3
                 
                 // Check if row matches all filter criteria
-                const idMatch = idFilterValue === '' || idCell.includes(idFilterValue);
-                const typeMatch = typeFilterValue === 'all' || typeCell === typeFilterValue;
-                const statusMatch = statusFilterValue === 'all' || 
-                    (statusFilterValue === 'pending' && statusCell.includes('Pending')) ||
-                    (statusFilterValue === 'verified' && statusCell.includes('Verified')) ||
-                    (statusFilterValue === 'rejected' && statusCell.includes('Rejected')) ||
-                    (statusFilterValue === 'sent' && statusCell.includes('Sent'));
+                // const idMatch = idFilterValue === '' || fullName.includes(idFilterValue); // Removed ID filter
+                const typeMatch = typeFilterValue === 'all' || applicationType === typeFilterValue;
+                const statusMatch = statusFilterValue === 'all' || status.includes(statusFilterValue);
                 
-                if (idMatch && typeMatch && statusMatch) {
+                if (typeMatch && statusMatch) { // Only type and status filters
                     row.style.display = 'grid';
+                    hasResults = true;
                 } else {
                     row.style.display = 'none';
                 }
             });
+
+            const noResultsDiv = document.querySelector('.no-results');
+            if (noResultsDiv) {
+                if (hasResults) {
+                    noResultsDiv.style.display = 'none';
+                } else {
+                    noResultsDiv.style.display = 'block';
+                }
+            }
         }
     </script>
 </body>

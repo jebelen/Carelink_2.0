@@ -494,7 +494,7 @@ try {
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="usersTableBody">
                             <?php if (empty($users)): ?>
                                 <tr>
                                     <td colspan="6" style="text-align:center;">No users found.</td>
@@ -517,7 +517,7 @@ try {
                                         <td><?php echo htmlspecialchars(str_replace('_', ' ', ucwords($user['role']))); ?></td>
                                         <td><?php echo htmlspecialchars($user['barangay']); ?></td>
                                         <td>
-                                            <a href="edit_user.php?id=<?php echo $user['id']; ?>" class="btn btn-small btn-warning">Edit</a>
+                                            <button class="btn btn-small btn-warning edit-user-btn" data-id="<?php echo $user['id']; ?>">Edit</button>
                                             <form action="delete_user.php" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this user?');">
                                                 <input type="hidden" name="id" value="<?php echo $user['id']; ?>">
                                                 <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
@@ -536,52 +536,310 @@ try {
 
     <script src="../assets/js/sidebar-toggle.js"></script>
     <script>
-
+        // Function to toggle password visibility (globally available)
+        window.togglePasswordVisibility = function(fieldId) {
+            const passwordInput = document.getElementById(fieldId);
+            if (passwordInput) {
+                const icon = passwordInput.nextElementSibling.querySelector('i');
+                if (icon) {
+                    if (passwordInput.type === 'password') {
+                        passwordInput.type = 'text';
+                        icon.classList.remove('fa-eye');
+                        icon.classList.add('fa-eye-slash');
+                    } else {
+                        passwordInput.type = 'password';
+                        icon.classList.remove('fa-eye-slash');
+                        icon.classList.add('fa-eye');
+                    }
+                }
+            }
+        };
 
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('user_management.php script loaded and DOMContentLoaded fired.'); // Debug log
+
+            // Welcome message logic
             const welcomeMessage = document.querySelector('.welcome-message');
             const firstName = welcomeMessage.dataset.firstName;
             const lastName = welcomeMessage.dataset.lastName;
-            const role = welcomeMessage.dataset.role;
             const hour = new Date().getHours();
             let greeting;
             if (hour < 12) {
                 greeting = "Good morning";
             } else if (hour < 18) {
                 greeting = "Good afternoon";
-            }
-            else {
+            } else {
                 greeting = "Good evening";
             }
             welcomeMessage.innerHTML = `${greeting}, <strong>${firstName} ${lastName}</strong>!`;
 
-            const togglePassword = document.querySelector('.toggle-password');
-            const passwordInput = document.querySelector('#password');
+            // Password toggle for Add User form
+            const togglePasswordAddUser = document.querySelector('#addUserForm .toggle-password');
+            const passwordInputAddUser = document.querySelector('#addUserForm #password');
+            if (togglePasswordAddUser && passwordInputAddUser) {
+                togglePasswordAddUser.addEventListener('click', function () {
+                    window.togglePasswordVisibility('password');
+                });
+            }
 
-            togglePassword.addEventListener('click', function () {
-                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                passwordInput.setAttribute('type', type);
-                this.querySelector('i').classList.toggle('fa-eye');
-                this.querySelector('i').classList.toggle('fa-eye-slash');
-            });
+            // Profile picture preview for Add User form
+            const profilePictureInputAddUser = document.getElementById('profile_picture');
+            const profilePicturePreviewAddUser = document.getElementById('profile_picture_preview');
+            if (profilePictureInputAddUser && profilePicturePreviewAddUser) {
+                profilePictureInputAddUser.addEventListener('change', function() {
+                    const file = this.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            profilePicturePreviewAddUser.src = e.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                    } else {
+                        profilePicturePreviewAddUser.src = '../images/profile_pictures/default.jpg';
+                    }
+                });
+            }
 
-            // Profile picture preview
-            const profilePictureInput = document.getElementById('profile_picture');
-            const profilePicturePreview = document.getElementById('profile_picture_preview');
+            // Edit User Modal Logic
+            const editUserModal = document.getElementById('editUserModal');
+            const closeButton = editUserModal ? editUserModal.querySelector('.close-button') : null;
+            const editUserFormContainer = document.getElementById('editUserFormContainer');
 
-            profilePictureInput.addEventListener('change', function() {
-                const file = this.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        profilePicturePreview.src = e.target.result;
-                    };
-                    reader.readAsDataURL(file);
-                } else {
-                    profilePicturePreview.src = '../images/profile_pictures/default.jpg';
+            if (closeButton) {
+                closeButton.addEventListener('click', function() {
+                    editUserModal.style.display = 'none';
+                });
+            }
+
+            window.addEventListener('click', function(event) {
+                if (editUserModal && event.target == editUserModal) {
+                    editUserModal.style.display = 'none';
                 }
             });
+
+            function fetchUserDetails(userId) {
+                if (!editUserFormContainer) {
+                    console.error('editUserFormContainer not found.');
+                    return;
+                }
+                editUserFormContainer.innerHTML = '<p style="text-align: center;">Loading user details...</p>';
+
+                fetch(`edit_user.php?id=${userId}&modal=true`)
+                    .then(response => response.text())
+                    .then(html => {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        const formContent = doc.getElementById('editUserForm');
+                        
+                        if (formContent) {
+                            editUserFormContainer.innerHTML = formContent.outerHTML;
+                            initializeEditUserFormScripts();
+                        } else {
+                            editUserFormContainer.innerHTML = '<p style="text-align: center; color: var(--accent);">Error: Could not load user edit form.</p>';
+                            console.error('editUserForm not found in fetched HTML.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching user details:', error);
+                        editUserFormContainer.innerHTML = '<p style="text-align: center; color: var(--accent);">Error loading user details.</p>';
+                    });
+            }
+
+            function initializeEditUserFormScripts() {
+                // This function will re-initialize scripts for the dynamically loaded form
+                // Password toggle for modal form
+                const togglePasswordElementsModal = editUserFormContainer.querySelectorAll('.toggle-password');
+                togglePasswordElementsModal.forEach(toggle => {
+                    toggle.onclick = function() {
+                        const fieldId = this.previousElementSibling.id;
+                        window.togglePasswordVisibility(fieldId);
+                    };
+                });
+
+                // Profile picture preview for modal form
+                const profilePictureInputModal = editUserFormContainer.querySelector('#profile_picture');
+                const profilePicturePreviewModal = editUserFormContainer.querySelector('#profile_picture_preview');
+                if (profilePictureInputModal && profilePicturePreviewModal) {
+                    profilePictureInputModal.addEventListener('change', function() {
+                        const file = this.files[0];
+                        if (file) {
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                profilePicturePreviewModal.src = e.target.result;
+                            };
+                            reader.readAsDataURL(file);
+                        } else {
+                            profilePicturePreviewModal.src = profilePicturePreviewModal.dataset.originalSrc || '../images/profile_pictures/default.jpg';
+                        }
+                    });
+                    profilePicturePreviewModal.dataset.originalSrc = profilePicturePreviewModal.src;
+                }
+
+                // Dynamic display of barangay field based on role for modal form
+                const roleSelectModal = editUserFormContainer.querySelector('#role');
+                const barangayFormGroupModal = editUserFormContainer.querySelector('#barangayFormGroup');
+                const barangaySelectModal = editUserFormContainer.querySelector('#barangay');
+
+                if (roleSelectModal && barangayFormGroupModal && barangaySelectModal) {
+                    function toggleBarangayFieldModal() {
+                        if (roleSelectModal.value === 'barangay_staff') {
+                            barangayFormGroupModal.style.display = 'block';
+                            barangaySelectModal.setAttribute('required', 'required');
+                        } else {
+                            barangayFormGroupModal.style.display = 'none';
+                            barangaySelectModal.removeAttribute('required');
+                            barangaySelectModal.value = '';
+                        }
+                    }
+                    toggleBarangayFieldModal();
+                    roleSelectModal.addEventListener('change', toggleBarangayFieldModal);
+                }
+
+                // Handle form submission within the modal
+                const editUserForm = editUserFormContainer.querySelector('#editUserForm');
+                if (editUserForm) {
+                    editUserForm.addEventListener('submit', function(e) {
+                        e.preventDefault();
+
+                        const formData = new FormData(editUserForm);
+
+                        fetch(editUserForm.action, {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(response => {
+                            // Log the raw response for debugging
+                            console.log('Raw response from edit_user.php:', response);
+                            const clonedResponse = response.clone(); // Clone the response here
+
+                            if (!response.ok) {
+                                // If response is not OK (e.g., 404, 500), try to get text for more info
+                                return clonedResponse.text().then(text => {
+                                    throw new Error(`HTTP error! status: ${response.status}, body: ${text}`);
+                                });
+                            }
+                            return response.json().catch(jsonError => {
+                                // Catch JSON parsing errors specifically, using the cloned response for text fallback
+                                return clonedResponse.text().then(text => {
+                                    throw new Error(`JSON parsing error: ${jsonError.message}, raw response: ${text}`);
+                                });
+                            });
+                        })
+                        .then(data => {
+                            if (data.success) {
+                                alert(data.message);
+                                editUserModal.style.display = 'none';
+                                location.reload(); // Reload to show updated user list
+                            } else {
+                                alert(data.error || 'An unexpected error occurred.');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error updating user:', error);
+                            alert('An error occurred while updating the user: ' + error.message);
+                        });
+                    });
+                }
+            }
+
+            // Event delegation for Edit User buttons
+            const usersTableBody = document.querySelector('#usersTableBody');
+            if (usersTableBody) {
+                usersTableBody.addEventListener('click', function(event) {
+                    const clickedButton = event.target.closest('.edit-user-btn');
+                    if (clickedButton) {
+                        console.log('Edit button clicked for user ID:', clickedButton.dataset.id);
+                        const userId = clickedButton.dataset.id;
+                        fetchUserDetails(userId);
+                        if (editUserModal) {
+                            editUserModal.style.display = 'flex';
+                        }
+                    }
+                });
+            }
         });
     </script>
+
+    <!-- Edit User Modal -->
+    <div id="editUserModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-user-edit"></i> Edit User</h2>
+                <span class="close-button">&times;</span>
+            </div>
+            <div class="modal-body">
+                <!-- Content from edit_user.php will be loaded here -->
+                <div id="editUserFormContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Modal Styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 700px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: var(--primary);
+            font-size: 1.5rem;
+        }
+
+        .modal-header h2 i {
+            margin-right: 10px;
+            color: var(--secondary);
+        }
+
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close-button:hover,
+        .close-button:focus {
+            color: #000;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            padding: 10px 0;
+        }
+    </style>
 </body>
 </html>

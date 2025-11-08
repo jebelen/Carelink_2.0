@@ -17,9 +17,7 @@ if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
-if ($_SESSION['role'] !== 'department_admin') {
-    require_once '../includes/barangays_list.php';
-}
+require_once '../includes/barangays_list.php';
 
 // Fetch user data if ID is provided
 if (isset($_GET['id'])) {
@@ -45,124 +43,179 @@ if (isset($_GET['id'])) {
 
 // Handle form submission for updating user
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updateUser'])) {
+    error_log("DEBUG: edit_user.php: POST request received for user update.");
+    error_log("DEBUG: POST data: " . print_r($_POST, true));
+    error_log("DEBUG: FILES data: " . print_r($_FILES, true));
+
+    $response = ['success' => false, 'message' => '', 'error' => '']; // Initialize response array
+
     // Verify CSRF token
     if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
-        $error = 'CSRF token validation failed.';
+        $response['error'] = 'CSRF token validation failed.';
+        error_log("ERROR: CSRF token validation failed.");
     } else {
-                $id = filter_var($_POST['id'], FILTER_SANITIZE_NUMBER_INT);
-                $firstName = $_POST['firstName'];
-                $lastName = $_POST['lastName'];
-                $email = $_POST['email'];
-                $username = $_POST['username'];
-                $role = $_POST['role'];
-                $barangay = isset($_POST['barangay']) ? $_POST['barangay'] : null;
-                $newPassword = $_POST['newPassword'];
-                $confirmPassword = $_POST['confirmPassword'];
-                $profilePicture = $user['profile_picture']; // Keep existing if not updated
+        error_log("DEBUG: CSRF token validated successfully.");
+        $id = filter_var($_POST['id'], FILTER_SANITIZE_NUMBER_INT);
+        $firstName = $_POST['firstName'];
+        $lastName = $_POST['lastName'];
+        $email = $_POST['email'];
+        $username = $_POST['username'];
+        $role = $_POST['role'];
+        $barangay = isset($_POST['barangay']) ? $_POST['barangay'] : null;
+        $newPassword = $_POST['newPassword'];
+        $confirmPassword = $_POST['confirmPassword'];
+        $profilePicture = $user['profile_picture']; // Keep existing if not updated
         
-                if (empty($firstName) || empty($lastName) || empty($email) || empty($username) || empty($role)) {
-                    $error = 'Please fill in all required fields.';
-                } else {
-                    // Validate barangay only if the current user is not a department_admin and a barangay is provided
-                    if ($_SESSION['role'] !== 'department_admin' && !empty($barangay)) {
-                        if (!in_array($barangay, $barangays_list)) {
-                            $error = 'Invalid barangay selected.';
-                        }
-                    } else if ($_SESSION['role'] !== 'department_admin' && empty($barangay) && $role === 'barangay_staff') {
-                        $error = 'Barangay is required for Barangay Staff.';
-                    } else if ($_SESSION['role'] === 'department_admin') {
-                        $barangay = null; // Set barangay to null for department admins
+        error_log("DEBUG: Parsed form data - ID: $id, Role: $role, Barangay: " . ($barangay ?? 'NULL'));
+
+        if (empty($firstName) || empty($lastName) || empty($email) || empty($username) || empty($role)) {
+            $response['error'] = 'Please fill in all required fields.';
+            error_log("ERROR: Required fields missing.");
+        } else {
+            // Validate barangay based on the selected role for the user being edited
+            if ($role === 'barangay_staff') {
+                if (empty($barangay)) {
+                    $response['error'] = 'Barangay is required for Barangay Staff.';
+                    error_log("ERROR: Barangay required for barangay_staff.");
+                } elseif (!in_array($barangay, $barangays_list)) {
+                    $response['error'] = 'Invalid barangay selected.';
+                    error_log("ERROR: Invalid barangay selected: $barangay.");
+                }
+            } else { // role is department_admin
+                $barangay = null; // Ensure barangay is null for department admins
+                error_log("DEBUG: Role is department_admin, setting barangay to NULL.");
+            }
+            // Check for duplicate username (excluding current user)
+            if (empty($response['error'])) {
+                $stmt = $conn->prepare("SELECT COUNT(*) FROM users WHERE username = :username AND id != :id");
+                $stmt->execute(['username' => $username, 'id' => $id]);
+                if ($stmt->fetchColumn() > 0) {
+                    $response['error'] = 'Username already exists. Please choose a different one.';
+                    error_log("ERROR: Duplicate username: $username.");
+                }
+            }
+
+            if (empty($response['error'])) {
+                // Check for duplicate email (excluding current user)
+                $stmt = $conn->prepare("SELECT COUNT(*) FROM users WHERE email = :email AND id != :id");
+                $stmt->execute(['email' => $email, 'id' => $id]);
+                if ($stmt->fetchColumn() > 0) {
+                    $response['error'] = 'Email already exists. Please use a different one.';
+                    error_log("ERROR: Duplicate email: $email.");
+                }
+            }
+
+            if (empty($response['error'])) {
+                // Password validation
+                if (!empty($newPassword)) {
+                    if ($newPassword !== $confirmPassword) {
+                        $response['error'] = 'New password and confirm password do not match.';
+                        error_log("ERROR: Passwords do not match.");
                     }
-                    // Check for duplicate username (excluding current user)
-                    $stmt = $conn->prepare("SELECT COUNT(*) FROM users WHERE username = :username AND id != :id");
-                    $stmt->execute(['username' => $username, 'id' => $id]);
-                    if ($stmt->fetchColumn() > 0) {
-                        $error = 'Username already exists. Please choose a different one.';
+                }
+            }
+
+            // Handle profile picture upload only if no other errors yet
+            if (empty($response['error']) && isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] == UPLOAD_ERR_OK) {
+                error_log("DEBUG: Attempting profile picture upload.");
+                $fileTmpPath = $_FILES['profile_picture']['tmp_name'];
+                $fileName = $_FILES['profile_picture']['name'];
+                $fileSize = $_FILES['profile_picture']['size'];
+                $fileType = $_FILES['profile_picture']['type'];
+                $fileNameCmps = explode(".", $fileName);
+                $fileExtension = strtolower(end($fileNameCmps));
+
+                $allowedfileExtensions = array('jpg', 'gif', 'png', 'jpeg');
+                if (in_array($fileExtension, $allowedfileExtensions)) {
+                    $uploadFileDir = '../images/profile_pictures/';
+                    if (!is_dir($uploadFileDir)) {
+                        mkdir($uploadFileDir, 0777, true);
+                        error_log("DEBUG: Created directory: $uploadFileDir");
+                    }
+                    $newFileName = md5(time() . $fileName) . '.' . $fileExtension;
+                    $dest_path = $uploadFileDir . $newFileName;
+
+                    if(move_uploaded_file($fileTmpPath, $dest_path)) {
+                        $profilePicture = $newFileName;
+                        error_log("DEBUG: Profile picture uploaded successfully: $newFileName");
                     } else {
-                        // Check for duplicate email (excluding current user)
-                        $stmt = $conn->prepare("SELECT COUNT(*) FROM users WHERE email = :email AND id != :id");
-                        $stmt->execute(['email' => $email, 'id' => $id]);
-                        if ($stmt->fetchColumn() > 0) {
-                            $error = 'Email already exists. Please use a different one.';
-                        } else {
-                            // Password validation
-                            if (!empty($newPassword)) {
-                                if ($newPassword !== $confirmPassword) {
-                                    $error = 'New password and confirm password do not match.';
-                                }
-                            } // Closes if ($newPassword !== $confirmPassword)
-                        } // Closes if (!empty($newPassword))
-
-                        // Handle profile picture upload only if no other errors yet
-                        if (empty($error) && isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] == UPLOAD_ERR_OK) {
-                            $fileTmpPath = $_FILES['profile_picture']['tmp_name'];
-                            $fileName = $_FILES['profile_picture']['name'];
-                            $fileSize = $_FILES['profile_picture']['size'];
-                            $fileType = $_FILES['profile_picture']['type'];
-                            $fileNameCmps = explode(".", $fileName);
-                            $fileExtension = strtolower(end($fileNameCmps));
-
-                            $allowedfileExtensions = array('jpg', 'gif', 'png', 'jpeg');
-                            if (in_array($fileExtension, $allowedfileExtensions)) {
-                                $uploadFileDir = '../images/profile_pictures/';
-                                if (!is_dir($uploadFileDir)) {
-                                    mkdir($uploadFileDir, 0777, true);
-                                }
-                                $newFileName = md5(time() . $fileName) . '.' . $fileExtension;
-                                $dest_path = $uploadFileDir . $newFileName;
-
-                                if(move_uploaded_file($fileTmpPath, $dest_path)) {
-                                    $profilePicture = $newFileName;
-                                } else {
-                                    $error = "There was an error moving the uploaded profile picture file.";
-                                }
-                            } else {
-                                $error = "Invalid profile picture file type. Only JPG, JPEG, PNG, GIF are allowed.";
-                            }
-                        }
-
-                        // Proceed with database update only if no errors
-                        if (empty($error)) {
-                            try {
-                                $sql = "UPDATE users SET first_name = :first_name, last_name = :last_name, email = :email, username = :username, role = :role, barangay = :barangay, profile_picture = :profile_picture";
-                                $params = [
-                                    'first_name' => $firstName,
-                                    'last_name' => $lastName,
-                                    'email' => $email,
-                                    'username' => $username,
-                                    'role' => $role,
-                                    'barangay' => $barangay,
-                                    'profile_picture' => $profilePicture,
-                                    'id' => $id
-                                ];
-
-                                if (!empty($newPassword)) {
-                                    $sql .= ", password = :password";
-                                    $params['password'] = password_hash($newPassword, PASSWORD_DEFAULT);
-                                }
-
-                                $sql .= " WHERE id = :id";
-                                $stmt = $conn->prepare($sql);
-                                $stmt->execute($params);
-
-                                $message = 'User updated successfully!';
-                                // Re-fetch user data to display updated info immediately
-                                $stmt = $conn->prepare('SELECT * FROM users WHERE id = :id');
-                                $stmt->execute(['id' => $id]);
-                                $user = $stmt->fetch(PDO::FETCH_ASSOC);
-                                // Regenerate CSRF token after successful submission
-                                $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-
-                            } catch (PDOException $e) {
-                                $error = "Error updating user: " . $e->getMessage();
-                            }
-                        }
-                    } 
-                            } 
-                        } 
+                        $response['error'] = "There was an error moving the uploaded profile picture file.";
+                        error_log("ERROR: Failed to move uploaded file to $dest_path.");
                     }
-                ?><!DOCTYPE html>
-<html lang="en">
+                } else {
+                    $response['error'] = "Invalid profile picture file type. Only JPG, JPEG, PNG, GIF are allowed.";
+                    error_log("ERROR: Invalid profile picture file type: $fileExtension.");
+                }
+            } elseif (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] !== UPLOAD_ERR_NO_FILE) {
+                error_log("ERROR: Profile picture upload error code: " . $_FILES['profile_picture']['error']);
+                $response['error'] = "Profile picture upload failed with error code: " . $_FILES['profile_picture']['error'];
+            }
+
+
+            // Proceed with database update only if no errors
+            if (empty($response['error'])) {
+                try {
+                    error_log("DEBUG: Proceeding with database update.");
+                    $sql = "UPDATE users SET first_name = :first_name, last_name = :last_name, email = :email, username = :username, role = :role, barangay = :barangay, profile_picture = :profile_picture";
+                    $params = [
+                        'first_name' => $firstName,
+                        'last_name' => $lastName,
+                        'email' => $email,
+                        'username' => $username,
+                        'role' => $role,
+                        'barangay' => $barangay,
+                        'profile_picture' => $profilePicture,
+                        'id' => $id
+                    ];
+
+                    if (!empty($newPassword)) {
+                        $sql .= ", password = :password";
+                        $params['password'] = password_hash($newPassword, PASSWORD_DEFAULT);
+                        error_log("DEBUG: New password will be updated.");
+                    }
+
+                    $sql .= " WHERE id = :id";
+                    $stmt = $conn->prepare($sql);
+                    $stmt->execute($params);
+                    error_log("DEBUG: Database update query executed successfully.");
+
+                    $response['success'] = true;
+                    $response['message'] = 'User updated successfully!';
+                    error_log("DEBUG: Message set: User updated successfully!");
+                    // Re-fetch user data to display updated info immediately
+                    $stmt = $conn->prepare('SELECT * FROM users WHERE id = :id');
+                    $stmt->execute(['id' => $id]);
+                    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+                    // Regenerate CSRF token after successful submission
+                    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+
+                } catch (PDOException $e) {
+                    $response['error'] = "Error updating user: " . $e->getMessage();
+                    error_log("ERROR: PDOException during user update: " . $e->getMessage());
+                }
+            } else {
+                error_log("ERROR: Database update skipped due to prior errors: " . $response['error']);
+            }
+        }
+    }
+
+    // Always return JSON for modal updates
+    if (isset($_GET['modal']) && $_GET['modal'] === 'true') {
+        header('Content-Type: application/json');
+        echo json_encode($response);
+        exit;
+    } else {
+        // For non-modal requests, set $message or $error based on $response
+        if ($response['success']) {
+            $message = $response['message'];
+        } else {
+            $error = $response['error'];
+        }
+    }
+}
+                        ?>
+                        <?php if (!isset($_GET['modal']) || $_GET['modal'] !== 'true'): ?>
+                        <!DOCTYPE html><html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -461,17 +514,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updateUser'])) {
                                 <option value="barangay_staff" <?php echo ($user['role'] == 'barangay_staff') ? 'selected' : ''; ?>>Barangay Staff</option>
                             </select>
                         </div>
-                        <?php if ($_SESSION['role'] !== 'department_admin'): ?>
-                        <div class="form-group">
+                        <div class="form-group" id="barangayFormGroup" style="display: none;">
                             <label for="barangay">Barangay</label>
-                            <select id="barangay" name="barangay" required>
+                            <select id="barangay" name="barangay">
                                 <option value="">Select barangay</option>
                                 <?php foreach ($barangays_list as $b): ?>
                                     <option value="<?php echo htmlspecialchars($b); ?>" <?php echo ($user['barangay'] == $b) ? 'selected' : ''; ?>><?php echo htmlspecialchars($b); ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
-                        <?php endif; ?>
                     </div>
                     <div class="form-group">
                         <label for="profile_picture">Profile Picture (optional)</label>
@@ -559,8 +610,159 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updateUser'])) {
                     profilePicturePreview.src = '<?php echo $currentProfilePicPath; ?>';
                 }
             });
+
+            // Dynamic display of barangay field based on role
+            const roleSelect = document.getElementById('role');
+            const barangayFormGroup = document.getElementById('barangayFormGroup');
+            const barangaySelect = document.getElementById('barangay');
+
+            function toggleBarangayField() {
+                if (roleSelect.value === 'barangay_staff') {
+                    barangayFormGroup.style.display = 'block';
+                    barangaySelect.setAttribute('required', 'required');
+                } else {
+                    barangayFormGroup.style.display = 'none';
+                    barangaySelect.removeAttribute('required');
+                    barangaySelect.value = ''; // Clear selected barangay if not staff
+                }
+            }
+
+            // Initial check on page load
+            toggleBarangayField();
+
+            // Add event listener for role change
+            roleSelect.addEventListener('change', toggleBarangayField);
         });
     </script>
     <script src="../assets/js/sidebar-toggle.js"></script>
 </body>
 </html>
+<?php else: // If modal=true, only output the form content ?>
+            <?php if ($message): ?>
+                <div class="message"><?php echo $message; ?></div>
+            <?php endif; ?>
+            <?php if ($error): ?>
+                <div class="error"><?php echo $error; ?></div>
+            <?php endif; ?>
+            <?php if ($user): ?>
+                <form id="editUserForm" method="post" action="" enctype="multipart/form-data">
+                    <h3><i class="fas fa-user-edit"></i> Edit User: <?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></h3>
+                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                    <input type="hidden" name="id" value="<?php echo htmlspecialchars($user['id']); ?>">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="firstName">First Name</label>
+                            <input type="text" id="firstName" name="firstName" value="<?php echo htmlspecialchars($user['first_name']); ?>" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="lastName">Last Name</label>
+                            <input type="text" id="lastName" name="lastName" value="<?php echo htmlspecialchars($user['last_name']); ?>" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($user['email']); ?>" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="username">Username</label>
+                            <input type="text" id="username" name="username" value="<?php echo htmlspecialchars($user['username']); ?>" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="role">Role</label>
+                            <select id="role" name="role" required>
+                                <option value="">Select role</option>
+                                <option value="department_admin" <?php echo ($user['role'] == 'department_admin') ? 'selected' : ''; ?>>Administrator</option>
+                                <option value="barangay_staff" <?php echo ($user['role'] == 'barangay_staff') ? 'selected' : ''; ?>>Barangay Staff</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="barangayFormGroup" style="display: none;">
+                            <label for="barangay">Barangay</label>
+                            <select id="barangay" name="barangay">
+                                <option value="">Select barangay</option>
+                                <?php foreach ($barangays_list as $b): ?>
+                                    <option value="<?php echo htmlspecialchars($b); ?>" <?php echo ($user['barangay'] == $b) ? 'selected' : ''; ?>><?php echo htmlspecialchars($b); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="profile_picture">Profile Picture (optional)</label>
+                        <input type="file" id="profile_picture" name="profile_picture" accept="image/*">
+                        <?php
+                            $currentProfilePic = isset($user['profile_picture']) ? $user['profile_picture'] : 'default.jpg';
+                            $currentProfilePicPath = '../images/profile_pictures/' . $currentProfilePic;
+                            if (!file_exists($currentProfilePicPath) || is_dir($currentProfilePicPath)) {
+                                $currentProfilePicPath = '../images/profile_pictures/default.jpg'; // Fallback to default if file doesn't exist
+                            }
+                        ?>
+                        <img id="profile_picture_preview" class="profile-picture-preview" src="<?php echo $currentProfilePicPath; ?>" alt="Profile Picture Preview">
+                    </div>
+                    <div class="form-group">
+                        <label for="newPassword">New Password (leave blank to keep current)</label>
+                        <div class="password-input-container">
+                            <input type="password" id="newPassword" name="newPassword" placeholder="Enter new password">
+                            <span class="toggle-password" onclick="togglePasswordVisibility('newPassword')"><i class="fas fa-eye"></i></span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm New Password</label>
+                        <div class="password-input-container">
+                            <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm new password">
+                            <span class="toggle-password" onclick="togglePasswordVisibility('confirmPassword')"><i class="fas fa-eye"></i></span>
+                        </div>
+                    </div>
+                    <div class="actions">
+                        <button type="submit" name="updateUser" class="btn btn-success">Update User</button>
+                        <a href="User_Management.php" class="btn">Cancel</a>
+                    </div>
+                </form>
+                <?php else: ?>
+                    <p>User not found or invalid ID.</p>
+                <?php endif; ?>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Profile picture preview for edit user
+            const profilePictureInput = document.getElementById('profile_picture');
+            const profilePicturePreview = document.getElementById('profile_picture_preview');
+
+            profilePictureInput.addEventListener('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        profilePicturePreview.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    // If no file is selected, revert to the current profile picture or default
+                    profilePicturePreview.src = '<?php echo $currentProfilePicPath; ?>';
+                }
+            });
+
+            // Dynamic display of barangay field based on role
+            const roleSelect = document.getElementById('role');
+            const barangayFormGroup = document.getElementById('barangayFormGroup');
+            const barangaySelect = document.getElementById('barangay');
+
+            function toggleBarangayField() {
+                if (roleSelect.value === 'barangay_staff') {
+                    barangayFormGroup.style.display = 'block';
+                    barangaySelect.setAttribute('required', 'required');
+                } else {
+                    barangayFormGroup.style.display = 'none';
+                    barangaySelect.removeAttribute('required');
+                    barangaySelect.value = ''; // Clear selected barangay if not staff
+                }
+            }
+
+            // Initial check on page load
+            toggleBarangayField();
+
+            // Add event listener for role change
+            roleSelect.addEventListener('change', toggleBarangayField);
+        });
+    </script>
+<?php endif; ?>
