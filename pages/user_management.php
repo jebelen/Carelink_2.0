@@ -518,7 +518,11 @@ try {
                                         <td><?php echo htmlspecialchars($user['barangay']); ?></td>
                                         <td>
                                             <a href="edit_user.php?id=<?php echo $user['id']; ?>" class="btn btn-small btn-warning">Edit</a>
-                                            <a href="delete_user.php?id=<?php echo $user['id']; ?>" class="btn btn-small btn-danger" onclick="return confirm('Are you sure you want to delete this user?');">Delete</a>
+                                            <form action="delete_user.php" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this user?');">
+                                                <input type="hidden" name="id" value="<?php echo $user['id']; ?>">
+                                                <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                                                <button type="submit" name="deleteUser" class="btn btn-small btn-danger">Delete</button>
+                                            </form>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
