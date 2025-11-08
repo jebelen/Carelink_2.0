@@ -24,6 +24,9 @@
   gap: 18px;
   z-index: 1000;
   transition: width 0.3s;
+  border-top-right-radius: 15px;
+  border-bottom-right-radius: 15px;
+  box-shadow: 5px 0 15px rgba(0, 0, 0, 0.2); /* Added box-shadow */
 }
 
 .sidebar .logo { display:flex; align-items:center; gap:12px; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.06); }
@@ -75,6 +78,10 @@
 
 .sidebar.collapsed .nav-links a {
     justify-content: center;
+}
+
+.sidebar.collapsed .logo img {
+    height: 50px; /* Increased size for collapsed state */
 }
 
 .main.collapsed, .main-content.collapsed {

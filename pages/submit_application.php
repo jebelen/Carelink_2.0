@@ -1,6 +1,14 @@
 <?php
 session_start();
 require_once '../includes/db_connect.php';
+
+// Check if the user is logged in and has the correct role
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'barangay_staff') {
+    header('Location: ../index.php');
+    exit;
+}
+
+$loggedInBarangay = htmlspecialchars($_SESSION['barangay'] ?? '');
 ?>
 <!DOCTYPE html>
 <head>
@@ -1394,6 +1402,8 @@ require_once '../includes/db_connect.php';
         const statusFilter = document.querySelector('#statusFilter');
         const applyFilterBtn = document.querySelector('#applyFilterBtn');
 
+        const userBarangay = "<?php echo $loggedInBarangay; ?>"; // Define userBarangay here
+
         function fetchApplications() {
             const query = searchInput.value;
             const type = applicationTypeFilter.value;
@@ -1405,6 +1415,10 @@ require_once '../includes/db_connect.php';
             }
             if (status) {
                 url += `&status=${status}`;
+            }
+            // Add barangay filter
+            if (userBarangay) {
+                url += `&barangay=${userBarangay}`;
             }
 
             fetch(url)
