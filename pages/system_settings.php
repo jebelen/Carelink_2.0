@@ -286,7 +286,14 @@ session_start();
                 <div class="header-actions">
                     <div class="user-info">
                         <div class="user-avatar">
-                            <i class="fas fa-user"></i>
+                            <?php
+                                $profilePic = isset($_SESSION['profile_picture']) ? $_SESSION['profile_picture'] : 'default.jpg';
+                                $profilePicPath = '../images/profile_pictures/' . $profilePic;
+                                if (!file_exists($profilePicPath) || is_dir($profilePicPath)) {
+                                    $profilePicPath = '../images/profile_pictures/default.jpg'; // Fallback to default if file doesn't exist
+                                }
+                            ?>
+                            <img src="<?php echo $profilePicPath; ?>" alt="Profile Picture" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
                         </div>
                         <div class="user-details">
                             <h2><?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?></h2>
@@ -420,6 +427,7 @@ session_start();
     </div>
   </div>
 
+  <script src="../assets/js/sidebar-toggle.js"></script>
   <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Add click event to navigation items

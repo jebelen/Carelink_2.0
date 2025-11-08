@@ -45,6 +45,7 @@ if (!isset($_SESSION['user_id']) && isset($_COOKIE['remember_me'])) {
                 $_SESSION['first_name'] = $user['first_name'];
                 $_SESSION['last_name'] = $user['last_name'];
                 $_SESSION['role'] = $user['role'];
+                $_SESSION['profile_picture'] = $user['profile_picture'];
 
                 // Regenerate token to prevent theft
                 $newValidator = bin2hex(random_bytes(32));
@@ -135,10 +136,26 @@ if (isset($_COOKIE['remember_user'])) {
             width: 100%;
             height: 100%;
             z-index: -1;
-            background-image: url('images/LOGO_1.png');
+            background-image: url('images/system_background.png');
             background-size: cover;
             background-position: center;
             opacity: 0.3;
+            animation: kenburns 30s ease-in-out infinite;
+        }
+
+        @keyframes kenburns {
+            0% {
+                transform: scale(1) translate(0, 0);
+                opacity: 0.3;
+            }
+            50% {
+                transform: scale(1.2) translate(-5%, 5%);
+                opacity: 0.4;
+            }
+            100% {
+                transform: scale(1) translate(0, 0);
+                opacity: 0.3;
+            }
         }
 
         /* Menu Bar */
@@ -365,7 +382,7 @@ if (isset($_COOKIE['remember_user'])) {
             border-radius: 12px;
             padding: 30px;
             width: 90%;
-            max-width: 450px;
+            max-width: 600px;
             box-shadow: 0 12px 25px rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.1);
             animation: slideUp 0.5s ease-out;
@@ -403,6 +420,45 @@ if (isset($_COOKIE['remember_user'])) {
 
         .about-body p {
             margin-bottom: 12px;
+        }
+
+        .team-section {
+            margin-top: 25px;
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 20px;
+        }
+
+        .team-section h4 {
+            font-size: 1.2rem;
+            color: #4CAF50;
+            margin-bottom: 15px;
+        }
+
+        .team-members-container {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            flex-wrap: wrap;
+        }
+
+        .team-member {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: white;
+        }
+
+        .team-member i {
+            font-size: 2.5rem;
+            color: #4CAF50;
+            margin-bottom: 8px;
+        }
+
+        .team-member p {
+            font-size: 0.85rem;
+            margin: 0;
+            opacity: 0.9;
         }
 
         /* Responsive Design */
@@ -547,6 +603,8 @@ if (isset($_COOKIE['remember_user'])) {
         </footer>
     </div>
 
+
+    
     <!-- About Modal -->
     <div class="about-modal" id="aboutModal">
         <div class="about-content">
@@ -559,6 +617,23 @@ if (isset($_COOKIE['remember_user'])) {
                 <p>CARELINK is a Centralized Profiling and Record Authentication System designed specifically for Senior Citizens and Persons with Disabilities (PWD).</p>
                 <p>Using advanced Convolutional Neural Network (CNN) technology, CARELINK ensures secure and accurate identity verification while maintaining data privacy.</p>
                 <p>The system provides efficient access to government services for our senior citizens and PWD community members.</p>
+                <div class="team-section">
+                    <h4>Our Team</h4>
+                    <div class="team-members-container">
+                        <div class="team-member">
+                            <i class="fas fa-user-circle fa-3x"></i>
+                            <p>Developer</p>
+                        </div>
+                        <div class="team-member">
+                            <i class="fas fa-user-tie fa-3x"></i>
+                            <p>Front End</p>
+                        </div>
+                        <div class="team-member">
+                            <i class="fas fa-user-cog fa-3x"></i>
+                            <p>Back End</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -585,7 +660,7 @@ if (isset($_COOKIE['remember_user'])) {
         window.addEventListener('click', (e) => {
             if (e.target === aboutModal) {
                 aboutModal.style.display = 'none';
-            });
+            }
         });
 
         // Add hover effect to role cards

@@ -196,6 +196,77 @@ $barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
             font-size: 12px;
         }
 
+        .calendar-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px; /* Space between calendar and notifications */
+        }
+
+        .calendar-card h3 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .calendar-header button {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: var(--primary);
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .calendar-header .month-year {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .calendar-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: center;
+        }
+
+        .calendar-table th, .calendar-table td {
+            padding: 8px;
+            border: 1px solid #eee;
+        }
+
+        .calendar-table th {
+            background: var(--light);
+            color: var(--dark);
+            font-weight: 500;
+        }
+
+        .calendar-table td {
+            color: var(--primary);
+        }
+
+        .calendar-table td.inactive {
+            color: var(--gray);
+        }
+
+        .calendar-table td.today {
+            background: var(--secondary);
+            color: white;
+            border-radius: 50%;
+            font-weight: bold;
+        }
+
 
         .btn {
             display: inline-block;
@@ -747,12 +818,20 @@ $barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
             <div class="header">
                 <div class="header-content">
                     <div class="welcome-message" data-first-name="<?php echo htmlspecialchars($_SESSION['first_name']); ?>" data-last-name="<?php echo htmlspecialchars($_SESSION['last_name']); ?>" data-role="<?php echo htmlspecialchars($_SESSION['role']); ?>"></div>
+                    <span id="live-clock" style="font-size: 1.2rem; color: var(--primary); margin-top: 5px;"></span>
                     <h1>Barangay <?php echo $barangayName; ?> Dashboard</h1>
                 </div>
                 <div class="header-actions">
                     <div class="user-info">
                         <div class="user-avatar">
-                            <i class="fas fa-user"></i>
+                            <?php
+                                $profilePic = isset($_SESSION['profile_picture']) ? $_SESSION['profile_picture'] : 'default.jpg';
+                                $profilePicPath = '../images/profile_pictures/' . $profilePic;
+                                if (!file_exists($profilePicPath) || is_dir($profilePicPath)) {
+                                    $profilePicPath = '../images/profile_pictures/default.jpg'; // Fallback to default if file doesn't exist
+                                }
+                            ?>
+                            <img src="<?php echo $profilePicPath; ?>" alt="Profile Picture" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
                         </div>
                         <div class="user-details">
                             <h2><?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?></h2>
@@ -787,6 +866,32 @@ $barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
 
                 <!-- Right Panel - Notifications -->
                 <div class="right-panel">
+                    <div class="calendar-card">
+                        <h3><i class="fas fa-calendar-alt"></i> Calendar</h3>
+                        <div class="calendar-body">
+                            <div class="calendar-header">
+                                <button class="prev-month"><i class="fas fa-chevron-left"></i></button>
+                                <span class="month-year"></span>
+                                <button class="next-month"><i class="fas fa-chevron-right"></i></button>
+                            </div>
+                            <table class="calendar-table">
+                                <thead>
+                                    <tr>
+                                        <th>Sun</th>
+                                        <th>Mon</th>
+                                        <th>Tue</th>
+                                        <th>Wed</th>
+                                        <th>Thu</th>
+                                        <th>Fri</th>
+                                        <th>Sat</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="calendar-body">
+                                    <!-- Calendar days will be generated here by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                     <div class="notifications-card">
                         <div class="notifications-header">
                             <h3><i class="fas fa-bell"></i> Department Notifications</h3>
@@ -962,6 +1067,76 @@ $barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
             }
             
             welcomeMessage.innerHTML = `${greeting}, <strong>${firstName} ${lastName}</strong>!`;
+
+            // Calendar functionality
+            const calendarBody = document.getElementById('calendar-body');
+            const monthYearSpan = document.querySelector('.month-year');
+            const prevMonthBtn = document.querySelector('.prev-month');
+            const nextMonthBtn = document.querySelector('.next-month');
+
+            let currentDate = new Date();
+
+            function generateCalendar(date) {
+                const today = new Date();
+                const month = date.getMonth();
+                const year = date.getFullYear();
+
+                monthYearSpan.textContent = date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+
+                // Clear previous days
+                calendarBody.innerHTML = '';
+
+                // Get first day of the month (0 for Sunday, 1 for Monday, etc.)
+                const firstDayOfMonth = new Date(year, month, 1).getDay();
+                // Get number of days in current month
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                // Get number of days in previous month
+                const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+                let day = 1;
+                let nextMonthDay = 1;
+
+                for (let i = 0; i < 6; i++) { // 6 rows to accommodate all days
+                    const row = document.createElement('tr');
+
+                    for (let j = 0; j < 7; j++) { // 7 days a week
+                        const cell = document.createElement('td');
+
+                        if (i === 0 && j < firstDayOfMonth) {
+                            // Days from previous month
+                            cell.classList.add('inactive');
+                            cell.textContent = daysInPrevMonth - firstDayOfMonth + j + 1;
+                        } else if (day <= daysInMonth) {
+                            // Current month's days
+                            cell.textContent = day;
+                            if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
+                                cell.classList.add('today');
+                            }
+                            day++;
+                        } else {
+                            // Days from next month
+                            cell.classList.add('inactive');
+                            cell.textContent = nextMonthDay;
+                            nextMonthDay++;
+                        }
+                        row.appendChild(cell);
+                    }
+                    calendarBody.appendChild(row);
+                }
+            }
+
+            prevMonthBtn.addEventListener('click', () => {
+                currentDate.setMonth(currentDate.getMonth() - 1);
+                generateCalendar(currentDate);
+            });
+
+            nextMonthBtn.addEventListener('click', () => {
+                currentDate.setMonth(currentDate.getMonth() + 1);
+                generateCalendar(currentDate);
+            });
+
+            // Initial calendar generation
+            generateCalendar(currentDate);
         });
 
 
@@ -1044,6 +1219,7 @@ $barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
             });
         }
     </script>
+    <script src="../assets/js/sidebar-toggle.js"></script>
 </body>
 </html>
 

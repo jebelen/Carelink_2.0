@@ -418,10 +418,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updatePassword'])) {
                 </div>
                 <div class="header-actions">
                     <div class="user-info">
-                        <div class="user-avatar">
-                            <i class="fas fa-user"></i>
-                        </div>
-                        <div class="user-details">
+                                            <div class="user-avatar">
+                                                <?php
+                                                    $profilePic = isset($_SESSION['profile_picture']) ? $_SESSION['profile_picture'] : 'default.jpg';
+                                                    $profilePicPath = '../images/profile_pictures/' . $profilePic;
+                                                    if (!file_exists($profilePicPath) || is_dir($profilePicPath)) {
+                                                        $profilePicPath = '../images/profile_pictures/default.jpg'; // Fallback to default if file doesn't exist
+                                                    }
+                                                ?>
+                                                <img src="<?php echo $profilePicPath; ?>" alt="Profile Picture" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                                            </div>                        <div class="user-details">
                             <h2><?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></h2>
                             <p><?php echo htmlspecialchars(ucwords(str_replace('_', ' ', $user['role']))); ?></p>
                         </div>
@@ -442,7 +448,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updatePassword'])) {
                     <div class="profile-avatar"><?php echo htmlspecialchars(strtoupper(substr($user['first_name'], 0, 1) . substr($user['last_name'], 0, 1))); ?></div>
                     <div class="profile-info">
                         <h2><?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></h2>
-                        <p><?php echo htmlspecialchars(ucwords(str_replace('_', ' ', $user['role']))); ?> • <?php echo htmlspecialchars($user['barangay']); ?></p>
+                        <p><?php echo htmlspecialchars(ucwords(str_replace('_', ' ', $user['role']))); ?><?php if ($_SESSION['role'] !== 'department_admin'): ?> • <?php echo htmlspecialchars($user['barangay']); ?><?php endif; ?></p>
                     </div>
                 </div>
                 <p style="color: var(--gray); font-size: 14px;">Manage your account preferences and appearance.</p>
@@ -535,6 +541,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updatePassword'])) {
             </div>
     </div>
 
+    <script src="../assets/js/sidebar-toggle.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const welcomeMessage = document.querySelector('.welcome-message');
