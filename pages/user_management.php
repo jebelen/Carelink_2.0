@@ -703,7 +703,13 @@ try {
 
                         const formData = new FormData(editUserForm);
 
-                        fetch(editUserForm.action, {
+                        let actionUrl = editUserForm.action;
+                        // Ensure 'modal=true' is always present in the action URL for modal submissions
+                        if (actionUrl.indexOf('modal=true') === -1) {
+                            actionUrl += (actionUrl.indexOf('?') === -1 ? '?' : '&') + 'modal=true';
+                        }
+
+                        fetch(actionUrl, {
                             method: 'POST',
                             body: formData
                         })
