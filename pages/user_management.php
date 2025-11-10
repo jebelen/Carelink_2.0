@@ -419,7 +419,7 @@ try {
                     const userId = editButton.dataset.id;
                     editAlert.style.display = 'none';
                     
-                    fetch(`edit_user.php?id=${userId}`)
+                    fetch(`edit_user.php?id=${userId}&modal=true`)
                         .then(response => response.json())
                         .then(data => {
                             if (data.success) {
@@ -452,6 +452,8 @@ try {
             editUserForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 const formData = new FormData(editUserForm);
+                
+                formData.append('updateUser', '1'); // Explicitly add updateUser parameter
                 
                 fetch('edit_user.php', {
                     method: 'POST',
