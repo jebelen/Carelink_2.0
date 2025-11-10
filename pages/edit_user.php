@@ -1,4 +1,7 @@
 <?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 error_log("DEBUG: edit_user.php: Script started.");
 session_start();
 require_once '../includes/db_connect.php';
@@ -33,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET' && isset($_GET['id'])) {
     $id = filter_var($_GET['id'], FILTER_SANITIZE_NUMBER_INT);
     error_log("DEBUG: edit_user.php: User ID from GET: $id");
 
-    $response = ['success' => false, 'message' => '', 'error' => '']; // Initialize response array for modal
+    $response = ['success' => false, 'message' => '']; // Initialize response array for modal
 
     try {
         $stmt = $conn->prepare("SELECT * FROM users WHERE id = :id");
@@ -61,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET' && isset($_GET['id'])) {
             $error = 'User not found.';
             error_log("ERROR: edit_user.php: User not found with ID: $id for GET request.");
             if (isset($_GET['modal']) && $_GET['modal'] === 'true') {
-                $response['error'] = 'User not found.';
+                $response['message'] = 'User not found.'; // Changed from $response['error']
                 header('Content-Type: application/json');
                 echo json_encode($response);
                 exit;
@@ -71,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET' && isset($_GET['id'])) {
         $error = "Database error: " . $e->getMessage();
         error_log("ERROR: edit_user.php: PDOException fetching user for GET request: " . $e->getMessage());
         if (isset($_GET['modal']) && $_GET['modal'] === 'true') {
-                $response['error'] = "Database error: " . $e->getMessage();
+                $response['message'] = "Database error: " . $e->getMessage(); // Changed from $response['error']
                 header('Content-Type: application/json');
                 echo json_encode($response);
                 exit;
@@ -84,171 +87,186 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updateUser'])) {
     error_log("DEBUG: edit_user.php: POST request for user update detected.");
     error_log("DEBUG: POST data: " . print_r($_POST, true));
     error_log("DEBUG: FILES data: " . print_r($_FILES, true));
-    $response = ['success' => false, 'message' => '', 'error' => '']; // Initialize response array
+    $response = ['success' => false, 'message' => '']; // Initialize response array with empty message
 
-    // Verify CSRF token
-    if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
-        $response['error'] = 'CSRF token validation failed.';
-        error_log("ERROR: edit_user.php: CSRF token validation failed for POST request.");
-    } else {
-        error_log("DEBUG: edit_user.php: CSRF token validated successfully for POST request.");
-        $id = filter_var($_POST['id'], FILTER_SANITIZE_NUMBER_INT);
-        error_log("DEBUG: edit_user.php: User ID from POST: $id");
-
-        // Fetch user data for the update operation
-        try {
-            error_log("DEBUG: edit_user.php: Attempting to fetch user for update with ID: $id");
-            $stmt = $conn->prepare("SELECT * FROM users WHERE id = :id");
-            $stmt->execute(['id' => $id]);
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if (!$user) {
-                $response['error'] = 'User not found for update.';
-                error_log("ERROR: edit_user.php: User not found for update with ID: $id.");
-            } else {
-                error_log("DEBUG: edit_user.php: User found for update. Username: " . $user['username']);
-            }
-        } catch (PDOException $e) {
-            $response['error'] = "Error fetching user for update: " . $e->getMessage();
-            error_log("ERROR: edit_user.php: PDOException fetching user for update: " . $e->getMessage());
-        }
-
-        if (empty($response['error'])) {
-            $firstName = $_POST['firstName'];
-            $lastName = $_POST['lastName'];
-            $email = $_POST['email'];
-            $username = $_POST['username'];
-            $role = $_POST['role'];
-            $barangay = isset($_POST['barangay']) ? $_POST['barangay'] : null;
-            $newPassword = $_POST['newPassword'];
-            $confirmPassword = $_POST['confirmPassword'];
-            $profilePicture = ($user && isset($user['profile_picture'])) ? $user['profile_picture'] : 'default.jpg'; // Safely get existing profile picture
-
-            if (empty($firstName) || empty($lastName) || empty($email) || empty($username) || empty($role)) {
-                $response['error'] = 'Please fill in all required fields.';
-            } else {
-                // Validate barangay based on the selected role for the user being edited
-                if ($role === 'barangay_staff') {
-                    if (empty($barangay)) {
-                        $response['error'] = 'Barangay is required for Barangay Staff.';
-                    } elseif (!in_array($barangay, $barangays_list)) {
-                        $response['error'] = 'Invalid barangay selected.';
-                    }
-                } else { // role is department_admin
-                    $barangay = null; // Ensure barangay is null for department admins
-                }
-                // Check for duplicate username (excluding current user)
-                if (empty($response['error'])) {
-                    $stmt = $conn->prepare("SELECT COUNT(*) FROM users WHERE username = :username AND id != :id");
-                    $stmt->execute(['username' => $username, 'id' => $id]);
-                    if ($stmt->fetchColumn() > 0) {
-                        $response['error'] = 'Username already exists. Please choose a different one.';
-                    }
-                }
-
-                if (empty($response['error'])) {
-                    // Check for duplicate email (excluding current user)
-                    $stmt = $conn->prepare("SELECT COUNT(*) FROM users WHERE email = :email AND id != :id");
-                    $stmt->execute(['email' => $email, 'id' => $id]);
-                    if ($stmt->fetchColumn() > 0) {
-                        $response['error'] = 'Email already exists. Please use a different one.';
-                    }
-                }
-
-                if (empty($response['error'])) {
-                    // Password validation
-                    if (!empty($newPassword)) {
-                        if ($newPassword !== $confirmPassword) {
-                            $response['error'] = 'New password and confirm password do not match.';
-                        }
-                    }
-                }
-
-                // Handle profile picture upload only if no other errors yet
-                if (empty($response['error']) && isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] == UPLOAD_ERR_OK) {
-                    $fileTmpPath = $_FILES['profile_picture']['tmp_name'];
-                    $fileName = $_FILES['profile_picture']['name'];
-                    $fileSize = $_FILES['profile_picture']['size'];
-                    $fileType = $_FILES['profile_picture']['type'];
-                    $fileNameCmps = explode(".", $fileName);
-                    $fileExtension = strtolower(end($fileNameCmps));
-
-                    $allowedfileExtensions = array('jpg', 'gif', 'png', 'jpeg');
-                    if (in_array($fileExtension, $allowedfileExtensions)) {
-                        $uploadFileDir = '../images/profile_pictures/';
-                        if (!is_dir($uploadFileDir)) {
-                            mkdir($uploadFileDir, 0777, true);
-                        }
-                        $newFileName = md5(time() . $fileName) . '.' . $fileExtension;
-                        $dest_path = $uploadFileDir . $newFileName;
-
-                        if(move_uploaded_file($fileTmpPath, $dest_path)) {
-                            $profilePicture = $newFileName;
-                        } else {
-                            $response['error'] = "There was an error moving the uploaded profile picture file.";
-                        }
-                    } else {
-                        $response['error'] = "Invalid profile picture file type. Only JPG, JPEG, PNG, GIF are allowed.";
-                    }
-                } elseif (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] !== UPLOAD_ERR_NO_FILE) {
-                    $response['error'] = "Profile picture upload failed with error code: " . $_FILES['profile_picture']['error'];
-                }
-
-                // Proceed with database update only if no errors
-                if (empty($response['error'])) {
-                    try {
-                        $sql = "UPDATE users SET first_name = :first_name, last_name = :last_name, email = :email, username = :username, role = :role, barangay = :barangay, profile_picture = :profile_picture";
-                        $params = [
-                            'first_name' => $firstName,
-                            'last_name' => $lastName,
-                            'email' => $email,
-                            'username' => $username,
-                            'role' => $role,
-                            'barangay' => $barangay,
-                            'profile_picture' => $profilePicture,
-                            'id' => $id
-                        ];
-
-                        if (!empty($newPassword)) {
-                            $sql .= ", password = :password";
-                            $params['password'] = password_hash($newPassword, PASSWORD_DEFAULT);
-                        }
-
-                        $sql .= " WHERE id = :id";
-                        $stmt = $conn->prepare($sql);
-                        $stmt->execute($params);
-
-                        $response['success'] = true;
-                        $response['message'] = 'User updated successfully!';
-                        // Re-fetch user data to display updated info immediately
-                        $stmt = $conn->prepare('SELECT * FROM users WHERE id = :id');
-                        $stmt->execute(['id' => $id]);
-                        $user = $stmt->fetch(PDO::FETCH_ASSOC);
-                        // Regenerate CSRF token after successful submission
-                        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-
-                        // If the logged-in user updated their own profile, update session variables
-                        if ($id == $_SESSION['user_id']) {
-                            $_SESSION['first_name'] = $user['first_name'];
-                            $_SESSION['last_name'] = $user['last_name'];
-                            $_SESSION['email'] = $user['email'];
-                            $_SESSION['username'] = $user['username'];
-                            $_SESSION['role'] = $user['role'];
-                            $_SESSION['barangay'] = $user['barangay'];
-                            $_SESSION['profile_picture'] = $user['profile_picture'];
-                        }
-
-                    } catch (PDOException $e) {
-                        $response['error'] = "Error updating user: " . $e->getMessage();
-                    }
-                }
-            }
-        }
-    }
-
-    // Always return JSON for modal updates
+    // If it's a modal request, set header early
     if (isset($_GET['modal']) && $_GET['modal'] === 'true') {
         header('Content-Type: application/json');
+    }
+
+    try {
+        // Verify CSRF token
+        if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+            $response['message'] = 'CSRF token validation failed.'; // Changed from $response['error']
+            error_log("ERROR: edit_user.php: CSRF token validation failed for POST request.");
+        } else {
+            error_log("DEBUG: edit_user.php: CSRF token validated successfully for POST request.");
+            $id = filter_var($_POST['id'], FILTER_SANITIZE_NUMBER_INT);
+            error_log("DEBUG: edit_user.php: User ID from POST: $id");
+
+            // Fetch user data for the update operation
+            try {
+                error_log("DEBUG: edit_user.php: Attempting to fetch user for update with ID: $id");
+                $stmt = $conn->prepare("SELECT * FROM users WHERE id = :id");
+                $stmt->execute(['id' => $id]);
+                $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if (!$user) {
+                    $response['message'] = 'User not found for update.'; // Changed from $response['error']
+                    error_log("ERROR: edit_user.php: User not found for update with ID: $id.");
+                } else {
+                    error_log("DEBUG: edit_user.php: User found for update. Username: " . $user['username']);
+                }
+            } catch (PDOException $e) {
+                $response['message'] = "Error fetching user for update: " . $e->getMessage(); // Changed from $response['error']
+                error_log("ERROR: edit_user.php: PDOException fetching user for update: " . $e->getMessage());
+            }
+
+            error_log("DEBUG: edit_user.php: Before processing form fields and validation."); // Added log
+            if (empty($response['message'])) { // Check $response['message'] for errors
+                error_log("DEBUG: edit_user.php: Inside empty(\$response['message']) block."); // Added log
+                $firstName = $_POST['firstName'];
+                $lastName = $_POST['lastName'];
+                $email = $_POST['email'];
+                $username = $_POST['username'];
+                $role = $_POST['role'];
+                $barangay = isset($_POST['barangay']) ? $_POST['barangay'] : null;
+                $newPassword = $_POST['newPassword'];
+                $confirmPassword = $_POST['confirmPassword'];
+                $profilePicture = ($user && isset($user['profile_picture'])) ? $user['profile_picture'] : 'default.jpg'; // Safely get existing profile picture
+
+                if (empty($firstName) || empty($lastName) || empty($email) || empty($username) || empty($role)) {
+                    $response['message'] = 'Please fill in all required fields.'; // Changed from $response['error']
+                } else {
+                    // Validate barangay based on the selected role for the user being edited
+                    if ($role === 'barangay_staff') {
+                        if (empty($barangay)) {
+                            $response['message'] = 'Barangay is required for Barangay Staff.'; // Changed from $response['error']
+                        } elseif (!in_array($barangay, $barangays_list)) {
+                            $response['message'] = 'Invalid barangay selected.'; // Changed from $response['error']
+                        }
+                    } else { // role is department_admin
+                        $barangay = null; // Ensure barangay is null for department admins
+                    }
+                    // Check for duplicate username (excluding current user)
+                    if (empty($response['message'])) { // Check $response['message'] for errors
+                        $stmt = $conn->prepare("SELECT COUNT(*) FROM users WHERE username = :username AND id != :id");
+                        $stmt->execute(['username' => $username, 'id' => $id]);
+                        if ($stmt->fetchColumn() > 0) {
+                            $response['message'] = 'Username already exists. Please choose a different one.'; // Changed from $response['error']
+                        }
+                    }
+
+                    if (empty($response['message'])) { // Check $response['message'] for errors
+                        // Check for duplicate email (excluding current user)
+                        $stmt = $conn->prepare("SELECT COUNT(*) FROM users WHERE email = :email AND id != :id");
+                        $stmt->execute(['email' => $email, 'id' => $id]);
+                        if ($stmt->fetchColumn() > 0) {
+                            $response['message'] = 'Email already exists. Please use a different one.'; // Changed from $response['error']
+                        }
+                    }
+
+                    if (empty($response['message'])) { // Check $response['message'] for errors
+                        // Password validation
+                        if (!empty($newPassword)) {
+                            if ($newPassword !== $confirmPassword) {
+                                $response['message'] = 'New password and confirm password do not match.'; // Changed from $response['error']
+                            }
+                        }
+                    }
+
+                    // Handle profile picture upload only if no other errors yet
+                    if (empty($response['message']) && isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] == UPLOAD_ERR_OK) { // Check $response['message'] for errors
+                        $fileTmpPath = $_FILES['profile_picture']['tmp_name'];
+                        $fileName = $_FILES['profile_picture']['name'];
+                        $fileSize = $_FILES['profile_picture']['size'];
+                        $fileType = $_FILES['profile_picture']['type'];
+                        $fileNameCmps = explode(".", $fileName);
+                        $fileExtension = strtolower(end($fileNameCmps));
+
+                        $allowedfileExtensions = array('jpg', 'gif', 'png', 'jpeg');
+                        if (in_array($fileExtension, $allowedfileExtensions)) {
+                            $uploadFileDir = '../images/profile_pictures/';
+                            if (!is_dir($uploadFileDir)) {
+                                mkdir($uploadFileDir, 0777, true);
+                            }
+                            $newFileName = md5(time() . $fileName) . '.' . $fileExtension;
+                            $dest_path = $uploadFileDir . $newFileName;
+
+                            if(move_uploaded_file($fileTmpPath, $dest_path)) {
+                                $profilePicture = $newFileName;
+                            } else {
+                                $response['message'] = "There was an error moving the uploaded profile picture file."; // Changed from $response['error']
+                            }
+                        } else {
+                            $response['message'] = "Invalid profile picture file type. Only JPG, JPEG, PNG, GIF are allowed."; // Changed from $response['error']
+                        }
+                    } elseif (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] !== UPLOAD_ERR_NO_FILE) {
+                        $response['message'] = "Profile picture upload failed with error code: " . $_FILES['profile_picture']['error']; // Changed from $response['error']
+                    }
+
+                    // Proceed with database update only if no errors
+                    if (empty($response['message'])) { // Check $response['message'] for errors
+                        error_log("DEBUG: edit_user.php: Attempting database update."); // Added log
+                        try {
+                            $sql = "UPDATE users SET first_name = :first_name, last_name = :last_name, email = :email, username = :username, role = :role, barangay = :barangay, profile_picture = :profile_picture";
+                            $params = [
+                                'first_name' => $firstName,
+                                'last_name' => $lastName,
+                                'email' => $email,
+                                'username' => $username,
+                                'role' => $role,
+                                'barangay' => $barangay,
+                                'profile_picture' => $profilePicture,
+                                'id' => $id
+                            ];
+
+                            if (!empty($newPassword)) {
+                                $sql .= ", password = :password";
+                                $params['password'] = password_hash($newPassword, PASSWORD_DEFAULT);
+                            }
+
+                            $sql .= " WHERE id = :id";
+                            $stmt = $conn->prepare($sql);
+                            $stmt->execute($params);
+
+                            $response['success'] = true;
+                            $response['message'] = 'User updated successfully!';
+                            error_log("DEBUG: edit_user.php: User updated successfully. Re-fetching user data."); // Added log
+                            // Re-fetch user data to display updated info immediately
+                            $stmt = $conn->prepare('SELECT * FROM users WHERE id = :id');
+                            $stmt->execute(['id' => $id]);
+                            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+                            // Regenerate CSRF token after successful submission
+                            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+
+                            // If the logged-in user updated their own profile, update session variables
+                            if ($id == $_SESSION['user_id']) {
+                                $_SESSION['first_name'] = $user['first_name'];
+                                $_SESSION['last_name'] = $user['last_name'];
+                                $_SESSION['email'] = $user['email'];
+                                $_SESSION['username'] = $user['username'];
+                                $_SESSION['role'] = $user['role'];
+                                $_SESSION['barangay'] = $user['barangay'];
+                                $_SESSION['profile_picture'] = $user['profile_picture'];
+                            }
+
+                        } catch (PDOException $e) {
+                            $response['message'] = "Error updating user: " . $e->getMessage(); // Changed from $response['error']
+                            error_log("ERROR: edit_user.php: PDOException updating user: " . $e->getMessage()); // Added log
+                        }
+                    }
+                }
+            }
+        }
+    } catch (Exception $e) {
+        $response['message'] = "Server error: " . $e->getMessage(); // Changed from $response['error']
+        error_log("FATAL ERROR: edit_user.php: Uncaught exception during POST request: " . $e->getMessage());
+    }
+
+    // Always return JSON for modal updates if it was a modal request
+    if (isset($_GET['modal']) && $_GET['modal'] === 'true') {
+        error_log("DEBUG: edit_user.php: Returning JSON response for modal."); // Added log
         echo json_encode($response);
         exit;
     } else {
@@ -256,7 +274,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updateUser'])) {
         if ($response['success']) {
             $message = $response['message'];
         } else {
-            $error = $response['error'];
+            $error = $response['message']; // Changed from $error = $response['error'];
             // If the update fails, we need to re-fetch the user data to display the form again.
             if (isset($_POST['id'])) {
                 $id = filter_var($_POST['id'], FILTER_SANITIZE_NUMBER_INT);
