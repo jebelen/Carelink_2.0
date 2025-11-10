@@ -419,7 +419,7 @@ try {
                     const userId = editButton.dataset.id;
                     editAlert.style.display = 'none';
                     
-                    fetch(`edit_user.php?id=${userId}`)
+                    fetch(`edit_user.php?id=${userId}&modal=true`)
                         .then(response => response.json())
                         .then(data => {
                             if (data.success) {
@@ -453,23 +453,31 @@ try {
                 e.preventDefault();
                 const formData = new FormData(editUserForm);
                 
-                fetch('edit_user.php', {
+                formData.append('updateUser', '1'); // Explicitly add updateUser parameter
+                
+                fetch('edit_user.php?modal=true', {
                     method: 'POST',
                     body: formData
                 })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        // If response is not OK (e.g., 404, 500), try to read it as text
+                        return response.text().then(text => { throw new Error(text) });
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     if (data.success) {
                         alert(data.message);
                         location.reload();
                     } else {
-                        editAlert.textContent = data.message;
+                        editAlert.textContent = data.message || 'An unknown error occurred during update.';
                         editAlert.style.display = 'block';
                     }
                 })
                 .catch(error => {
                     console.error('Error updating user:', error);
-                    editAlert.textContent = 'An unexpected error occurred. Please try again.';
+                    editAlert.textContent = 'An unexpected error occurred. Details: ' + error.message;
                     editAlert.style.display = 'block';
                 });
             });

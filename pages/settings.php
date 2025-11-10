@@ -417,6 +417,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updatePassword'])) {
                     <h1>User Settings</h1>
                 </div>
                 <div class="header-actions">
+                    <button class="btn"><i class="fas fa-bell"></i> Notifications</button>
                     <div class="user-info">
                                             <div class="user-avatar">
                                                 <?php
@@ -426,10 +427,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updatePassword'])) {
                                                         $profilePicPath = '../images/profile_pictures/default.jpg'; // Fallback to default if file doesn't exist
                                                     }
                                                 ?>
-                                                <img src="<?php echo $profilePicPath; ?>" alt="Profile Picture" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                                                <img src="<?php echo $profilePicPath; ?>" alt="Profile Picture">
                                             </div>                        <div class="user-details">
                             <h2><?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></h2>
-                            <p><?php echo htmlspecialchars(ucwords(str_replace('_', ' ', $user['role']))); ?></p>
+                            <p><?php echo htmlspecialchars(ucwords(str_replace('_', ' ', $user['role']))) . ' • ' . htmlspecialchars($_SESSION['barangay']); ?></p>
                         </div>
                     </div>
                 </div>

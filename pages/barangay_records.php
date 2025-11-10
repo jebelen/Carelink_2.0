@@ -34,193 +34,8 @@ try {
     <link rel="stylesheet" href="../assets/css/barangay-sidebar.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        :root {
-            --primary: #2c3e50;
-            --secondary: #3498db;
-            --accent: #e74c3c;
-            --success: #2ecc71;
-            --warning: #f39c12;
-            --light: #ecf0f1;
-            --dark: #34495e;
-            --gray: #95a5a6;
-        }
-
-        body {
-            background-color: #f5f7fa;
-            color: #333;
-            line-height: 1.6;
-            height: 100vh;
-            overflow: auto;
-        }
-
-        /* layout handled by shared sidebar CSS (assets/css/barangay-sidebar.css) */
-
-        .logo {
-            display: flex;
-            align-items: center;
-            padding: 0 20px 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            margin-bottom: 20px;
-        }
-        
-        .logo-image {
-            height: 45px;
-            width: auto;
-            margin-right: 12px;
-            border-radius: 5px;
-            object-fit: contain;
-        }
-        
-        .logo h1 {
-            font-size: 18px;
-            font-weight: 600;
-            color: white;
-        }
-
-        .nav-links {
-            list-style: none;
-        }
-
-        .nav-links li {
-            padding: 12px 20px;
-            transition: all 0.3s;
-        }
-
-        .nav-links li:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .nav-links li.active {
-            background: var(--secondary);
-            border-left: 4px solid white;
-        }
-
-        .nav-links a {
-            color: white;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-        }
-
-        .nav-links i {
-            margin-right: 10px;
-            font-size: 18px;
-        }
-
-        /* Main Content */
-        .main-content {
-            flex: 1;
-            padding: 20px;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #e0e0e0;
-        }
-
-        .header-content {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .welcome-message {
-            font-size: 1.2rem;
-            color: var(--gray);
-            margin-bottom: 5px;
-        }
-
-        .header h1 {
-            color: var(--primary);
-            font-size: 1.8rem;
-        }
-
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px 15px;
-            background: white;
-            border-radius: 25px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: var(--secondary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 18px;
-        }
-
-        .user-details {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .user-details h2 {
-            font-size: 14px;
-            margin-bottom: 2px;
-            color: var(--primary);
-        }
-
-        .user-details p {
-            color: var(--gray);
-            font-size: 12px;
-        }
-
-        .btn {
-            display: inline-block;
-            background: var(--secondary);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
-            text-decoration: none;
-            font-weight: 500;
-            transition: background 0.3s;
-            border: none;
-            cursor: pointer;
-        }
-
-        .btn:hover {
-            background: #2980b9;
-        }
-
-        .btn-accent {
-            background: var(--accent);
-        }
-
-        .btn-accent:hover {
-            background: #c0392b;
-        }
-
-        .btn-small {
-            padding: 5px 10px;
-            font-size: 12px;
-        }
-
-        /* Records Section */
-        .records-section {
+        /* Page-specific styles for records */
+        .records-section, .yearly-records {
             margin-bottom: 30px;
         }
 
@@ -266,7 +81,7 @@ try {
 
         .table-header {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr 1fr; /* Changed from 6 to 5 columns */
+            grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
             padding: 15px 20px;
             background: var(--primary);
             color: white;
@@ -278,7 +93,7 @@ try {
 
         .table-row {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr 1fr; /* Changed from 6 to 5 columns */
+            grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
             padding: 15px 20px;
             border-bottom: 1px solid #e0e0e0;
             transition: background 0.3s;
@@ -286,42 +101,6 @@ try {
 
         .table-row:hover {
             background: #f8f9fa;
-        }
-
-        .table-row:last-child {
-            border-bottom: none;
-        }
-
-        .application-status {
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-
-        .status-pending {
-            background: #fff3cd;
-            color: var(--warning);
-        }
-
-        .status-verified {
-            background: #d1edff;
-            color: var(--secondary);
-        }
-
-        .status-rejected {
-            background: #ffebee;
-            color: var(--accent);
-        }
-
-        .status-sent {
-            background: #d4edda;
-            color: var(--success);
-        }
-
-        /* Yearly Records Section */
-        .yearly-records {
-            margin-bottom: 30px;
         }
 
         .year-selector {
@@ -350,7 +129,6 @@ try {
             background: #f8f9fa;
         }
 
-        /* Filter Section */
         .filter-section {
             background: white;
             border-radius: 10px;
@@ -389,41 +167,83 @@ try {
             outline: none;
         }
 
-        /* Footer */
-        .footer {
+        .no-results {
             text-align: center;
             padding: 20px;
-            margin-top: 30px;
             color: var(--gray);
-            font-size: 14px;
-            border-top: 1px solid #e0e0e0;
+            font-style: italic;
         }
 
-        /* Responsive */
-        @media (max-width: 992px) {
-            .container {
-                flex-direction: column;
-            }
-            
-            .sidebar {
-                width: 100%;
-                padding: 10px;
-                height: auto;
-            }
-            
-            .nav-links {
-                display: flex;
-                overflow-x: auto;
-            }
-            
-            .nav-links li {
-                white-space: nowrap;
-            }
-            
-            .main-content {
-                height: auto;
-                overflow-y: visible;
-            }
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 50px auto;
+            width: 90%;
+            max-width: 900px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .modal-header h2 {
+            color: var(--primary);
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--gray);
+        }
+
+        .close-modal:hover {
+            color: var(--accent);
+        }
+
+        .modal-body {
+            padding: 30px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .detail-item {
+            margin-bottom: 10px;
+        }
+
+        .detail-item label {
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .detail-item p {
+            margin: 5px 0 0 0;
         }
 
         @media (max-width: 768px) {
@@ -434,37 +254,14 @@ try {
             }
             
             .table-header, .table-row {
-                grid-template-columns: 1fr 1fr; /* Adjusted for 5 columns, showing first two */
+                grid-template-columns: 1fr 1fr;
                 font-size: 14px;
             }
             
-            /* Removed specific nth-child(3) and (4) as ID Number is gone and columns shifted */
-            
-            .header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 15px;
-            }
-            
-            .header-actions {
-                align-self: flex-end;
-            }
-            
-            .year-selector {
-                flex-wrap: wrap;
-            }
-            
-            .filter-section {
+            .year-selector, .filter-section {
                 flex-direction: column;
                 align-items: flex-start;
             }
-        }
-
-        .no-results {
-            text-align: center;
-            padding: 20px;
-            color: var(--gray);
-            font-style: italic;
         }
     </style>
 </head>
@@ -619,9 +416,257 @@ try {
         </div>
     </div>
 
+    <!-- Application Detail Modal -->
+    <div id="applicationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Application Details</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="applicationDetailForm" method="POST" action="../api/update_application.php" enctype="multipart/form-data">
+                    <input type="hidden" id="applicationId" name="applicationId">
+                    <div class="form-section">
+                        <h3><i class="fas fa-user"></i> Basic Information</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="applicationType">Application Type</label>
+                                <select id="applicationType" name="applicationType" required>
+                                    <option value="pwd">PWD</option>
+                                    <option value="senior">Senior Citizen</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="lastName">Last Name</label>
+                                <input type="text" id="lastName" name="lastName" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="firstName">First Name</label>
+                                <input type="text" id="firstName" name="firstName" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="middleName">Middle Name</label>
+                                <input type="text" id="middleName" name="middleName">
+                            </div>
+                            <div class="form-group">
+                                <label for="suffix">Suffix</label>
+                                <input type="text" id="suffix" name="suffix">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="birthDate">Birth Date</label>
+                                <input type="date" id="birthDate" name="birthDate" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="contactNumber">Contact Number</label>
+                                <input type="text" id="contactNumber" name="contactNumber" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="completeAddress">Complete Address</label>
+                            <textarea id="completeAddress" name="completeAddress" required></textarea>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="emailAddress">Email Address</label>
+                                <input type="email" id="emailAddress" name="emailAddress">
+                            </div>
+                            <div class="form-group">
+                                <label for="religion">Religion</label>
+                                <input type="text" id="religion" name="religion">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="sex">Sex</label>
+                                <select id="sex" name="sex">
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="civilStatus">Civil Status</label>
+                                <select id="civilStatus" name="civilStatus">
+                                    <option value="Single">Single</option>
+                                    <option value="Married">Married</option>
+                                    <option value="Widow/er">Widow/er</option>
+                                    <option value="Cohabitation (Live-in)">Cohabitation (Live-in)</option>
+                                </select>
+                            </div>
+                        </div>
+                         <div class="form-row">
+                            <div class="form-group">
+                                <label for="bloodType">Blood Type</label>
+                                <input type="text" id="bloodType" name="bloodType">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="pwd-fields-modal">
+                        <div class="form-section">
+                            <h3><i class="fas fa-wheelchair"></i> PWD Specific Information</h3>
+                            <div class="form-group">
+                                <label>Type of Disability</label>
+                                <div>
+                                    <input type="checkbox" name="disabilityType[]" value="Deaf/Hard of Hearing"> Deaf/Hard of Hearing<br>
+                                    <input type="checkbox" name="disabilityType[]" value="Intellectual Disability"> Intellectual Disability<br>
+                                    <input type="checkbox" name="disabilityType[]" value="Learning Disability"> Learning Disability<br>
+                                    <input type="checkbox" name="disabilityType[]" value="Mental Disability"> Mental Disability<br>
+                                    <input type="checkbox" name="disabilityType[]" value="Orthopedic"> Orthopedic<br>
+                                    <input type="checkbox" name="disabilityType[]" value="Physical Disability"> Physical Disability<br>
+                                    <input type="checkbox" name="disabilityType[]" value="Psychosocial Disability"> Psychosocial Disability<br>
+                                    <input type="checkbox" name="disabilityType[]" value="Speech and Language Impairment"> Speech and Language Impairment<br>
+                                    <input type="checkbox" name="disabilityType[]" value="Visual Disability"> Visual Disability<br>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Cause of Disability</label>
+                                <div>
+                                    <input type="checkbox" name="disabilityCause[]" value="Acquired"> Acquired<br>
+                                    <input type="checkbox" name="disabilityCause[]" value="Cancer"> Cancer<br>
+                                    <input type="checkbox" name="disabilityCause[]" value="Chronic Illness"> Chronic Illness<br>
+                                    <input type="checkbox" name="disabilityCause[]" value="Congenital/Inborn"> Congenital/Inborn<br>
+                                    <input type="checkbox" name="disabilityCause[]" value="Injury"> Injury<br>
+                                    <input type="checkbox" name="disabilityCause[]" value="Autism"> Autism<br>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Educational Attainment</label>
+                                <div>
+                                    <input type="radio" name="educationalAttainment" value="None"> None<br>
+                                    <input type="radio" name="educationalAttainment" value="Elementary Education"> Elementary Education<br>
+                                    <input type="radio" name="educationalAttainment" value="High School Education"> High School Education<br>
+                                    <input type="radio" name="educationalAttainment" value="College"> College<br>
+                                    <input type="radio" name="educationalAttainment" value="Post Graduate Program"> Post Graduate Program<br>
+                                    <input type="radio" name="educationalAttainment" value="Non-Formal Education"> Non-Formal Education<br>
+                                    <input type="radio" name="educationalAttainment" value="Vocational"> Vocational<br>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Status of Employment</label>
+                                <div>
+                                    <input type="radio" name="employmentStatus" value="Employed"> Employed<br>
+                                    <input type="radio" name="employmentStatus" value="Unemployed"> Unemployed<br>
+                                    <input type="radio" name="employmentStatus" value="Self-employed"> Self-employed<br>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="occupation">Occupation</label>
+                                <select id="occupation" name="occupation">
+                                    <option value="Managers">Managers</option>
+                                    <option value="Professionals">Professionals</option>
+                                    <option value="Technician and Associate Professionals">Technician and Associate Professionals</option>
+                                    <option value="Clerical Support Workers">Clerical Support Workers</option>
+                                    <option value="Service and Sales Workers">Service and Sales Workers</option>
+                                    <option value="Skilled Agricultural, Forestry & Fishery Workers">Skilled Agricultural, Forestry & Fishery Workers</option>
+                                    <option value="Plant and Machine Operators & Assemblers">Plant and Machine Operators & Assemblers</option>
+                                    <option value="Elementary Occupations">Elementary Occupations</option>
+                                    <option value="Armed Forces Occupations">Armed Forces Occupations</option>
+                                    <option value="Others">Others, specify</option>
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="sssNo">SSS No.</label>
+                                    <input type="text" id="sssNo" name="sssNo">
+                                </div>
+                                <div class="form-group">
+                                    <label for="gsisNo">GSIS No.</label>
+                                    <input type="text" id="gsisNo" name="gsisNo">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="pagibigNo">Pag-ibig No.</label>
+                                    <input type="text" id="pagibigNo" name="pagibigNo">
+                                </div>
+                                <div class="form-group">
+                                    <label for="philhealthNo">Philhealth No.</label>
+                                    <input type="text" id="philhealthNo" name="philhealthNo">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="fatherName">Father's Name</label>
+                                <input type="text" id="fatherName" name="fatherName">
+                            </div>
+                            <div class="form-group">
+                                <label for="motherName">Mother's Name</label>
+                                <input type="text" id="motherName" name="motherName">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="senior-fields-modal" style="display: none;">
+                        <div class="form-section">
+                            <h3><i class="fas fa-user-friends"></i> Senior Citizen Specific Information</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="placeOfBirth">Place of Birth</label>
+                                    <input type="text" id="placeOfBirth" name="placeOfBirth">
+                                </div>
+                                <div class="form-group">
+                                    <label for="yearsInPasig">No. of Years in Pasig</label>
+                                    <input type="number" id="yearsInPasig" name="yearsInPasig">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="citizenship">Citizenship</label>
+                                <input type="text" id="citizenship" name="citizenship">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3><i class="fas fa-file-alt"></i> Required Documents</h3>
+                        <div class="form-group">
+                            <label for="birthCertificate">Birth Certificate</label>
+                            <input type="file" id="birthCertificate" name="birthCertificate">
+                            <p id="currentBirthCertificate"></p>
+                        </div>
+                        <div class="form-group">
+                            <label for="medicalCertificate">Medical Certificate</label>
+                            <input type="file" id="medicalCertificate" name="medicalCertificate">
+                            <p id="currentMedicalCertificate"></p>
+                        </div>
+                        <div class="form-group">
+                            <label for="clientIdentification">Client Identification</label>
+                            <input type="file" id="clientIdentification" name="clientIdentification">
+                            <p id="currentClientIdentification"></p>
+                        </div>
+                        <div class="form-group">
+                            <label for="proofOfAddress">Proof of Address</label>
+                            <input type="file" id="proofOfAddress" name="proofOfAddress">
+                            <p id="currentProofOfAddress"></p>
+                        </div>
+                        <div class="form-group">
+                            <label for="idImage">Updated ID Image</label>
+                            <input type="file" id="idImage" name="idImage">
+                            <p id="currentIdImage"></p>
+                        </div>
+                    </div>
+                    <div class="form-section">
+                        <h3><i class="fas fa-info-circle"></i> Additional Information</h3>
+                        <div class="form-group">
+                            <label for="additionalNotes">Additional Notes</label>
+                            <textarea id="additionalNotes" name="additionalNotes"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn"><i class="fas fa-save"></i> Save Changes</button>
+                        <button type="button" class="btn btn-accent" onclick="exportApplicationDetails(document.getElementById('applicationId').value)"><i class="fas fa-download"></i> Export</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script src="../assets/js/sidebar-toggle.js"></script>
     <script>
-        // Simple script for interactive elements
         document.addEventListener('DOMContentLoaded', function() {
             // Add click event to navigation items
             const navItems = document.querySelectorAll('.nav-links li');
@@ -631,18 +676,22 @@ try {
                     this.classList.add('active');
                 });
             });
-            
-            // Add functionality to table action buttons
-            const viewButtons = document.querySelectorAll('.btn-small');
-            viewButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const row = this.closest('.table-row');
-                    const name = row.children[0].textContent;
-                    const type = row.children[1].textContent;
-                    alert(`Viewing details for: ${name} (${type})`);
-                });
+
+            // Event delegation for View Details buttons
+            const tableBody = document.querySelector('.table-data');
+            tableBody.addEventListener('click', function(event) {
+                const clickedElement = event.target.closest('.view-application-btn');
+                if (clickedElement) {
+                    const appId = clickedElement.dataset.id;
+                    openApplicationModal(appId);
+                }
             });
-            
+
+            const closeModalBtn = document.querySelector('#applicationModal .close-modal');
+            closeModalBtn.addEventListener('click', () => {
+                document.getElementById('applicationModal').style.display = 'none';
+            });
+
             // Year selection functionality
             const yearBtns = document.querySelectorAll('.year-btn');
             const currentYearElement = document.getElementById('current-year');
@@ -664,12 +713,10 @@ try {
             });
             
             // Auto-filter functionality (client-side filtering for now)
-            // const idFilter = document.getElementById('id-filter'); // Removed ID filter
             const typeFilter = document.getElementById('type-filter');
             const statusFilter = document.getElementById('status-filter');
             
             // Add event listeners for automatic filtering
-            // idFilter.addEventListener('input', applyFilters); // Removed ID filter event listener
             typeFilter.addEventListener('change', applyFilters);
             statusFilter.addEventListener('change', applyFilters);
             
@@ -688,6 +735,198 @@ try {
             
             welcomeMessage.innerHTML = `${greeting}, <strong><?php echo htmlspecialchars($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?></strong>!`;
         });
+
+        function openApplicationModal(appId) {
+            const modalBody = document.querySelector('#applicationModal .modal-body');
+            modalBody.innerHTML = '<p>Loading...</p>';
+            document.getElementById('applicationModal').style.display = 'block';
+
+            fetch(`../api/get_application_details.php?id=${appId}`)
+                .then(response => response.json())
+                .then(application => {
+                    if (application.error) {
+                        modalBody.innerHTML = `<p>Error: ${application.error}</p>`;
+                        return;
+                    }
+
+                    if (!application) {
+                        modalBody.innerHTML = '<p>Error loading application details.</p>';
+                        return;
+                    }
+
+                    // Re-render the form with fetched data
+                    modalBody.innerHTML = `
+                        <div class="form-section">
+                            <h3><i class="fas fa-user"></i> Basic Information</h3>
+                            <div class="details-grid">
+                                <div class="detail-item">
+                                    <label>Application Type</label>
+                                    <p>${application.application_type || ''}</p>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Last Name</label>
+                                    <p>${application.lastName || ''}</p>
+                                </div>
+                                <div class="detail-item">
+                                    <label>First Name</label>
+                                    <p>${application.firstName || ''}</p>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Middle Name</label>
+                                    <p>${application.middleName || ''}</p>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Suffix</label>
+                                    <p>${application.suffix || ''}</p>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Birth Date</label>
+                                    <p>${application.birth_date || ''}</p>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Contact Number</label>
+                                    <p>${application.contact_number || ''}</p>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Complete Address</label>
+                                    <p>${application.complete_address || ''}</p>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Email Address</label>
+                                    <p>${application.email_address || ''}</p>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Religion</label>
+                                    <p>${application.religion || ''}</p>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Sex</label>
+                                    <p>${application.sex || ''}</p>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Civil Status</label>
+                                    <p>${application.civilStatus || ''}</p>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Blood Type</label>
+                                    <p>${application.bloodType || ''}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="pwd-fields-modal" style="display: ${application.application_type === 'pwd' ? 'block' : 'none'}">
+                            <div class="form-section">
+                                <h3><i class="fas fa-wheelchair"></i> PWD Specific Information</h3>
+                                <div class="details-grid">
+                                    <div class="detail-item">
+                                        <label>Type of Disability</label>
+                                        <p>${application.disabilityType ? application.disabilityType.join(', ') : ''}</p>
+                                    </div>
+                                    <div class="detail-item">
+                                        <label>Cause of Disability</label>
+                                        <p>${application.disabilityCause ? application.disabilityCause.join(', ') : ''}</p>
+                                    </div>
+                                    <div class="detail-item">
+                                        <label>Educational Attainment</label>
+                                        <p>${application.educationalAttainment || ''}</p>
+                                    </div>
+                                    <div class="detail-item">
+                                        <label>Status of Employment</label>
+                                        <p>${application.employmentStatus || ''}</p>
+                                    </div>
+                                    <div class="detail-item">
+                                        <label>Occupation</label>
+                                        <p>${application.occupation || ''}</p>
+                                    </div>
+                                    <div class="detail-item">
+                                        <label>SSS No.</label>
+                                        <p>${application.sssNo || ''}</p>
+                                    </div>
+                                    <div class="detail-item">
+                                        <label>GSIS No.</label>
+                                        <p>${application.gsisNo || ''}</p>
+                                    </div>
+                                    <div class="detail-item">
+                                        <label>Pag-ibig No.</label>
+                                        <p>${application.pagibigNo || ''}</p>
+                                    </div>
+                                    <div class="detail-item">
+                                        <label>Philhealth No.</label>
+                                        <p>${application.philhealthNo || ''}</p>
+                                    </div>
+                                    <div class="detail-item">
+                                        <label>Father's Name</label>
+                                        <p>${application.fatherName || ''}</p>
+                                    </div>
+                                    <div class="detail-item">
+                                        <label>Mother's Name</label>
+                                        <p>${application.motherName || ''}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="senior-fields-modal" style="display: ${application.application_type === 'senior' ? 'block' : 'none'}">
+                            <div class="form-section">
+                                <h3><i class="fas fa-user-friends"></i> Senior Citizen Specific Information</h3>
+                                <div class="details-grid">
+                                    <div class="detail-item">
+                                        <label>Place of Birth</label>
+                                        <p>${application.placeOfBirth || ''}</p>
+                                    </div>
+                                    <div class="detail-item">
+                                        <label>No. of Years in Pasig</label>
+                                        <p>${application.yearsInPasig || ''}</p>
+                                    </div>
+                                    <div class="detail-item">
+                                        <label>Citizenship</label>
+                                        <p>${application.citizenship || ''}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3><i class="fas fa-file-alt"></i> Required Documents</h3>
+                            <div class="details-grid">
+                                <div class="detail-item">
+                                    <label>Birth Certificate</label>
+                                    <p>${application.has_birth_certificate ? `<a href="../api/get_document.php?id=${appId}&doc_type=birth_certificate" target="_blank">View Current Birth Certificate</a>` : 'No document uploaded'}</p>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Medical Certificate</label>
+                                    <p>${application.has_medical_certificate ? `<a href="../api/get_document.php?id=${appId}&doc_type=medical_certificate" target="_blank">View Current Medical Certificate</a>` : 'No document uploaded'}</p>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Client Identification</label>
+                                    <p>${application.has_client_identification ? `<a href="../api/get_document.php?id=${appId}&doc_type=client_identification" target="_blank">View Current Client Identification</a>` : 'No document uploaded'}</p>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Proof of Address</label>
+                                    <p>${application.has_proof_of_address ? `<a href="../api/get_document.php?id=${appId}&doc_type=proof_of_address" target="_blank">View Current Proof of Address</a>` : 'No document uploaded'}</p>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Updated ID Image</label>
+                                    <p>${application.has_id_image ? `<a href="../api/get_document.php?id=${appId}&doc_type=id_image" target="_blank">View Current ID Image</a>` : 'No document uploaded'}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-section">
+                            <h3><i class="fas fa-info-circle"></i> Additional Information</h3>
+                            <div class="details-grid">
+                                <div class="detail-item">
+                                    <label>Additional Notes</label>
+                                    <p>${application.additional_notes || ''}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);
+                    modalBody.innerHTML = '<p>Error loading application details. Please check the console for more information.</p>';
+                });
+        }
 
         function updateTableData(year) {
             // In a real application, this would fetch data from a server
