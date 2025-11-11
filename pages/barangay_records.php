@@ -11,17 +11,68 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'barangay_staff') {
 $barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
 error_log("DEBUG: Logged-in barangay: " . $_SESSION['barangay']);
 
-// Fetch applications from the database for the logged-in barangay
-$applications = [];
-try {
-    $stmt = $conn->prepare("SELECT id, full_name, application_type, date_submitted, status FROM applications WHERE barangay = :barangay ORDER BY date_submitted DESC");
-    $stmt->execute(['barangay' => $_SESSION['barangay']]);
-    $applications = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-    // Log the error or display a user-friendly message
-    error_log("Error fetching applications: " . $e->getMessage());
-    // Optionally, set an error message for the user
-    $_SESSION['error_message'] = "Error loading applications. Please try again later.";
+// 1. Get filter, search, and pagination parameters from URL
+$search = $_GET['search'] ?? '';
+$typeFilter = $_GET['type'] ?? 'all';
+$statusFilter = $_GET['status'] ?? 'approved'; // Default to approved
+$page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
+$recordsPerPage = 15;
+$offset = ($page - 1) * $recordsPerPage;
+
+// 2. Build the database query dynamically
+$baseQuery = "FROM applications WHERE barangay = :barangay";
+$whereClauses = [];
+$params = [':barangay' => $_SESSION['barangay']];
+
+if (!empty($search)) {
+    $whereClauses[] = "(full_name LIKE :search OR id LIKE :search)";
+    $params[':search'] = "%$search%";
+}
+if ($typeFilter !== 'all') {
+    $whereClauses[] = "application_type = :type";
+    $params[':type'] = $typeFilter;
+}
+if ($statusFilter !== 'all') {
+    $whereClauses[] = "status = :status";
+    $params[':status'] = $statusFilter;
+}
+
+$whereSql = '';
+if (!empty($whereClauses)) {
+    $whereSql = " AND " . implode(' AND ', $whereClauses);
+}
+
+// 3. Get total number of records for pagination
+$totalQuery = "SELECT COUNT(*) " . $baseQuery . $whereSql;
+$totalStmt = $conn->prepare($totalQuery);
+$totalStmt->execute($params);
+$totalRecords = $totalStmt->fetchColumn();
+$totalPages = ceil($totalRecords / $recordsPerPage);
+
+// 4. Get the records for the current page
+$recordsQuery = "SELECT id, full_name, application_type, date_submitted, status " . $baseQuery . $whereSql . " ORDER BY date_submitted DESC LIMIT :limit OFFSET :offset";
+$recordsStmt = $conn->prepare($recordsQuery);
+
+// Bind all parameters including limit and offset
+foreach ($params as $key => &$val) {
+    $recordsStmt->bindParam($key, $val);
+}
+$recordsStmt->bindParam(':limit', $recordsPerPage, PDO::PARAM_INT);
+$recordsStmt->bindParam(':offset', $offset, PDO::PARAM_INT);
+
+$recordsStmt->execute();
+$applications = $recordsStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Helper function to get status class for styling
+function getStatusClass($status) {
+    switch (strtolower($status)) {
+        case 'pending': return 'status-pending';
+        case 'verified': return 'status-verified';
+        case 'rejected': return 'status-rejected';
+        case 'approved': return 'status-approved';
+        case 'sent to city hall': return 'status-sent';
+        default: return 'status-default';
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -97,6 +148,9 @@ try {
             padding: 15px 20px;
             border-bottom: 1px solid #e0e0e0;
             transition: background 0.3s;
+            font-size: 14px; /* Increased font size */
+            font-weight: 500; /* Made text bolder */
+            color: #212529; /* Darker color for better contrast */
         }
 
         .table-row:hover {
@@ -353,6 +407,7 @@ try {
                             <option value="verified">Verified</option>
                             <option value="rejected">Rejected</option>
                             <option value="sent">Sent to City Hall</option>
+                            <option value="approved" selected>Approved</option>
                         </select>
                     </div>
                 </div>
@@ -372,31 +427,12 @@ try {
                                 <div class="no-results">No applications found for Barangay <?php echo $barangayName; ?>.</div>
                             <?php else: ?>
                                 <?php foreach ($applications as $app): ?>
-                                    <div class="table-row">
+                                    <div class="table-row <?php echo getStatusClass($app['status']); ?>">
                                         <div><?php echo htmlspecialchars($app['full_name']); ?></div>
                                         <div><?php echo htmlspecialchars($app['application_type']); ?></div>
                                         <div><?php echo htmlspecialchars(date('m/d/Y', strtotime($app['date_submitted']))); ?></div>
                                         <div>
-                                            <?php
-                                                $statusClass = '';
-                                                switch ($app['status']) {
-                                                    case 'pending':
-                                                        $statusClass = 'status-pending';
-                                                        break;
-                                                    case 'verified':
-                                                        $statusClass = 'status-verified';
-                                                        break;
-                                                    case 'rejected':
-                                                        $statusClass = 'status-rejected';
-                                                        break;
-                                                    case 'sent':
-                                                        $statusClass = 'status-sent';
-                                                        break;
-                                                    default:
-                                                        $statusClass = '';
-                                                }
-                                            ?>
-                                            <span class="application-status <?php echo $statusClass; ?>"><?php echo htmlspecialchars(ucfirst($app['status'])); ?></span>
+                                            <span class="application-status"><?php echo htmlspecialchars(ucfirst($app['status'])); ?></span>
                                         </div>
                                         <div>
                                             <button class="btn btn-small view-application-btn" data-id="<?php echo $app['id']; ?>"><i class="fas fa-eye"></i> View</button>
@@ -754,180 +790,185 @@ try {
                         return;
                     }
 
-                    // Re-render the form with fetched data
                     modalBody.innerHTML = `
-                        <div class="form-section">
-                            <h3><i class="fas fa-user"></i> Basic Information</h3>
-                            <div class="details-grid">
-                                <div class="detail-item">
-                                    <label>Application Type</label>
-                                    <p>${application.application_type || ''}</p>
+                        <form id="applicationDetailForm" method="POST" action="../api/update_application.php" enctype="multipart/form-data">
+                            <input type="hidden" id="applicationId" name="applicationId" value="${application.id}">
+                            <div class="form-section">
+                                <h3><i class="fas fa-user"></i> Basic Information</h3>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="applicationType">Application Type</label>
+                                        <select id="applicationType" name="applicationType" required>
+                                            <option value="pwd" ${application.application_type === 'pwd' ? 'selected' : ''}>PWD</option>
+                                            <option value="senior" ${application.application_type === 'senior' ? 'selected' : ''}>Senior Citizen</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="detail-item">
-                                    <label>Last Name</label>
-                                    <p>${application.lastName || ''}</p>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="lastName">Last Name</label>
+                                        <input type="text" id="lastName" name="lastName" value="${application.lastName || ''}" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="firstName">First Name</label>
+                                        <input type="text" id="firstName" name="firstName" value="${application.firstName || ''}" required>
+                                    </div>
                                 </div>
-                                <div class="detail-item">
-                                    <label>First Name</label>
-                                    <p>${application.firstName || ''}</p>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="middleName">Middle Name</label>
+                                        <input type="text" id="middleName" name="middleName" value="${application.middleName || ''}">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="suffix">Suffix</label>
+                                        <input type="text" id="suffix" name="suffix" value="${application.suffix || ''}">
+                                    </div>
                                 </div>
-                                <div class="detail-item">
-                                    <label>Middle Name</label>
-                                    <p>${application.middleName || ''}</p>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="birthDate">Birth Date</label>
+                                        <input type="date" id="birthDate" name="birthDate" value="${application.birth_date || ''}" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="contactNumber">Contact Number</label>
+                                        <input type="text" id="contactNumber" name="contactNumber" value="${application.contact_number || ''}" required>
+                                    </div>
                                 </div>
-                                <div class="detail-item">
-                                    <label>Suffix</label>
-                                    <p>${application.suffix || ''}</p>
+                                <div class="form-group">
+                                    <label for="completeAddress">Complete Address</label>
+                                    <textarea id="completeAddress" name="completeAddress" required>${application.complete_address || ''}</textarea>
                                 </div>
-                                <div class="detail-item">
-                                    <label>Birth Date</label>
-                                    <p>${application.birth_date || ''}</p>
-                                </div>
-                                <div class="detail-item">
-                                    <label>Contact Number</label>
-                                    <p>${application.contact_number || ''}</p>
-                                </div>
-                                <div class="detail-item">
-                                    <label>Complete Address</label>
-                                    <p>${application.complete_address || ''}</p>
-                                </div>
-                                <div class="detail-item">
-                                    <label>Email Address</label>
-                                    <p>${application.email_address || ''}</p>
-                                </div>
-                                <div class="detail-item">
-                                    <label>Religion</label>
-                                    <p>${application.religion || ''}</p>
-                                </div>
-                                <div class="detail-item">
-                                    <label>Sex</label>
-                                    <p>${application.sex || ''}</p>
-                                </div>
-                                <div class="detail-item">
-                                    <label>Civil Status</label>
-                                    <p>${application.civilStatus || ''}</p>
-                                </div>
-                                <div class="detail-item">
-                                    <label>Blood Type</label>
-                                    <p>${application.bloodType || ''}</p>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="emergencyContactName">Emergency Contact Name</label>
+                                        <input type="text" id="emergencyContactName" name="emergencyContactName" value="${application.emergency_contact_name || ''}">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="emergencyContact">Emergency Contact Number</label>
+                                        <input type="text" id="emergencyContact" name="emergencyContact" value="${application.emergency_contact || ''}">
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div id="pwd-fields-modal" style="display: ${application.application_type === 'pwd' ? 'block' : 'none'}">
-                            <div class="form-section">
-                                <h3><i class="fas fa-wheelchair"></i> PWD Specific Information</h3>
-                                <div class="details-grid">
-                                    <div class="detail-item">
+                            <div id="pwd-fields-modal" style="display: ${application.application_type === 'pwd' ? 'block' : 'none'}">
+                                <div class="form-section">
+                                    <h3><i class="fas fa-wheelchair"></i> PWD Specific Information</h3>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="idNumber">ID Number</label>
+                                            <input type="text" id="idNumber" name="idNumber" value="${application.id_number || ''}">
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
                                         <label>Type of Disability</label>
-                                        <p>${application.disabilityType ? application.disabilityType.join(', ') : ''}</p>
+                                        <div>
+                                            <input type="checkbox" name="disabilityType[]" value="Deaf/Hard of Hearing" ${application.disabilityType && application.disabilityType.includes('Deaf/Hard of Hearing') ? 'checked' : ''}> Deaf/Hard of Hearing<br>
+                                            <input type="checkbox" name="disabilityType[]" value="Intellectual Disability" ${application.disabilityType && application.disabilityType.includes('Intellectual Disability') ? 'checked' : ''}> Intellectual Disability<br>
+                                            <input type="checkbox" name="disabilityType[]" value="Learning Disability" ${application.disabilityType && application.disabilityType.includes('Learning Disability') ? 'checked' : ''}> Learning Disability<br>
+                                            <input type="checkbox" name="disabilityType[]" value="Mental Disability" ${application.disabilityType && application.disabilityType.includes('Mental Disability') ? 'checked' : ''}> Mental Disability<br>
+                                            <input type="checkbox" name="disabilityType[]" value="Orthopedic" ${application.disabilityType && application.disabilityType.includes('Orthopedic') ? 'checked' : ''}> Orthopedic<br>
+                                            <input type="checkbox" name="disabilityType[]" value="Physical Disability" ${application.disabilityType && application.disabilityType.includes('Physical Disability') ? 'checked' : ''}> Physical Disability<br>
+                                            <input type="checkbox" name="disabilityType[]" value="Psychosocial Disability" ${application.disabilityType && application.disabilityType.includes('Psychosocial Disability') ? 'checked' : ''}> Psychosocial Disability<br>
+                                            <input type="checkbox" name="disabilityType[]" value="Speech and Language Impairment" ${application.disabilityType && application.disabilityType.includes('Speech and Language Impairment') ? 'checked' : ''}> Speech and Language Impairment<br>
+                                            <input type="checkbox" name="disabilityType[]" value="Visual Disability" ${application.disabilityType && application.disabilityType.includes('Visual Disability') ? 'checked' : ''}> Visual Disability<br>
+                                        </div>
                                     </div>
-                                    <div class="detail-item">
-                                        <label>Cause of Disability</label>
-                                        <p>${application.disabilityCause ? application.disabilityCause.join(', ') : ''}</p>
-                                    </div>
-                                    <div class="detail-item">
-                                        <label>Educational Attainment</label>
-                                        <p>${application.educationalAttainment || ''}</p>
-                                    </div>
-                                    <div class="detail-item">
-                                        <label>Status of Employment</label>
-                                        <p>${application.employmentStatus || ''}</p>
-                                    </div>
-                                    <div class="detail-item">
-                                        <label>Occupation</label>
-                                        <p>${application.occupation || ''}</p>
-                                    </div>
-                                    <div class="detail-item">
-                                        <label>SSS No.</label>
-                                        <p>${application.sssNo || ''}</p>
-                                    </div>
-                                    <div class="detail-item">
-                                        <label>GSIS No.</label>
-                                        <p>${application.gsisNo || ''}</p>
-                                    </div>
-                                    <div class="detail-item">
-                                        <label>Pag-ibig No.</label>
-                                        <p>${application.pagibigNo || ''}</p>
-                                    </div>
-                                    <div class="detail-item">
-                                        <label>Philhealth No.</label>
-                                        <p>${application.philhealthNo || ''}</p>
-                                    </div>
-                                    <div class="detail-item">
-                                        <label>Father's Name</label>
-                                        <p>${application.fatherName || ''}</p>
-                                    </div>
-                                    <div class="detail-item">
-                                        <label>Mother's Name</label>
-                                        <p>${application.motherName || ''}</p>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="pwdIdIssueDate">ID Issue Date</label>
+                                            <input type="date" id="pwdIdIssueDate" name="pwdIdIssueDate" value="${application.pwd_id_issue_date || ''}">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="pwdIdExpiryDate">ID Expiry Date</label>
+                                            <input type="date" id="pwdIdExpiryDate" name="pwdIdExpiryDate" value="${application.pwd_id_expiry_date || ''}">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div id="senior-fields-modal" style="display: ${application.application_type === 'senior' ? 'block' : 'none'}">
+                            <div id="senior-fields-modal" style="display: ${application.application_type === 'senior' ? 'block' : 'none'}">
+                                <div class="form-section">
+                                    <h3><i class="fas fa-user-friends"></i> Senior Citizen Specific Information</h3>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="idNumber">ID Number</label>
+                                            <input type="text" id="idNumber" name="idNumber" value="${application.id_number || ''}">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="form-section">
-                                <h3><i class="fas fa-user-friends"></i> Senior Citizen Specific Information</h3>
-                                <div class="details-grid">
-                                    <div class="detail-item">
-                                        <label>Place of Birth</label>
-                                        <p>${application.placeOfBirth || ''}</p>
-                                    </div>
-                                    <div class="detail-item">
-                                        <label>No. of Years in Pasig</label>
-                                        <p>${application.yearsInPasig || ''}</p>
-                                    </div>
-                                    <div class="detail-item">
-                                        <label>Citizenship</label>
-                                        <p>${application.citizenship || ''}</p>
-                                    </div>
+                                <h3><i class="fas fa-file-alt"></i> Required Documents</h3>
+                                <div class="form-group">
+                                    <label for="proofOfAddress">Proof of Address</label>
+                                    <input type="file" id="proofOfAddress" name="proofOfAddress">
+                                    <p id="currentProofOfAddress">${application.has_proof_of_address ? `<a href="../api/get_document.php?id=${appId}&doc_type=proof_of_address" target="_blank">View Current Proof of Address</a>` : 'No document uploaded'}</p>
+                                </div>
+                                <div class="form-group">
+                                    <label for="idImage">ID Image</label>
+                                    <input type="file" id="idImage" name="idImage">
+                                    <p id="currentIdImage">${application.has_id_image ? `<a href="../api/get_document.php?id=${appId}&doc_type=id_image" target="_blank">View Current ID Image</a>` : 'No document uploaded'}</p>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="form-section">
-                            <h3><i class="fas fa-file-alt"></i> Required Documents</h3>
-                            <div class="details-grid">
-                                <div class="detail-item">
-                                    <label>Birth Certificate</label>
-                                    <p>${application.has_birth_certificate ? `<a href="../api/get_document.php?id=${appId}&doc_type=birth_certificate" target="_blank">View Current Birth Certificate</a>` : 'No document uploaded'}</p>
-                                </div>
-                                <div class="detail-item">
-                                    <label>Medical Certificate</label>
-                                    <p>${application.has_medical_certificate ? `<a href="../api/get_document.php?id=${appId}&doc_type=medical_certificate" target="_blank">View Current Medical Certificate</a>` : 'No document uploaded'}</p>
-                                </div>
-                                <div class="detail-item">
-                                    <label>Client Identification</label>
-                                    <p>${application.has_client_identification ? `<a href="../api/get_document.php?id=${appId}&doc_type=client_identification" target="_blank">View Current Client Identification</a>` : 'No document uploaded'}</p>
-                                </div>
-                                <div class="detail-item">
-                                    <label>Proof of Address</label>
-                                    <p>${application.has_proof_of_address ? `<a href="../api/get_document.php?id=${appId}&doc_type=proof_of_address" target="_blank">View Current Proof of Address</a>` : 'No document uploaded'}</p>
-                                </div>
-                                <div class="detail-item">
-                                    <label>Updated ID Image</label>
-                                    <p>${application.has_id_image ? `<a href="../api/get_document.php?id=${appId}&doc_type=id_image" target="_blank">View Current ID Image</a>` : 'No document uploaded'}</p>
+                            <div class="form-section">
+                                <h3><i class="fas fa-info-circle"></i> Additional Information</h3>
+                                <div class="form-group">
+                                    <label for="additionalNotes">Additional Notes</label>
+                                    <textarea id="additionalNotes" name="additionalNotes">${application.additional_notes || ''}</textarea>
                                 </div>
                             </div>
-                        </div>
-                        <div class="form-section">
-                            <h3><i class="fas fa-info-circle"></i> Additional Information</h3>
-                            <div class="details-grid">
-                                <div class="detail-item">
-                                    <label>Additional Notes</label>
-                                    <p>${application.additional_notes || ''}</p>
-                                </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn"><i class="fas fa-save"></i> Save Changes</button>
+                                <button type="button" class="btn btn-accent" onclick="exportApplicationDetails(${appId})"><i class="fas fa-download"></i> Export</button>
                             </div>
-                        </div>
+                        </form>
                     `;
+
+                    // Add event listener for application type change within the modal
+                    document.getElementById('applicationType').addEventListener('change', function () {
+                        if (this.value === 'pwd') {
+                            document.getElementById('pwd-fields-modal').style.display = 'block';
+                            document.getElementById('senior-fields-modal').style.display = 'none';
+                        } else if (this.value === 'senior') {
+                            document.getElementById('pwd-fields-modal').style.display = 'none';
+                            document.getElementById('senior-fields-modal').style.display = 'block';
+                        }
+                    });
+
+                    // Handle form submission for updating application
+                    document.getElementById('applicationDetailForm').addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        const form = e.target;
+                        const formData = new FormData(form);
+
+                        fetch(form.action, {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                alert(data.message);
+                                document.getElementById('applicationModal').style.display = 'none';
+                                // Optionally refresh the table or update the specific row
+                                location.reload(); // Reload the page to reflect changes
+                            } else {
+                                alert(data.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error updating application:', error);
+                            alert('An error occurred while updating the application.');
+                        });
+                    });
+
                 })
                 .catch(error => {
                     console.error('Fetch error:', error);
                     modalBody.innerHTML = '<p>Error loading application details. Please check the console for more information.</p>';
                 });
         }
-
         function updateTableData(year) {
             // In a real application, this would fetch data from a server
             // For this demo, we'll just update the year in the table header

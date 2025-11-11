@@ -12,50 +12,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $applicationType = filter_input(INPUT_POST, 'applicationType', FILTER_SANITIZE_STRING);
     $birthDate = filter_input(INPUT_POST, 'birthDate', FILTER_SANITIZE_STRING);
     $contactNumber = filter_input(INPUT_POST, 'contactNumber', FILTER_SANITIZE_STRING);
-    $emailAddress = filter_input(INPUT_POST, 'emailAddress', FILTER_VALIDATE_EMAIL);
     $completeAddress = filter_input(INPUT_POST, 'completeAddress', FILTER_SANITIZE_STRING);
     $emergencyContact = filter_input(INPUT_POST, 'emergencyContact', FILTER_SANITIZE_STRING) ?? '';
     $emergencyContactName = filter_input(INPUT_POST, 'emergencyContactName', FILTER_SANITIZE_STRING) ?? '';
-    $medicalConditions = filter_input(INPUT_POST, 'medicalConditions', FILTER_SANITIZE_STRING);
-    $additionalNotes = filter_input(INPUT_POST, 'additionalNotes', FILTER_SANITIZE_STRING);
     $barangay = $_SESSION['barangay']; // Assuming barangay is stored in session
 
-    $religion = filter_input(INPUT_POST, 'religion', FILTER_SANITIZE_STRING);
-    $sex = filter_input(INPUT_POST, 'sex', FILTER_SANITIZE_STRING);
-    $civilStatus = filter_input(INPUT_POST, 'civilStatus', FILTER_SANITIZE_STRING);
-    $bloodType = filter_input(INPUT_POST, 'bloodType', FILTER_SANITIZE_STRING);
-
     $disabilityType = isset($_POST['disabilityType']) ? implode(', ', $_POST['disabilityType']) : null;
-    $disabilityCause = isset($_POST['disabilityCause']) ? implode(', ', $_POST['disabilityCause']) : null;
-    $educationalAttainment = filter_input(INPUT_POST, 'educationalAttainment', FILTER_SANITIZE_STRING);
-    $employmentStatus = filter_input(INPUT_POST, 'employmentStatus', FILTER_SANITIZE_STRING);
-    $occupation = filter_input(INPUT_POST, 'occupation', FILTER_SANITIZE_STRING);
-    $sssNo = filter_input(INPUT_POST, 'sssNo', FILTER_SANITIZE_STRING);
-    $gsisNo = filter_input(INPUT_POST, 'gsisNo', FILTER_SANITIZE_STRING);
-    $pagibigNo = filter_input(INPUT_POST, 'pagibigNo', FILTER_SANITIZE_STRING);
-    $philhealthNo = filter_input(INPUT_POST, 'philhealthNo', FILTER_SANITIZE_STRING);
-    $fatherName = filter_input(INPUT_POST, 'fatherName', FILTER_SANITIZE_STRING);
-    $motherName = filter_input(INPUT_POST, 'motherName', FILTER_SANITIZE_STRING);
+    $idNumber = filter_input(INPUT_POST, 'idNumber', FILTER_SANITIZE_STRING);
+    $pwdIdIssueDate = filter_input(INPUT_POST, 'pwdIdIssueDate', FILTER_SANITIZE_STRING);
+    $pwdIdExpiryDate = filter_input(INPUT_POST, 'pwdIdExpiryDate', FILTER_SANITIZE_STRING);
 
-    $placeOfBirth = filter_input(INPUT_POST, 'placeOfBirth', FILTER_SANITIZE_STRING);
-    $yearsInPasig = filter_input(INPUT_POST, 'yearsInPasig', FILTER_SANITIZE_NUMBER_INT);
-    $citizenship = filter_input(INPUT_POST, 'citizenship', FILTER_SANITIZE_STRING);
-
-    $birthCertificate = isset($_FILES['birthCertificate']) && $_FILES['birthCertificate']['error'] == 0 ? file_get_contents($_FILES['birthCertificate']['tmp_name']) : null;
-    $birthCertificateType = isset($_FILES['birthCertificate']) && $_FILES['birthCertificate']['error'] == 0 ? $_FILES['birthCertificate']['type'] : null;
-    $medicalCertificate = isset($_FILES['medicalCertificate']) && $_FILES['medicalCertificate']['error'] == 0 ? file_get_contents($_FILES['medicalCertificate']['tmp_name']) : null;
-    $medicalCertificateType = isset($_FILES['medicalCertificate']) && $_FILES['medicalCertificate']['error'] == 0 ? $_FILES['medicalCertificate']['type'] : null;
-    $clientIdentification = isset($_FILES['clientIdentification']) && $_FILES['clientIdentification']['error'] == 0 ? file_get_contents($_FILES['clientIdentification']['tmp_name']) : null;
-    $clientIdentificationType = isset($_FILES['clientIdentification']) && $_FILES['clientIdentification']['error'] == 0 ? $_FILES['clientIdentification']['type'] : null;
     $proofOfAddress = isset($_FILES['proofOfAddress']) && $_FILES['proofOfAddress']['error'] == 0 ? file_get_contents($_FILES['proofOfAddress']['tmp_name']) : null;
     $proofOfAddressType = isset($_FILES['proofOfAddress']) && $_FILES['proofOfAddress']['error'] == 0 ? $_FILES['proofOfAddress']['type'] : null;
     $idImage = isset($_FILES['idImage']) && $_FILES['idImage']['error'] == 0 ? file_get_contents($_FILES['idImage']['tmp_name']) : null;
     $idImageType = isset($_FILES['idImage']) && $_FILES['idImage']['error'] == 0 ? $_FILES['idImage']['type'] : null;
 
     // Prepare and bind
-    $stmt = $conn->prepare("INSERT INTO applications (full_name, application_type, birth_date, contact_number, email_address, complete_address, emergency_contact, emergency_contact_name, medical_conditions, additional_notes, barangay, birth_certificate, birth_certificate_type, medical_certificate, medical_certificate_type, client_identification, client_identification_type, proof_of_address, proof_of_address_type, id_image, id_image_type, lastName, firstName, middleName, suffix, religion, sex, civilStatus, bloodType, disabilityType, disabilityCause, educationalAttainment, employmentStatus, occupation, sssNo, gsisNo, pagibigNo, philhealthNo, fatherName, motherName, placeOfBirth, yearsInPasig, citizenship) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-    
-    if ($stmt->execute([$fullName, $applicationType, $birthDate, $contactNumber, $emailAddress, $completeAddress, $emergencyContact, $emergencyContactName, $medicalConditions, $additionalNotes, $barangay, $birthCertificate, $birthCertificateType, $medicalCertificate, $medicalCertificateType, $clientIdentification, $clientIdentificationType, $proofOfAddress, $proofOfAddressType, $idImage, $idImageType, $lastName, $firstName, $middleName, $suffix, $religion, $sex, $civilStatus, $bloodType, $disabilityType, $disabilityCause, $educationalAttainment, $employmentStatus, $occupation, $sssNo, $gsisNo, $pagibigNo, $philhealthNo, $fatherName, $motherName, $placeOfBirth, $yearsInPasig, $citizenship])) {
+    $stmt = $conn->prepare("INSERT INTO applications (full_name, application_type, birth_date, contact_number, complete_address, emergency_contact, emergency_contact_name, barangay, disabilityType, id_number, pwd_id_issue_date, pwd_id_expiry_date, proof_of_address, proof_of_address_type, id_image, id_image_type, lastName, firstName, middleName, suffix) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+    if ($stmt->execute([$fullName, $applicationType, $birthDate, $contactNumber, $completeAddress, $emergencyContact, $emergencyContactName, $barangay, $disabilityType, $idNumber, $pwdIdIssueDate, $pwdIdExpiryDate, $proofOfAddress, $proofOfAddressType, $idImage, $idImageType, $lastName, $firstName, $middleName, $suffix])) {
         header("Location: Submit_Application.php?success=1");
         exit();
     } else {
@@ -92,6 +67,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                     <option value="pwd">PWD</option>
                                     <option value="senior">Senior Citizen</option>
                                 </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="idNumber">ID Number</label>
+                                <input type="text" id="idNumber" name="idNumber">
                             </div>
                         </div>
                         <div class="form-row">
@@ -130,36 +109,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="emailAddress">Email Address</label>
-                                <input type="email" id="emailAddress" name="emailAddress">
+                                <label for="emergencyContactName">Emergency Contact Name</label>
+                                <input type="text" id="emergencyContactName" name="emergencyContactName">
                             </div>
                             <div class="form-group">
-                                <label for="religion">Religion</label>
-                                <input type="text" id="religion" name="religion">
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="sex">Sex</label>
-                                <select id="sex" name="sex">
-                                    <option value="Male">Male</option>
-                                    <option value="Female">Female</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="civilStatus">Civil Status</label>
-                                <select id="civilStatus" name="civilStatus">
-                                    <option value="Single">Single</option>
-                                    <option value="Married">Married</option>
-                                    <option value="Widow/er">Widow/er</option>
-                                    <option value="Cohabitation (Live-in)">Cohabitation (Live-in)</option>
-                                </select>
-                            </div>
-                        </div>
-                         <div class="form-row">
-                            <div class="form-group">
-                                <label for="bloodType">Blood Type</label>
-                                <input type="text" id="bloodType" name="bloodType">
+                                <label for="emergencyContact">Emergency Contact Number</label>
+                                <input type="text" id="emergencyContact" name="emergencyContact">
                             </div>
                         </div>
                     </div>
@@ -181,131 +136,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                     <input type="checkbox" name="disabilityType[]" value="Visual Disability"> Visual Disability<br>
                                 </div>
                             </div>
-                            <div class="form-group">
-                                <label>Cause of Disability</label>
-                                <div>
-                                    <input type="checkbox" name="disabilityCause[]" value="Acquired"> Acquired<br>
-                                    <input type="checkbox" name="disabilityCause[]" value="Cancer"> Cancer<br>
-                                    <input type="checkbox" name="disabilityCause[]" value="Chronic Illness"> Chronic Illness<br>
-                                    <input type="checkbox" name="disabilityCause[]" value="Congenital/Inborn"> Congenital/Inborn<br>
-                                    <input type="checkbox" name="disabilityCause[]" value="Injury"> Injury<br>
-                                    <input type="checkbox" name="disabilityCause[]" value="Autism"> Autism<br>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label>Educational Attainment</label>
-                                <div>
-                                    <input type="radio" name="educationalAttainment" value="None"> None<br>
-                                    <input type="radio" name="educationalAttainment" value="Elementary Education"> Elementary Education<br>
-                                    <input type="radio" name="educationalAttainment" value="High School Education"> High School Education<br>
-                                    <input type="radio" name="educationalAttainment" value="College"> College<br>
-                                    <input type="radio" name="educationalAttainment" value="Post Graduate Program"> Post Graduate Program<br>
-                                    <input type="radio" name="educationalAttainment" value="Non-Formal Education"> Non-Formal Education<br>
-                                    <input type="radio" name="educationalAttainment" value="Vocational"> Vocational<br>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label>Status of Employment</label>
-                                <div>
-                                    <input type="radio" name="employmentStatus" value="Employed"> Employed<br>
-                                    <input type="radio" name="employmentStatus" value="Unemployed"> Unemployed<br>
-                                    <input type="radio" name="employmentStatus" value="Self-employed"> Self-employed<br>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="occupation">Occupation</label>
-                                <select id="occupation" name="occupation">
-                                    <option value="Managers">Managers</option>
-                                    <option value="Professionals">Professionals</option>
-                                    <option value="Technician and Associate Professionals">Technician and Associate Professionals</option>
-                                    <option value="Clerical Support Workers">Clerical Support Workers</option>
-                                    <option value="Service and Sales Workers">Service and Sales Workers</option>
-                                    <option value="Skilled Agricultural, Forestry & Fishery Workers">Skilled Agricultural, Forestry & Fishery Workers</option>
-                                    <option value="Plant and Machine Operators & Assemblers">Plant and Machine Operators & Assemblers</option>
-                                    <option value="Elementary Occupations">Elementary Occupations</option>
-                                    <option value="Armed Forces Occupations">Armed Forces Occupations</option>
-                                    <option value="Others">Others, specify</option>
-                                </select>
-                            </div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="sssNo">SSS No.</label>
-                                    <input type="text" id="sssNo" name="sssNo">
+                                    <label for="pwdIdIssueDate">ID Issue Date</label>
+                                    <input type="date" id="pwdIdIssueDate" name="pwdIdIssueDate">
                                 </div>
                                 <div class="form-group">
-                                    <label for="gsisNo">GSIS No.</label>
-                                    <input type="text" id="gsisNo" name="gsisNo">
+                                    <label for="pwdIdExpiryDate">ID Expiry Date</label>
+                                    <input type="date" id="pwdIdExpiryDate" name="pwdIdExpiryDate">
                                 </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="pagibigNo">Pag-ibig No.</label>
-                                    <input type="text" id="pagibigNo" name="pagibigNo">
-                                </div>
-                                <div class="form-group">
-                                    <label for="philhealthNo">Philhealth No.</label>
-                                    <input type="text" id="philhealthNo" name="philhealthNo">
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="fatherName">Father's Name</label>
-                                <input type="text" id="fatherName" name="fatherName">
-                            </div>
-                            <div class="form-group">
-                                <label for="motherName">Mother's Name</label>
-                                <input type="text" id="motherName" name="motherName">
                             </div>
                         </div>
                     </div>
 
                     <div id="senior-fields" style="display: none;">
-                        <div class="form-section">
-                            <h3><i class="fas fa-user-friends"></i> Senior Citizen Specific Information</h3>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="placeOfBirth">Place of Birth</label>
-                                    <input type="text" id="placeOfBirth" name="placeOfBirth">
-                                </div>
-                                <div class="form-group">
-                                    <label for="yearsInPasig">No. of Years in Pasig</label>
-                                    <input type="number" id="yearsInPasig" name="yearsInPasig">
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="citizenship">Citizenship</label>
-                                <input type="text" id="citizenship" name="citizenship">
-                            </div>
-                        </div>
+                        <!-- Senior Citizen specific fields are covered by Basic Information as per user's request -->
                     </div>
 
                     <div class="form-section">
                         <h3><i class="fas fa-file-alt"></i> Required Documents</h3>
                         <div class="form-group">
-                            <label for="birthCertificate">Birth Certificate</label>
-                            <input type="file" id="birthCertificate" name="birthCertificate">
-                        </div>
-                        <div class="form-group">
-                            <label for="medicalCertificate">Medical Certificate</label>
-                            <input type="file" id="medicalCertificate" name="medicalCertificate">
-                        </div>
-                        <div class="form-group">
-                            <label for="clientIdentification">Client Identification</label>
-                            <input type="file" id="clientIdentification" name="clientIdentification">
-                        </div>
-                        <div class="form-group">
                             <label for="proofOfAddress">Proof of Address</label>
                             <input type="file" id="proofOfAddress" name="proofOfAddress">
                         </div>
                         <div class="form-group">
-                            <label for="idImage">Updated ID Image</label>
+                            <label for="idImage">ID Image</label>
                             <input type="file" id="idImage" name="idImage">
-                        </div>
-                    </div>
-                    <div class="form-section">
-                        <h3><i class="fas fa-info-circle"></i> Additional Information</h3>
-                        <div class="form-group">
-                            <label for="additionalNotes">Additional Notes</label>
-                            <textarea id="additionalNotes" name="additionalNotes"></textarea>
                         </div>
                     </div>
                     <div class="form-actions">
@@ -328,4 +184,4 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     });
 </script>
-</html>
+</html> 

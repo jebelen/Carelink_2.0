@@ -466,7 +466,6 @@ $loggedInBarangay = htmlspecialchars($_SESSION['barangay'] ?? '');
                         return;
                     }
 
-                    // Re-render the form with fetched data
                     modalBody.innerHTML = `
                         <form id="applicationDetailForm" method="POST" action="../api/update_application.php" enctype="multipart/form-data">
                             <input type="hidden" id="applicationId" name="applicationId" value="${application.id}">
@@ -517,36 +516,12 @@ $loggedInBarangay = htmlspecialchars($_SESSION['barangay'] ?? '');
                                 </div>
                                 <div class="form-row">
                                     <div class="form-group">
-                                        <label for="emailAddress">Email Address</label>
-                                        <input type="email" id="emailAddress" name="emailAddress" value="${application.email_address || ''}">
+                                        <label for="emergencyContactName">Emergency Contact Name</label>
+                                        <input type="text" id="emergencyContactName" name="emergencyContactName" value="${application.emergency_contact_name || ''}">
                                     </div>
                                     <div class="form-group">
-                                        <label for="religion">Religion</label>
-                                        <input type="text" id="religion" name="religion" value="${application.religion || ''}">
-                                    </div>
-                                </div>
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label for="sex">Sex</label>
-                                        <select id="sex" name="sex">
-                                            <option value="Male" ${application.sex === 'Male' ? 'selected' : ''}>Male</option>
-                                            <option value="Female" ${application.sex === 'Female' ? 'selected' : ''}>Female</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="civilStatus">Civil Status</label>
-                                        <select id="civilStatus" name="civilStatus">
-                                            <option value="Single" ${application.civilStatus === 'Single' ? 'selected' : ''}>Single</option>
-                                            <option value="Married" ${application.civilStatus === 'Married' ? 'selected' : ''}>Married</option>
-                                            <option value="Widow/er" ${application.civilStatus === 'Widow/er' ? 'selected' : ''}>Widow/er</option>
-                                            <option value="Cohabitation (Live-in)" ${application.civilStatus === 'Cohabitation (Live-in)' ? 'selected' : ''}>Cohabitation (Live-in)</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label for="bloodType">Blood Type</label>
-                                        <input type="text" id="bloodType" name="bloodType" value="${application.bloodType || ''}">
+                                        <label for="emergencyContact">Emergency Contact Number</label>
+                                        <input type="text" id="emergencyContact" name="emergencyContact" value="${application.emergency_contact || ''}">
                                     </div>
                                 </div>
                             </div>
@@ -554,6 +529,12 @@ $loggedInBarangay = htmlspecialchars($_SESSION['barangay'] ?? '');
                             <div id="pwd-fields-modal" style="display: ${application.application_type === 'pwd' ? 'block' : 'none'}">
                                 <div class="form-section">
                                     <h3><i class="fas fa-wheelchair"></i> PWD Specific Information</h3>
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="idNumber">ID Number</label>
+                                            <input type="text" id="idNumber" name="idNumber" value="${application.id_number || ''}">
+                                        </div>
+                                    </div>
                                     <div class="form-group">
                                         <label>Type of Disability</label>
                                         <div>
@@ -568,79 +549,15 @@ $loggedInBarangay = htmlspecialchars($_SESSION['barangay'] ?? '');
                                             <input type="checkbox" name="disabilityType[]" value="Visual Disability" ${application.disabilityType && application.disabilityType.includes('Visual Disability') ? 'checked' : ''}> Visual Disability<br>
                                         </div>
                                     </div>
-                                    <div class="form-group">
-                                        <label>Cause of Disability</label>
-                                        <div>
-                                            <input type="checkbox" name="disabilityCause[]" value="Acquired" ${application.disabilityCause && application.disabilityCause.includes('Acquired') ? 'checked' : ''}> Acquired<br>
-                                            <input type="checkbox" name="disabilityCause[]" value="Cancer" ${application.disabilityCause && application.disabilityCause.includes('Cancer') ? 'checked' : ''}> Cancer<br>
-                                            <input type="checkbox" name="disabilityCause[]" value="Chronic Illness" ${application.disabilityCause && application.disabilityCause.includes('Chronic Illness') ? 'checked' : ''}> Chronic Illness<br>
-                                            <input type="checkbox" name="disabilityCause[]" value="Congenital/Inborn" ${application.disabilityCause && application.disabilityCause.includes('Congenital/Inborn') ? 'checked' : ''}> Congenital/Inborn<br>
-                                            <input type="checkbox" name="disabilityCause[]" value="Injury" ${application.disabilityCause && application.disabilityCause.includes('Injury') ? 'checked' : ''}> Injury<br>
-                                            <input type="checkbox" name="disabilityCause[]" value="Autism" ${application.disabilityCause && application.disabilityCause.includes('Autism') ? 'checked' : ''}> Autism<br>
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Educational Attainment</label>
-                                        <div>
-                                            <input type="radio" name="educationalAttainment" value="None" ${application.educationalAttainment === 'None' ? 'checked' : ''}> None<br>
-                                            <input type="radio" name="educationalAttainment" value="Elementary Education" ${application.educationalAttainment === 'Elementary Education' ? 'checked' : ''}> Elementary Education<br>
-                                            <input type="radio" name="educationalAttainment" value="High School Education" ${application.educationalAttainment === 'High School Education' ? 'checked' : ''}> High School Education<br>
-                                            <input type="radio" name="educationalAttainment" value="College" ${application.educationalAttainment === 'College' ? 'checked' : ''}> College<br>
-                                            <input type="radio" name="educationalAttainment" value="Post Graduate Program" ${application.educationalAttainment === 'Post Graduate Program' ? 'checked' : ''}> Post Graduate Program<br>
-                                            <input type="radio" name="educationalAttainment" value="Non-Formal Education" ${application.educationalAttainment === 'Non-Formal Education' ? 'checked' : ''}> Non-Formal Education<br>
-                                            <input type="radio" name="educationalAttainment" value="Vocational" ${application.educationalAttainment === 'Vocational' ? 'checked' : ''}> Vocational<br>
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Status of Employment</label>
-                                        <div>
-                                            <input type="radio" name="employmentStatus" value="Employed" ${application.employmentStatus === 'Employed' ? 'checked' : ''}> Employed<br>
-                                            <input type="radio" name="employmentStatus" value="Unemployed" ${application.employmentStatus === 'Unemployed' ? 'checked' : ''}> Unemployed<br>
-                                            <input type="radio" name="employmentStatus" value="Self-employed" ${application.employmentStatus === 'Self-employed' ? 'checked' : ''}> Self-employed<br>
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="occupation">Occupation</label>
-                                        <select id="occupation" name="occupation">
-                                            <option value="Managers" ${application.occupation === 'Managers' ? 'selected' : ''}>Managers</option>
-                                            <option value="Professionals" ${application.occupation === 'Professionals' ? 'selected' : ''}>Professionals</option>
-                                            <option value="Technician and Associate Professionals" ${application.occupation === 'Technician and Associate Professionals' ? 'selected' : ''}>Technician and Associate Professionals</option>
-                                            <option value="Clerical Support Workers" ${application.occupation === 'Clerical Support Workers' ? 'selected' : ''}>Clerical Support Workers</option>
-                                            <option value="Service and Sales Workers" ${application.occupation === 'Service and Sales Workers' ? 'selected' : ''}>Service and Sales Workers</option>
-                                            <option value="Skilled Agricultural, Forestry & Fishery Workers" ${application.occupation === 'Skilled Agricultural, Forestry & Fishery Workers' ? 'selected' : ''}>Skilled Agricultural, Forestry & Fishery Workers</option>
-                                            <option value="Plant and Machine Operators & Assemblers" ${application.occupation === 'Plant and Machine Operators & Assemblers' ? 'selected' : ''}>Plant and Machine Operators & Assemblers</option>
-                                            <option value="Elementary Occupations" ${application.occupation === 'Elementary Occupations' ? 'selected' : ''}>Elementary Occupations</option>
-                                            <option value="Armed Forces Occupations" ${application.occupation === 'Armed Forces Occupations' ? 'selected' : ''}>Armed Forces Occupations</option>
-                                            <option value="Others" ${application.occupation === 'Others' ? 'selected' : ''}>Others, specify</option>
-                                        </select>
-                                    </div>
                                     <div class="form-row">
                                         <div class="form-group">
-                                            <label for="sssNo">SSS No.</label>
-                                            <input type="text" id="sssNo" name="sssNo" value="${application.sssNo || ''}">
+                                            <label for="pwdIdIssueDate">ID Issue Date</label>
+                                            <input type="date" id="pwdIdIssueDate" name="pwdIdIssueDate" value="${application.pwd_id_issue_date || ''}">
                                         </div>
                                         <div class="form-group">
-                                            <label for="gsisNo">GSIS No.</label>
-                                            <input type="text" id="gsisNo" name="gsisNo" value="${application.gsisNo || ''}">
+                                            <label for="pwdIdExpiryDate">ID Expiry Date</label>
+                                            <input type="date" id="pwdIdExpiryDate" name="pwdIdExpiryDate" value="${application.pwd_id_expiry_date || ''}">
                                         </div>
-                                    </div>
-                                    <div class="form-row">
-                                        <div class="form-group">
-                                            <label for="pagibigNo">Pag-ibig No.</label>
-                                            <input type="text" id="pagibigNo" name="pagibigNo" value="${application.pagibigNo || ''}">
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="philhealthNo">Philhealth No.</label>
-                                            <input type="text" id="philhealthNo" name="philhealthNo" value="${application.philhealthNo || ''}">
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="fatherName">Father's Name</label>
-                                        <input type="text" id="fatherName" name="fatherName" value="${application.fatherName || ''}">
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="motherName">Mother's Name</label>
-                                        <input type="text" id="motherName" name="motherName" value="${application.motherName || ''}">
                                     </div>
                                 </div>
                             </div>
@@ -650,17 +567,9 @@ $loggedInBarangay = htmlspecialchars($_SESSION['barangay'] ?? '');
                                     <h3><i class="fas fa-user-friends"></i> Senior Citizen Specific Information</h3>
                                     <div class="form-row">
                                         <div class="form-group">
-                                            <label for="placeOfBirth">Place of Birth</label>
-                                            <input type="text" id="placeOfBirth" name="placeOfBirth" value="${application.placeOfBirth || ''}">
+                                            <label for="idNumber">ID Number</label>
+                                            <input type="text" id="idNumber" name="idNumber" value="${application.id_number || ''}">
                                         </div>
-                                        <div class="form-group">
-                                            <label for="yearsInPasig">No. of Years in Pasig</label>
-                                            <input type="number" id="yearsInPasig" name="yearsInPasig" value="${application.yearsInPasig || ''}">
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="citizenship">Citizenship</label>
-                                        <input type="text" id="citizenship" name="citizenship" value="${application.citizenship || ''}">
                                     </div>
                                 </div>
                             </div>
@@ -668,27 +577,12 @@ $loggedInBarangay = htmlspecialchars($_SESSION['barangay'] ?? '');
                             <div class="form-section">
                                 <h3><i class="fas fa-file-alt"></i> Required Documents</h3>
                                 <div class="form-group">
-                                    <label for="birthCertificate">Birth Certificate</label>
-                                    <input type="file" id="birthCertificate" name="birthCertificate">
-                                    <p id="currentBirthCertificate">${application.has_birth_certificate ? `<a href="../api/get_document.php?id=${appId}&doc_type=birth_certificate" target="_blank">View Current Birth Certificate</a>` : 'No document uploaded'}</p>
-                                </div>
-                                <div class="form-group">
-                                    <label for="medicalCertificate">Medical Certificate</label>
-                                    <input type="file" id="medicalCertificate" name="medicalCertificate">
-                                    <p id="currentMedicalCertificate">${application.has_medical_certificate ? `<a href="../api/get_document.php?id=${appId}&doc_type=medical_certificate" target="_blank">View Current Medical Certificate</a>` : 'No document uploaded'}</p>
-                                </div>
-                                <div class="form-group">
-                                    <label for="clientIdentification">Client Identification</label>
-                                    <input type="file" id="clientIdentification" name="clientIdentification">
-                                    <p id="currentClientIdentification">${application.has_client_identification ? `<a href="../api/get_document.php?id=${appId}&doc_type=client_identification" target="_blank">View Current Client Identification</a>` : 'No document uploaded'}</p>
-                                </div>
-                                <div class="form-group">
                                     <label for="proofOfAddress">Proof of Address</label>
                                     <input type="file" id="proofOfAddress" name="proofOfAddress">
                                     <p id="currentProofOfAddress">${application.has_proof_of_address ? `<a href="../api/get_document.php?id=${appId}&doc_type=proof_of_address" target="_blank">View Current Proof of Address</a>` : 'No document uploaded'}</p>
                                 </div>
                                 <div class="form-group">
-                                    <label for="idImage">Updated ID Image</label>
+                                    <label for="idImage">ID Image</label>
                                     <input type="file" id="idImage" name="idImage">
                                     <p id="currentIdImage">${application.has_id_image ? `<a href="../api/get_document.php?id=${appId}&doc_type=id_image" target="_blank">View Current ID Image</a>` : 'No document uploaded'}</p>
                                 </div>
@@ -733,7 +627,8 @@ $loggedInBarangay = htmlspecialchars($_SESSION['barangay'] ?? '');
                             if (data.success) {
                                 alert(data.message);
                                 document.getElementById('applicationModal').style.display = 'none';
-                                fetchApplications(); // Refresh the table
+                                // Optionally refresh the table or update the specific row
+                                location.reload(); // Reload the page to reflect changes
                             } else {
                                 alert(data.message);
                             }
@@ -828,7 +723,7 @@ $loggedInBarangay = htmlspecialchars($_SESSION['barangay'] ?? '');
                     if (applications.length > 0) {
                         applications.forEach(app => {
                             const row = `
-                                <tr>
+                                <tr class="status-${app.status}">
                                     <td><a href="#" class="name-link" data-id="${app.id}">${app.full_name}</a></td>
                                     <td>${app.application_type}</td>
                                     <td>${app.birth_date}</td>

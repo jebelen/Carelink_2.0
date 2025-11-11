@@ -7,7 +7,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
         <div class="logo-image">
             <img src="../images/LOGO.jpg" alt="Barangay <?php echo $barangayName; ?> Logo" class="logo-image" onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='flex';">
         </div>
-        <h1 class="logo-text">CARELINK</h1>
+        <h1 class="logo-text"><span style="color: #00B050;">CARE</span>LINK</h1>
     </div>
     <ul class="nav-links">
         <li class="<?php echo ($current_page == 'barangay_dash.php') ? 'active' : ''; ?>"><a href="barangay_dash.php"><i class="fas fa-tachometer-alt"></i> <span class="link-text">Dashboard</span></a></li>

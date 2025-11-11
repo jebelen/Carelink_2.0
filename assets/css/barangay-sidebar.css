@@ -5,7 +5,7 @@
   --primary: #2c3e50;
   --secondary: #3498db;
   --accent: #e74c3c;
-  --success: #2ecc71;
+  --success: #155f34;
   --warning: #f39c12;
   --light: #ecf0f1;
   --dark: #34495e;
@@ -290,11 +290,16 @@ th, td {
     padding: 12px 15px;
     text-align: left;
     border-bottom: 1px solid #e0e0e0;
+    font-size: 14px; /* Increased font size */
 }
 th {
     background-color: #f8f9fa;
     color: var(--primary);
     font-weight: 600;
+}
+td {
+    font-weight: 500; /* Made text bolder */
+    color: #212529; /* Darker color for better contrast */
 }
 tr:hover {
     background-color: #f5f7fa;
@@ -312,7 +317,7 @@ tr:hover {
     font-weight: 500;
 }
 .status-pending { background-color: #fff3cd; color: #856404; }
-.status-approved { background-color: #d1ecf1; color: #0c5460; }
+.status-approved { background-color: #d4edda; color: #155724; }
 .status-rejected { background-color: #f8d7da; color: #721c24; }
 
 .name-link {
@@ -442,27 +447,27 @@ tr:hover {
     font-weight: 600;
     font-size: 0.85em;
     text-transform: capitalize;
-    color: white; /* Default text color for status */
+    color: #333; /* Changed to dark gray for better visibility */
 }
 
 .status-pending {
-    background-color: var(--warning); /* Orange/Yellow */
+    background-color: #fff3cd;
 }
 
 .status-verified {
-    background-color: var(--secondary); /* Blue */
+    background-color: #d1ecf1;
 }
 
 .status-rejected {
-    background-color: var(--accent); /* Red */
+    background-color: #f8d7da;
 }
 
 .status-approved {
-    background-color: var(--success); /* Green */
+    background-color: #d4edda;
 }
 
 .status-sent {
-    background-color: #673ab7; /* Deep Purple */
+    background-color: #d1c4e9;
 }
 
 .status-default {
