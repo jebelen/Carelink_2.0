@@ -6,7 +6,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <div class="sidebar-header">
         <div class="logo">
             <img src="../images/LOGO.jpg" alt="Logo" class="logo-image">
-            <h1 class="logo-text">CARELINK</h1>
+            <h1 class="logo-text"><span style="color: #00B050;">CARE</span>LINK</h1>
         </div>
     </div>
     <div class="sidebar-menu">
