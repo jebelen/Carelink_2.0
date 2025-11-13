@@ -397,8 +397,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             
             <form id="staffLoginForm" method="post" action="">
                 <div class="form-group">
-                    <label for="staffId">Staff ID</label>
-                    <input type="text" id="staffId" name="staffId" class="form-control" placeholder="Enter your staff ID" required>
+                    <label for="staffId">Username</label>
+                    <input type="text" id="staffId" name="staffId" class="form-control" placeholder="Enter your Username" required>
                 </div>
                 
                 <div class="form-group">

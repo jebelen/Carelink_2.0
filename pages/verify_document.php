@@ -411,7 +411,7 @@ require_once '../includes/db_connect.php';
                         </thead>
                         <tbody>
                             <?php
-                            $sql = "SELECT * FROM applications";
+                            $sql = "SELECT * FROM applications WHERE status IN ('pending', 'rejected')";
                             $stmt = $conn->prepare($sql);
                             $stmt->execute();
                             $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -623,12 +623,12 @@ require_once '../includes/db_connect.php';
                                 <div class="form-group">
                                     <label for="proofOfAddress">Proof of Address</label>
                                     <input type="file" id="proofOfAddress" name="proofOfAddress">
-                                    <p id="currentProofOfAddress">${application.has_proof_of_address ? `<a href="../api/get_document.php?id=${appId}&doc_type=proof_of_address" target="_blank">View Current Proof of Address</a>` : 'No document uploaded'}</p>
+                                    <p id="currentProofOfAddress">${application.has_proof_of_address ? `<a href="../api/get_document.php?id=${appId}&doc_type=proof_of_address" target="_blank">View Current Proof of Address</a> <button type="button" class="btn btn-small btn-secondary" onclick="verifyDocumentWithCNN(${appId}, 'proof_of_address', 'proofOfAddressResult')">Verify</button><span id="proofOfAddressResult"></span>` : 'No document uploaded'}</p>
                                 </div>
                                 <div class="form-group">
                                     <label for="idImage">ID Image</label>
                                     <input type="file" id="idImage" name="idImage">
-                                    <p id="currentIdImage">${application.has_id_image ? `<a href="../api/get_document.php?id=${appId}&doc_type=id_image" target="_blank">View Current ID Image</a>` : 'No document uploaded'}</p>
+                                    <p id="currentIdImage">${application.has_id_image ? `<a href="../api/get_document.php?id=${appId}&doc_type=id_image" target="_blank">View Current ID Image</a> <button type="button" class="btn btn-small btn-secondary" onclick="verifyDocumentWithCNN(${appId}, 'id_image', 'idImageResult')">Verify</button><span id="idImageResult"></span>` : 'No document uploaded'}</p>
                                 </div>
                             </div>
                             <div class="form-section">
@@ -745,6 +745,44 @@ require_once '../includes/db_connect.php';
 
         function exportApplicationDetails(appId) {
             window.open(`../api/export_application_pdf.php?id=${appId}`, '_blank');
+        }
+
+        function verifyDocumentWithCNN(appId, docType, resultElementId) {
+            const resultElement = document.getElementById(resultElementId);
+            resultElement.innerHTML = ' Verifying...';
+
+            fetch(`../api/get_document.php?id=${appId}&doc_type=${docType}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.blob(); // Get the document as a Blob
+                })
+                .then(blob => {
+                    const formData = new FormData();
+                    formData.append('document', blob, `${docType}_${appId}.pdf`);
+                    formData.append('doc_type', docType); // Add doc_type to FormData // Assuming PDF for now
+
+                    return fetch('http://localhost:5000/verify_document', { // Flask API endpoint
+                        method: 'POST',
+                        body: formData
+                    });
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        resultElement.innerHTML = ` Result: ${data.verification_result} (Confidence: ${(data.confidence * 100).toFixed(2)}%)`;
+                        resultElement.style.color = data.verification_result === 'verified' ? 'green' : 'red';
+                    } else {
+                        resultElement.innerHTML = ` Error: ${data.error}`;
+                        resultElement.style.color = 'red';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error verifying document:', error);
+                    resultElement.innerHTML = ` Verification failed: ${error.message}`;
+                    resultElement.style.color = 'red';
+                });
         }
     </script>
 </body>

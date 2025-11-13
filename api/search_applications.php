@@ -31,8 +31,17 @@ if (!empty($filter_type)) {
 }
 
 if (!empty($filter_status)) {
-    $where_clauses[] = "status = ?";
-    $params[] = $filter_status;
+    $statuses = explode(',', $filter_status);
+    if (count($statuses) > 1) {
+        $placeholders = implode(',', array_fill(0, count($statuses), '?'));
+        $where_clauses[] = "status IN ($placeholders)";
+        foreach ($statuses as $status) {
+            $params[] = $status;
+        }
+    } else {
+        $where_clauses[] = "status = ?";
+        $params[] = $filter_status;
+    }
 }
 
 if (!empty($filter_barangay)) {
