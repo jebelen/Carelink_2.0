@@ -74,9 +74,8 @@ $loggedInBarangay = htmlspecialchars($_SESSION['barangay'] ?? '');
                             <option value="senior">Senior</option>
                         </select>
                         <select id="statusFilter" class="btn">
-                            <option value="">All Statuses</option>
+                            <option value="pending,rejected" selected>Pending & Rejected</option>
                             <option value="pending">Pending</option>
-                            <option value="approved">Approved</option>
                             <option value="rejected">Rejected</option>
                         </select>
                         <button class="btn" id="applyFilterBtn"><i class="fas fa-filter"></i> Filter</button>

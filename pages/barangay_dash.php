@@ -46,8 +46,8 @@ $barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
         .notification-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; flex-shrink: 0; }
         .notification-info { flex-grow: 1; }
         .notification-title { font-weight: 600; margin-bottom: 2px; color: var(--primary); }
-        .notification-message { font-size: 14px; color: var(--gray); margin-bottom: 5px; }
-        .notification-time { font-size: 12px; color: var(--gray); }
+        .notification-message { font-size: 15px; color: var(--dark); font-weight: bold; margin-bottom: 5px; }
+        .notification-time { font-size: 13px; color: var(--dark); font-weight: bold; }
         .status-pending .notification-icon { background: rgba(243, 156, 18, 0.2); color: var(--warning); }
         .status-verified .notification-icon { background: rgba(52, 152, 219, 0.2); color: var(--secondary); }
         .status-rejected .notification-icon { background: rgba(231, 76, 60, 0.2); color: var(--accent); }
@@ -224,7 +224,15 @@ $barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
             const statusClass = notif.status.toLowerCase().replace(' ', '-');
             const iconClass = { pending: 'fa-clock', verified: 'fa-check', rejected: 'fa-times', approved: 'fa-check-double' }[statusClass] || 'fa-info-circle';
             
-            const timeAgo = getTimeAgo(new Date(notif.created_at));
+            const dateObj = new Date(notif.date_submitted.replace(' ', 'T')); // Parse with 'T' for reliability
+            const year = dateObj.getFullYear();
+            const month = (dateObj.getMonth() + 1).toString().padStart(2, '0'); // Months are 0-indexed
+            const day = dateObj.getDate().toString().padStart(2, '0');
+            const hours = dateObj.getHours().toString().padStart(2, '0');
+            const minutes = dateObj.getMinutes().toString().padStart(2, '0');
+            const seconds = dateObj.getSeconds().toString().padStart(2, '0');
+
+            const formattedDateTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 
             item.className = `notification-item status-${statusClass}`;
             item.innerHTML = `
@@ -232,7 +240,7 @@ $barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
                 <div class="notification-info">
                     <div class="notification-title">${notif.full_name}</div>
                     <div class="notification-message">${notif.application_type} - Status: ${notif.status}</div>
-                    <div class="notification-time">${timeAgo}</div>
+                    <div class="notification-time">${formattedDateTime}</div>
                 </div>
             `;
             listEl.appendChild(item);
