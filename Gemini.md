@@ -277,3 +277,98 @@ This document provides a technical overview of the CARELINK system.
 *   **Functionality:** This file contains the logic for fetching and updating the dashboard statistics and notifications in real-time.
 
 im using cnn in verifying the documents
+
+## 6. CNN Document Verification Setup and Usage
+
+This section outlines the steps to set up and use the Convolutional Neural Network (CNN) for document verification, classifying images into 'PWD ID', 'Senior ID', or 'Not An ID'.
+
+### 6.1. Python API Configuration
+
+The `python_api/app.py` file has been configured to:
+*   Load a model named `pasig_id_verifier_model.h5`.
+*   Expect image inputs of `128x128` pixels.
+*   Classify images into three categories: `['PWD_ID', 'Senior_ID', 'Not_An_ID']`.
+
+### 6.2. Training Data Preparation
+
+To train the CNN model, you need to organize your image data into specific folders:
+
+1.  **Create Folders:** Ensure the following directories exist inside `D:\xampp1\htdocs\Carelink_2.0\python_api\training_data\`:
+    *   `PWD_ID`
+    *   `Senior_ID`
+    *   `Not_An_ID`
+    (These folders have been created for you.)
+
+2.  **Populate Folders with Images:**
+    *   **`PWD_ID`**: Place all images of **Persons With Disabilities (PWD) IDs** here.
+    *   **`Senior_ID`**: Place all images of **Senior Citizen IDs** here.
+    *   **`Not_An_ID`**: Place images that are **not PWD IDs or Senior Citizen IDs** (e.g., other documents, random pictures) here.
+
+    *Important:* Ensure you have a sufficient number of diverse images for *each* category for effective model training.
+
+### 6.3. Install Python Dependencies
+
+Before training or running the API, install the necessary Python libraries:
+
+1.  Open your terminal or command prompt.
+2.  Navigate to the `python_api` directory:
+    ```bash
+    cd D:\xampp1\htdocs\Carelink_2.0\python_api
+    ```
+3.  Activate your Python virtual environment:
+    ```bash
+    .\venv\Scripts\activate
+    ```
+4.  Install the required packages:
+    ```bash
+    pip install tensorflow numpy Pillow
+    ```
+
+### 6.4. Train the CNN Model
+
+A training script `python_api/train_model.py` has been provided. This script will train the CNN using your prepared data.
+
+1.  Ensure your training data is organized as described in Section 6.2.
+2.  Open your terminal or command prompt.
+3.  Navigate to the `python_api` directory:
+    ```bash
+    cd D:\xampp1\htdocs\Carelink_2.0\python_api
+    ```
+4.  Activate your Python virtual environment:
+    ```bash
+    .\venv\Scripts\activate
+    ```
+5.  Run the training script:
+    ```bash
+    python train_model.py
+    ```
+    This process will take some time. Upon completion, a trained model file named `pasig_id_verifier_model.h5` will be saved in the `python_api` directory.
+
+### 6.5. Run the Verification API
+
+Once the model (`pasig_id_verifier_model.h5`) is trained and saved, you can start the Flask API for document verification:
+
+1.  Open your terminal or command prompt.
+2.  Navigate to the `python_api` directory:
+    ```bash
+    cd D:\xampp1\htdocs\Carelink_2.0\python_api
+    ```
+3.  Activate your Python virtual environment:
+    ```bash
+    .\venv\Scripts\activate
+    ```
+4.  Run the API script:
+    ```bash
+    python app.py
+    ```
+5.  The Flask application will start, typically on `http://127.0.0.1:5000/`.
+6.  The `/verify_document` endpoint will be available for use, accepting image files for classification.
+
+### 6.6. Troubleshooting VS Code Warnings
+
+If you see a "yellow warning" in VS Code on `import tensorflow as tf`:
+
+1.  Open the VS Code Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`).
+2.  Type "Python: Select Interpreter" and choose the Python interpreter located within your `python_api/venv` directory. The exact path you should select is:
+    `D:\xampp1\htdocs\Carelink_2.0\python_api\venv\Scripts\python.exe`
+3.  Restart VS Code if the warning persists.

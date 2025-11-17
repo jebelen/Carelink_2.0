@@ -13,7 +13,7 @@
 }
 
 /* Layout helpers */
-.container { display: block; min-height: 100vh; }
+.container { display: flex; min-height: 100vh; }
 
 /* Department Sidebar */
 .sidebar {
@@ -122,6 +122,8 @@
     overflow-y: auto;
     min-height: 100vh;
     transition: margin-left 0.3s;
+    flex: 1;
+    width: 100%;
 }
 
 /* Mobile: stack sidebar on top */
@@ -159,8 +161,9 @@
     .logout-item { margin-top: 0; }
 
     .main-content {
-        margin-left: 0;
+        padding-left: 0;
         padding: 10px;
+        margin-left: 0; /* Ensure no margin-left on mobile */
     }
 }
 
