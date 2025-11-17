@@ -11,12 +11,12 @@ CORS(app)
 
 # --- PLACEHOLDERS: YOU MUST UPDATE THESE WITH YOUR MODEL'S DETAILS ---
 # Path to your trained Keras/TensorFlow model file (.h5 or SavedModel format)
-MODEL_PATH = 'path/to/your/pasig_id_verifier_model.h5'
+MODEL_PATH = 'pasig_id_verifier_model.h5'
 # Image dimensions your model was trained with
 IMG_HEIGHT, IMG_WIDTH = 128, 128 # Example: Update with your model's input size
 # List of class names in the order your model predicts them
 # e.g., ['Not_Pasig_ID', 'PWD_ID', 'Senior_Citizen_ID']
-CLASS_NAMES = ['class_0', 'class_1', 'class_2'] # Example: Update with your actual class names
+CLASS_NAMES = ['Fake_PWD_ID', 'Fake_Senior_ID', 'Not_An_ID', 'PWD_ID', 'Senior_ID'] # Updated to reflect PWD ID, Senior Citizen ID, and Not an ID
 # --- END PLACEHOLDERS ---
 
 # Load your trained model once when the app starts

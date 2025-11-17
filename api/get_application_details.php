@@ -6,7 +6,7 @@ header('Content-Type: application/json');
 try {
     $appId = $_GET['id'];
 
-    $sql = "SELECT id, full_name, application_type, birth_date, contact_number, email_address, complete_address, emergency_contact, emergency_contact_name, medical_conditions, date_submitted, status, additional_notes, barangay, (birth_certificate IS NOT NULL) as has_birth_certificate, (medical_certificate IS NOT NULL) as has_medical_certificate, (client_identification IS NOT NULL) as has_client_identification, (proof_of_address IS NOT NULL) as has_proof_of_address, (id_image IS NOT NULL) as has_id_image, lastName, firstName, middleName, suffix, religion, sex, civilStatus, bloodType, disabilityType, disabilityCause, educationalAttainment, employmentStatus, occupation, sssNo, gsisNo, pagibigNo, philhealthNo, fatherName, motherName, placeOfBirth, yearsInPasig, citizenship, id_number, pwd_id_issue_date, pwd_id_expiry_date FROM applications WHERE id = ?";
+    $sql = "SELECT id, full_name, application_type, birth_date, contact_number, complete_address, emergency_contact, emergency_contact_name, date_submitted, status, barangay, (proof_of_address IS NOT NULL) as has_proof_of_address, (id_image IS NOT NULL) as has_id_image, lastName, firstName, middleName, suffix, disabilityType FROM applications WHERE id = ?";
     $stmt = $conn->prepare($sql);
     $stmt->execute([$appId]);
     $application = $stmt->fetch(PDO::FETCH_ASSOC);

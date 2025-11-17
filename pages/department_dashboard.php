@@ -134,6 +134,178 @@ require_once '../includes/db_connect.php';
         .bg-warning { background: var(--warning); }
         .bg-danger { background: var(--danger); }
         
+        /* Dashboard Panels Layout */
+        .dashboard-panels {
+            display: flex;
+            gap: 20px; /* Space between left and right panels */
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+        }
+
+        .left-panel,
+        .right-panel {
+            flex: 1; /* Allow panels to grow and shrink */
+            min-width: 300px; /* Minimum width before wrapping */
+        }
+
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .charts-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-card h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 300px; /* Fixed height for charts */
+            width: 100%;
+        }
+
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px; /* Space between calendar and notifications */
+        }
+
+        .calendar-card,
+        .notifications-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .calendar-card h2 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+
+        .calendar-card h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .calendar-header button {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: var(--secondary);
+        }
+
+        .calendar-table {
+            width: 100%;
+            text-align: center;
+        }
+
+        .calendar-table th,
+        .calendar-table td {
+            padding: 8px;
+            border: none;
+        }
+
+        .calendar-table th {
+            color: var(--gray);
+            font-weight: normal;
+        }
+
+        .calendar-table td {
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .calendar-table td:hover:not(.inactive) {
+            background-color: var(--light-gray);
+        }
+
+        .calendar-table td.today {
+            background-color: var(--secondary);
+            color: white;
+            font-weight: bold;
+        }
+
+        .calendar-table td.inactive {
+            color: #ccc;
+            cursor: default;
+        }
+
+        .notifications-card h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .notification-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+
+        .notification-icon {
+            font-size: 1.2rem;
+            color: var(--secondary);
+        }
+
+        .notification-title {
+            font-weight: bold;
+            color: var(--dark);
+        }
+
+        .notification-message {
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+
+        .notification-time {
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+        
+        .notifications-list {
+            max-height: 300px; /* Adjust as needed */
+            overflow-y: auto;
+            padding-right: 10px; /* To prevent scrollbar from overlapping content */
+        }
+        
         /* Dashboard Sections */
         .dashboard-section {
             background: white;
@@ -339,6 +511,7 @@ require_once '../includes/db_connect.php';
                     <h1>Centralized Profiling Dashboard</h1>
                 </div>
                 <div class="header-actions">
+                    <button class="btn"><i class="fas fa-bell"></i> Notifications</button>
                     <div class="user-info">
                         <div class="user-avatar">
                             <?php
@@ -401,61 +574,257 @@ require_once '../includes/db_connect.php';
                 </div>
             </div>
             
-
-
+            <div class="dashboard-panels">
+                        <div class="left-panel">
+                            <h2 style="color: var(--primary);">Application Statistics</h2>
+                            <div class="charts-container">
+                                <div class="chart-card">
+                                    <h3><i class="fas fa-chart-bar"></i> Barangay Records Chart</h3>
+                                    <div class="chart-wrapper"><canvas id="barangayRecordsChart"></canvas></div>
+                                </div>
+                                <div class="chart-card">
+                                    <h3><i class="fas fa-chart-bar"></i> Yearly Records Chart</h3>
+                                    <div class="chart-wrapper"><canvas id="yearlyRecordsChart"></canvas></div>
+                                </div>
+                            </div>
+                        </div>
+        
+                        <div class="right-panel">
+                            <div class="calendar-card">
+                                <h2 id="current-time"></h2>
+                                <h3><i class="fas fa-calendar-alt"></i> Calendar</h3>
+                                <div class="calendar-body">
+                                    <div class="calendar-header">
+                                        <button id="prev-month"><i class="fas fa-chevron-left"></i></button>
+                                        <span id="month-year"></span>
+                                        <button id="next-month"><i class="fas fa-chevron-right"></i></button>
+                                    </div>
+                                    <table class="calendar-table">
+                                        <thead><tr><th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th></tr></thead>
+                                        <tbody id="calendar-days"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="notifications-card">
+                                <h3><i class="fas fa-bell"></i> Recent Applications</h3>
+                                <div class="notifications-list" id="realtime-notifications-list">
+                                    <p>Loading notifications...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+        
+                    <div class="footer">                <p>Centralized Profiling and Record Authentication System | Department Admin &copy; 2024</p>
+            </div>
+        </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../assets/js/sidebar-toggle.js"></script>
     <script>
-        // Simple JavaScript for interactivity
         document.addEventListener('DOMContentLoaded', function() {
-            // Add click event to sidebar menu items
-            const menuItems = document.querySelectorAll('.sidebar-menu li');
-            menuItems.forEach(item => {
-                item.addEventListener('click', function() {
-                    menuItems.forEach(i => i.classList.remove('active'));
-                    this.classList.add('active');
+            initializeWelcomeMessage();
+            initializeCalendar();
+            updateTime();
+            setInterval(updateTime, 1000);
+
+            // Fetch dynamic data for charts and notifications
+            fetch('../api/get_realtime_data.php')
+                .then(response => response.json())
+                .then(result => {
+                    if (result.status === 'success') {
+                        renderNotifications(result.data.notifications);
+                        initializeDepartmentCharts(result.data);
+                        updateStatCards(result.data); // Call new function to update stat cards
+                    } else {
+                        console.error('Failed to load dashboard data:', result.message);
+                        document.getElementById('realtime-notifications-list').innerHTML = '<p>Could not load notifications.</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching dashboard data:', error);
+                    document.getElementById('realtime-notifications-list').innerHTML = '<p>Error loading notifications.</p>';
                 });
-            });
-            
-            // Add hover effect to table rows
-            const tableRows = document.querySelectorAll('tbody tr');
-            tableRows.forEach(row => {
-                row.addEventListener('mouseenter', function() {
-                    this.style.backgroundColor = '#f0f8ff';
-                });
-                row.addEventListener('mouseleave', function() {
-                    this.style.backgroundColor = '';
-                });
-            });
-            
-            // Add hover effect to record cards
-            const recordCards = document.querySelectorAll('.record-card');
-            recordCards.forEach(card => {
-                card.addEventListener('mouseenter', function() {
-                    this.style.boxShadow = '0 6px 12px rgba(0, 0, 0, 0.15)';
-                });
-                card.addEventListener('mouseleave', function() {
-                    this.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
-                });
-            });
-            
-            // Update welcome message based on time of day
+        });
+
+        function updateStatCards(data) {
+            document.querySelector('.stat-card:nth-child(1) h3').textContent = data.verified_applications;
+            document.querySelector('.stat-card:nth-child(2) h3').textContent = data.senior_citizen_records;
+            document.querySelector('.stat-card:nth-child(3) h3').textContent = data.pwd_records;
+            document.querySelector('.stat-card:nth-child(4) h3').textContent = data.total_processed;
+        }
+
+        function updateTime() {
+            const timeEl = document.getElementById('current-time');
+            if (timeEl) {
+                timeEl.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            }
+        }
+
+        function initializeWelcomeMessage() {
             const welcomeMessage = document.querySelector('.welcome-message');
             const firstName = welcomeMessage.dataset.firstName;
             const lastName = welcomeMessage.dataset.lastName;
-            const role = welcomeMessage.dataset.role;
             const hour = new Date().getHours();
-            let greeting;
-            
-            if (hour < 12) {
-                greeting = "Good morning";
-            } else if (hour < 18) {
-                greeting = "Good afternoon";
-            } else {
-                greeting = "Good evening";
-            }
-            
+            let greeting = (hour < 12) ? "Good morning" : (hour < 18) ? "Good afternoon" : "Good evening";
             welcomeMessage.innerHTML = `${greeting}, <strong>${firstName} ${lastName}</strong>!`;
-        });
+        }
+
+        function initializeCalendar() {
+            const monthYearEl = document.getElementById('month-year');
+            const calendarDaysEl = document.getElementById('calendar-days');
+            const prevMonthBtn = document.getElementById('prev-month');
+            const nextMonthBtn = document.getElementById('next-month');
+            if (!monthYearEl || !calendarDaysEl || !prevMonthBtn || !nextMonthBtn) return;
+            let currentDate = new Date();
+            function renderCalendar() {
+                const year = currentDate.getFullYear(), month = currentDate.getMonth();
+                const today = new Date();
+                const firstDayOfMonth = new Date(year, month, 1), lastDayOfMonth = new Date(year, month + 1, 0);
+                const firstDayOfWeek = firstDayOfMonth.getDay(), totalDays = lastDayOfMonth.getDate();
+                const prevMonthDays = new Date(year, month, 0).getDate();
+                monthYearEl.textContent = `${firstDayOfMonth.toLocaleString('default', { month: 'long' })} ${year}`;
+                calendarDaysEl.innerHTML = '';
+                let date = 1, nextMonthDate = 1;
+                for (let i = 0; i < 6; i++) {
+                    const row = document.createElement('tr');
+                    let weekHasDays = false;
+                    for (let j = 0; j < 7; j++) {
+                        const cell = document.createElement('td');
+                        if (i === 0 && j < firstDayOfWeek) {
+                            cell.textContent = prevMonthDays - firstDayOfWeek + j + 1;
+                            cell.classList.add('inactive');
+                        } else if (date > totalDays) {
+                            cell.textContent = nextMonthDate++;
+                            cell.classList.add('inactive');
+                        } else {
+                            cell.textContent = date;
+                            if (date === today.getDate() && month === today.getMonth() && year === today.getFullYear()) cell.classList.add('today');
+                            date++;
+                            weekHasDays = true;
+                        }
+                        row.appendChild(cell);
+                    }
+                    if (weekHasDays || i === 0) calendarDaysEl.appendChild(row);
+                }
+            }
+            prevMonthBtn.addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() - 1); renderCalendar(); });
+            nextMonthBtn.addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() + 1); renderCalendar(); });
+            renderCalendar();
+        }
+
+        function renderNotifications(notifications) {
+            const listEl = document.getElementById('realtime-notifications-list');
+            if (!listEl) return;
+            if (notifications.length === 0) {
+                listEl.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--gray);">No recent applications.</p>';
+                return;
+            }
+            listEl.innerHTML = '';
+            notifications.forEach(notif => {
+                const item = document.createElement('div');
+                const statusClass = notif.status.toLowerCase().replace(' ', '-');
+                const iconClass = { pending: 'fa-clock', verified: 'fa-check', rejected: 'fa-times', approved: 'fa-check-double' }[statusClass] || 'fa-info-circle';
+                
+                const dateObj = new Date(notif.date_submitted.replace(' ', 'T')); // Parse with 'T' for reliability
+                const year = dateObj.getFullYear();
+                const month = (dateObj.getMonth() + 1).toString().padStart(2, '0'); // Months are 0-indexed
+                const day = dateObj.getDate().toString().padStart(2, '0');
+                const hours = dateObj.getHours().toString().padStart(2, '0');
+                const minutes = dateObj.getMinutes().toString().padStart(2, '0');
+                const seconds = dateObj.getSeconds().toString().padStart(2, '0');
+
+                const formattedDateTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+
+                item.className = `notification-item status-${statusClass}`;
+                item.innerHTML = `
+                    <div class="notification-icon"><i class="fas ${iconClass}"></i></div>
+                    <div class="notification-info">
+                        <div class="notification-title">${notif.full_name}</div>
+                        <div class="notification-message">${notif.application_type} - Status: ${notif.status} - Barangay: ${notif.barangay}</div>
+                        <div class="notification-time">${formattedDateTime}</div>
+                    </div>
+                `;
+                listEl.appendChild(item);
+            });
+        }
+
+        function initializeDepartmentCharts(data) {
+            const { barangay_records, yearly_records } = data;
+
+            // Barangay Records Chart (Horizontal Bar)
+            const barangayRecordsCtx = document.getElementById('barangayRecordsChart')?.getContext('2d');
+            if (barangayRecordsCtx && barangay_records) {
+                const labels = barangay_records.map(record => record.barangay);
+                const counts = barangay_records.map(record => record.count);
+
+                new Chart(barangayRecordsCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Applications',
+                            data: counts,
+                            backgroundColor: [
+                                'rgba(255, 99, 132, 0.6)',
+                                'rgba(54, 162, 235, 0.6)',
+                                'rgba(255, 206, 86, 0.6)',
+                                'rgba(75, 192, 192, 0.6)',
+                                'rgba(153, 102, 255, 0.6)'
+                            ],
+                            borderColor: [
+                                'rgba(255, 99, 132, 1)',
+                                'rgba(54, 162, 235, 1)',
+                                'rgba(255, 206, 86, 1)',
+                                'rgba(75, 192, 192, 1)',
+                                'rgba(153, 102, 255, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y', // Makes it a horizontal bar chart
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            x: { beginAtZero: true }
+                        }
+                    }
+                });
+            }
+
+            // Yearly Records Chart (Bar)
+            const yearlyRecordsCtx = document.getElementById('yearlyRecordsChart')?.getContext('2d');
+            if (yearlyRecordsCtx && yearly_records) {
+                const labels = yearly_records.map(record => record.year);
+                const counts = yearly_records.map(record => record.count);
+
+                new Chart(yearlyRecordsCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Total Applications',
+                            data: counts,
+                            backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+            }
+        }
     </script>
 </body>
 </html>
