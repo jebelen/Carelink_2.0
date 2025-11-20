@@ -48,13 +48,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <title>CPRAS - New Application</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/barangay-sidebar.css">
+    <link rel="stylesheet" href="../assets/css/main-dark-mode.css">
 </head>
 <body>
     <div class="container">
         <?php include '../partials/barangay_sidebar.php'; ?>
         <div class="main-content">
             <div class="header">
-                <h1>New Application</h1>
+                <h1 style="color: var(--text);">New Application</h1>
             </div>
             <div class="application-form">
                 <form method="POST" action="new_application.php" enctype="multipart/form-data">
@@ -172,6 +173,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </div>
     </div>
     <script src="../assets/js/sidebar-toggle.js"></script>
+    <script src="../assets/js/dark-mode.js"></script>
 </body>
 <script>
     document.getElementById('applicationType').addEventListener('change', function () {

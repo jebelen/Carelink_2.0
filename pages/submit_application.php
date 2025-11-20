@@ -17,6 +17,7 @@ $loggedInBarangay = htmlspecialchars($_SESSION['barangay'] ?? '');
     <title>CPRAS Dashboard - Barangay Pinagbuhatan</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/barangay-sidebar.css">
+    <link rel="stylesheet" href="../assets/css/main-dark-mode.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -33,7 +34,6 @@ $loggedInBarangay = htmlspecialchars($_SESSION['barangay'] ?? '');
                     <div class="welcome-message" data-first-name="<?php echo htmlspecialchars($_SESSION['first_name']); ?>" data-last-name="<?php echo htmlspecialchars($_SESSION['last_name']); ?>"></div>
                 </div>
                 <div class="header-actions">
-                    <button class="btn"><i class="fas fa-bell"></i> Notifications</button>
                     <a href="new_application.php" class="btn"><i class="fas fa-plus"></i> Add Application</a>
                     <button class="btn" id="importBtn"><i class="fas fa-upload"></i> Import Applications</button>
                     <div class="user-info">
@@ -58,7 +58,7 @@ $loggedInBarangay = htmlspecialchars($_SESSION['barangay'] ?? '');
 
             <!-- Page Title -->
             <div class="page-title">
-                <p>Manage PWD and Senior Citizen applications for your barangay. View applications, verify documents, and track the status of applications.</p>
+                <p style="color: var(--text);">Manage PWD and Senior Citizen applications for your barangay. View applications, verify documents, and track the status of applications.</p>
             </div>
 
 
@@ -389,6 +389,7 @@ $loggedInBarangay = htmlspecialchars($_SESSION['barangay'] ?? '');
 
 
     <script src="../assets/js/sidebar-toggle.js"></script>
+    <script src="../assets/js/dark-mode.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Add click event to navigation items
@@ -755,3 +756,5 @@ $loggedInBarangay = htmlspecialchars($_SESSION['barangay'] ?? '');
         // Initial load of applications
         fetchApplications();
     </script>
+</body>
+</html>

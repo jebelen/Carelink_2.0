@@ -31,13 +31,17 @@ try {
 
 // Handle Profile Update
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updateProfile'])) {
-    $displayName = $_POST['displayName'];
+    $firstName = $_POST['firstName'];
+    $lastName = $_POST['lastName'];
     $email = $_POST['email'];
     $phone = $_POST['phone'];
+    $displayName = $firstName . ' ' . $lastName;
 
     try {
-        $stmt = $conn->prepare("UPDATE users SET display_name = :display_name, email = :email, phone = :phone WHERE id = :id");
+        $stmt = $conn->prepare("UPDATE users SET first_name = :first_name, last_name = :last_name, display_name = :display_name, email = :email, phone = :phone WHERE id = :id");
         $stmt->execute([
+            'first_name' => $firstName,
+            'last_name' => $lastName,
             'display_name' => $displayName,
             'email' => $email,
             'phone' => $phone,
@@ -52,31 +56,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updateProfile'])) {
         $error = "Error updating profile: " . $e->getMessage();
     }
 }
-
-// Handle Settings Update
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updateSettings'])) {
-    $theme = $_POST['theme'];
-    $language = $_POST['language'];
-    $notification_pref = $_POST['notifications'];
-
-    try {
-        $stmt = $conn->prepare("INSERT INTO settings (user_id, theme, language, notifications) VALUES (:user_id, :theme, :language, :notifications) ON DUPLICATE KEY UPDATE theme = :theme, language = :language, notifications = :notifications");
-        $stmt->execute([
-            'user_id' => $user_id,
-            'theme' => $theme,
-            'language' => $language,
-            'notifications' => $notification_pref
-        ]);
-        $message = "Settings updated successfully!";
-        // Re-fetch user data
-        $stmt = $conn->prepare("SELECT u.*, s.theme, s.language, s.notifications FROM users u LEFT JOIN settings s ON u.id = s.user_id WHERE u.id = :id");
-        $stmt->execute(['id' => $user_id]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {
-        $error = "Error updating settings: " . $e->getMessage();
-    }
-}
-
 
 // Handle Password Change
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updatePassword'])) {
@@ -109,6 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updatePassword'])) {
     <title>CARELINK — Settings</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/barangay-sidebar.css">
+    <link rel="stylesheet" href="../assets/css/main-dark-mode.css">
     <style>
         * {
             margin: 0;
@@ -126,14 +106,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updatePassword'])) {
             --light: #ecf0f1;
             --dark: #34495e;
             --gray: #95a5a6;
-        }
 
+            /* background & card */
+            --bg: #f5f7fa;
+            --card-bg: #ffffff;
+            --text: #222;
+        }
         body {
-            background-color: #f5f7fa;
-            color: #333;
+            background-color: var(--bg);
+            color: var(--text);
             line-height: 1.6;
             height: 100vh;
             overflow: hidden;
+            transition: background-color 240ms ease, color 240ms ease;
         }
 
         .container {
@@ -186,9 +171,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updatePassword'])) {
             align-items: center;
             gap: 10px;
             padding: 8px 15px;
-            background: white;
+            background: var(--card-bg);
             border-radius: 25px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            color: var(--text);
         }
 
         .user-avatar {
@@ -228,10 +214,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updatePassword'])) {
         }
 
         .settings-card {
-            background: white;
+            background: var(--card-bg);
             border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.06);
             padding: 20px;
+            border: 1px solid rgba(16,24,40,0.04);
+            color: var(--text);
         }
 
         .settings-card h3 {
@@ -267,6 +255,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updatePassword'])) {
             border-radius: 5px;
             font-size: 14px;
             transition: border-color 0.3s;
+            background: rgba(255,255,255,0.02);
+            color: var(--text);
+            border: 1px solid rgba(255,255,255,0.06);
         }
 
         .form-group input:focus,
@@ -278,6 +269,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updatePassword'])) {
         .form-group input:disabled {
             background-color: #f5f5f5;
             color: #999;
+        }
+
+        .dark-mode .form-group input:disabled {
+            background-color: #2c3e50;
+            color: #95a5a6;
         }
 
         .btn {
@@ -318,11 +314,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updatePassword'])) {
         }
 
         .profile-section {
-            background: white;
+            background: var(--card-bg);
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             padding: 20px;
             margin-bottom: 20px;
+            position: relative; /* allow absolute positioning for the toggle inside the card */
         }
 
         .profile-header {
@@ -401,6 +398,48 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updatePassword'])) {
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Custom styles for the new layout */
+        .settings-card.full-width-card {
+            grid-column: span 2;
+        }
+
+        @media (max-width: 768px) {
+            .settings-card.full-width-card {
+                grid-column: span 1;
+            }
+        }
+
+        /* Theme toggle button (small round switch with icon) */
+        .theme-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 20px;
+            background: var(--card-bg);
+            border: 1px solid rgba(16,24,40,0.06);
+            color: var(--primary);
+            cursor: pointer;
+            transition: background 180ms ease, transform 120ms ease;
+        }
+
+        .theme-toggle i {
+            font-size: 14px;
+        }
+
+        .theme-toggle:hover {
+            transform: translateY(-1px);
+        }
+
+        /* When placed inside profile card: position top-right */
+        .profile-section .theme-toggle {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            box-shadow: 0 6px 18px rgba(16,24,40,0.06);
+        }
     </style>
 </head>
 <body>
@@ -417,9 +456,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updatePassword'])) {
                     <h1>User Settings</h1>
                 </div>
                 <div class="header-actions">
-                    <button class="btn"><i class="fas fa-bell"></i> Notifications</button>
-                    <div class="user-info">
-                                            <div class="user-avatar">
+
+                     <div class="user-info">
+                         <div class="user-avatar">
                                                 <?php
                                                     $profilePic = isset($_SESSION['profile_picture']) ? $_SESSION['profile_picture'] : 'default.jpg';
                                                     $profilePicPath = '../images/profile_pictures/' . $profilePic;
@@ -445,34 +484,63 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updatePassword'])) {
 
             <!-- Profile Section -->
             <div class="profile-section">
-                <div class="profile-header">
-                    <div class="profile-avatar"><?php echo htmlspecialchars(strtoupper(substr($user['first_name'], 0, 1) . substr($user['last_name'], 0, 1))); ?></div>
-                    <div class="profile-info">
-                        <h2><?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></h2>
-                        <p><?php echo htmlspecialchars(ucwords(str_replace('_', ' ', $user['role']))); ?><?php if ($_SESSION['role'] !== 'department_admin'): ?> • <?php echo htmlspecialchars($user['barangay']); ?><?php endif; ?></p>
-                    </div>
-                </div>
-                <p style="color: var(--gray); font-size: 14px;">Manage your account preferences and appearance.</p>
-            </div>
+                <!-- Theme toggle moved inside profile card (top-right) -->
+                <button id="themeToggle" class="theme-toggle" title="Toggle theme" aria-pressed="false">
+                    <i id="themeIcon" class="fas fa-moon"></i>
+                </button>
+                 <div class="profile-header">
+                     <div class="profile-avatar"><?php echo htmlspecialchars(strtoupper(substr($user['first_name'], 0, 1) . substr($user['last_name'], 0, 1))); ?></div>
+                     <div class="profile-info">
+                         <h2><?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></h2>
+                         <p><?php echo htmlspecialchars(ucwords(str_replace('_', ' ', $user['role']))); ?><?php if ($_SESSION['role'] !== 'department_admin'): ?> • <?php echo htmlspecialchars($user['barangay']); ?><?php endif; ?></p>
+                     </div>
+                 </div>
+                 <p style="color: var(--gray); font-size: 14px;">Manage your account preferences and appearance.</p>
+             </div>
 
             <!-- Settings Grid -->
             <div class="settings-grid">
-                <!-- Profile Settings -->
+                <!-- Profile Settings (left, wider) -->
                 <div class="settings-card">
                     <h3><i class="fas fa-user"></i> Profile Settings</h3>
                     <form method="post" action="">
-                        <div class="form-group">
-                            <label for="displayName">Display Name</label>
-                            <input type="text" id="displayName" name="displayName" value="<?php echo htmlspecialchars($user['display_name'] ?? ''); ?>" disabled>
+                        <div class="form-row">
+                            <div class="form-group col">
+                                <label for="username">Username</label>
+                                <input type="text" id="username" name="username" value="<?php echo htmlspecialchars($user['username'] ?? ''); ?>" disabled>
+                            </div>
+                            <div class="form-group col">
+                                <label for="role">Role</label>
+                                <input type="text" id="role" name="role" value="<?php echo htmlspecialchars(ucwords(str_replace('_',' ',$user['role']))); ?>" disabled>
+                            </div>
                         </div>
+
+                        <div class="form-row">
+                            <div class="form-group col">
+                                <label for="firstName">First Name</label>
+                                <input type="text" id="firstName" name="firstName" value="<?php echo htmlspecialchars($user['first_name'] ?? ''); ?>" disabled>
+                            </div>
+                            <div class="form-group col">
+                                <label for="lastName">Last Name</label>
+                                <input type="text" id="lastName" name="lastName" value="<?php echo htmlspecialchars($user['last_name'] ?? ''); ?>" disabled>
+                            </div>
+                        </div>
+
                         <div class="form-group">
                             <label for="email">Email</label>
-                            <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($user['email']); ?>" disabled>
+                            <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($user['email'] ?? ''); ?>" disabled>
                         </div>
+
+                        <div class="form-group">
+                            <label for="barangay">Barangay</label>
+                            <input type="text" id="barangay" name="barangay" value="<?php echo htmlspecialchars($user['barangay'] ?? $_SESSION['barangay'] ?? ''); ?>" disabled>
+                        </div>
+
                         <div class="form-group">
                             <label for="phone">Phone (optional)</label>
                             <input type="text" id="phone" name="phone" value="<?php echo htmlspecialchars($user['phone'] ?? ''); ?>" disabled>
                         </div>
+
                         <div class="actions">
                             <button type="button" class="btn btn-small" id="editProfileBtn">Edit Profile</button>
                             <button type="submit" name="updateProfile" class="btn btn-success btn-small" id="saveBtn" style="display: none;">Save Changes</button>
@@ -481,68 +549,34 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updatePassword'])) {
                     </form>
                 </div>
 
-                <!-- System Settings -->
+                <!-- Security Settings (right, narrower) -->
                 <div class="settings-card">
-                    <h3><i class="fas fa-cog"></i> System Settings</h3>
+                    <h3><i class="fas fa-shield-alt"></i> Security Settings</h3>
                     <form method="post" action="">
                         <div class="form-group">
-                            <label for="theme">Theme</label>
-                            <select id="theme" name="theme" disabled>
-                                <option value="light" <?php echo ($user['theme'] ?? 'light') === 'light' ? 'selected' : ''; ?>>Light</option>
-                                <option value="dark" <?php echo ($user['theme'] ?? '') === 'dark' ? 'selected' : ''; ?>>Dark</option>
-                                <option value="auto" <?php echo ($user['theme'] ?? '') === 'auto' ? 'selected' : ''; ?>>Auto</option>
-                            </select>
+                            <label for="currentPassword">Current Password</label>
+                            <input type="password" id="currentPassword" name="currentPassword" placeholder="Enter current password" disabled>
                         </div>
                         <div class="form-group">
-                            <label for="language">Language</label>
-                            <select id="language" name="language" disabled>
-                                <option value="en" <?php echo ($user['language'] ?? 'en') === 'en' ? 'selected' : ''; ?>>English</option>
-                                <option value="fil" <?php echo ($user['language'] ?? '') === 'fil' ? 'selected' : ''; ?>>Filipino</option>
-                            </select>
+                            <label for="newPassword">New Password</label>
+                            <input type="password" id="newPassword" name="newPassword" placeholder="Enter new password" disabled>
                         </div>
                         <div class="form-group">
-                            <label for="notifications">Notifications</label>
-                            <select id="notifications" name="notifications" disabled>
-                                <option value="all" <?php echo ($user['notifications'] ?? 'all') === 'all' ? 'selected' : ''; ?>>All Notifications</option>
-                                <option value="important" <?php echo ($user['notifications'] ?? '') === 'important' ? 'selected' : ''; ?>>Important Only</option>
-                                <option value="none" <?php echo ($user['notifications'] ?? '') === 'none' ? 'selected' : ''; ?>>None</option>
-                            </select>
+                            <label for="confirmPassword">Confirm New Password</label>
+                            <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm new password" disabled>
                         </div>
                         <div class="actions">
-                            <button type="button" class="btn btn-small" id="editSystemBtn">Edit Settings</button>
-                            <button type="submit" name="updateSettings" class="btn btn-success btn-small" id="saveSystemBtn" style="display: none;">Save Changes</button>
-                            <button type="button" class="btn btn-secondary btn-small" id="cancelSystemBtn" style="display: none;">Cancel</button>
+                            <button type="button" class="btn btn-small" id="editPasswordBtn">Change Password</button>
+                            <button type="submit" name="updatePassword" class="btn btn-success btn-small" id="savePasswordBtn" style="display: none;">Update Password</button>
+                            <button type="button" class="btn btn-secondary btn-small" id="cancelPasswordBtn" style="display: none;">Cancel</button>
                         </div>
                     </form>
                 </div>
             </div>
-
-            <!-- Security Settings -->
-            <div class="settings-card">
-                <h3><i class="fas fa-shield-alt"></i> Security Settings</h3>
-                <form method="post" action="">
-                    <div class="form-group">
-                        <label for="currentPassword">Current Password</label>
-                        <input type="password" id="currentPassword" name="currentPassword" placeholder="Enter current password" disabled>
-                    </div>
-                    <div class="form-group">
-                        <label for="newPassword">New Password</label>
-                        <input type="password" id="newPassword" name="newPassword" placeholder="Enter new password" disabled>
-                    </div>
-                    <div class="form-group">
-                        <label for="confirmPassword">Confirm New Password</label>
-                        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm new password" disabled>
-                    </div>
-                    <div class="actions">
-                        <button type="button" class="btn btn-small" id="editPasswordBtn">Change Password</button>
-                        <button type="submit" name="updatePassword" class="btn btn-success btn-small" id="savePasswordBtn" style="display: none;">Update Password</button>
-                        <button type="button" class="btn btn-secondary btn-small" id="cancelPasswordBtn" style="display: none;">Cancel</button>
-                    </div>
-                </form>
-            </div>
     </div>
 
     <script src="../assets/js/sidebar-toggle.js"></script>
+    <script src="../assets/js/dark-mode.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const welcomeMessage = document.querySelector('.welcome-message');
@@ -563,7 +597,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updatePassword'])) {
             const editProfileBtn = document.getElementById('editProfileBtn');
             const saveBtn = document.getElementById('saveBtn');
             const cancelBtn = document.getElementById('cancelBtn');
-            const profileInputs = ['displayName', 'email', 'phone'];
+            const profileInputs = ['firstName', 'lastName', 'email', 'phone'];
 
             editProfileBtn.addEventListener('click', () => {
                 profileInputs.forEach(id => document.getElementById(id).disabled = false);
@@ -578,26 +612,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updatePassword'])) {
                 saveBtn.style.display = 'none';
                 cancelBtn.style.display = 'none';
                 // Reset to original values if needed
-            });
-
-            // System Settings
-            const editSystemBtn = document.getElementById('editSystemBtn');
-            const saveSystemBtn = document.getElementById('saveSystemBtn');
-            const cancelSystemBtn = document.getElementById('cancelSystemBtn');
-            const systemInputs = ['theme', 'language', 'notifications'];
-
-            editSystemBtn.addEventListener('click', () => {
-                systemInputs.forEach(id => document.getElementById(id).disabled = false);
-                editSystemBtn.style.display = 'none';
-                saveSystemBtn.style.display = 'inline-block';
-                cancelSystemBtn.style.display = 'inline-block';
-            });
-
-            cancelSystemBtn.addEventListener('click', () => {
-                systemInputs.forEach(id => document.getElementById(id).disabled = true);
-                editSystemBtn.style.display = 'inline-block';
-                saveSystemBtn.style.display = 'none';
-                cancelSystemBtn.style.display = 'none';
             });
 
             // Security Settings
@@ -626,3 +640,4 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updatePassword'])) {
     </script>
 </body>
 </html>
+

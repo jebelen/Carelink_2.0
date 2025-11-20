@@ -18,6 +18,7 @@ $barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
     <title>CPRAS Dashboard - Barangay <?php echo $barangayName; ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/barangay-sidebar.css">
+    <link rel="stylesheet" href="../assets/css/main-dark-mode.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* Page-specific styles for dashboard */
@@ -67,7 +68,7 @@ $barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
                     <h1>Barangay <?php echo $barangayName; ?> Dashboard</h1>
                 </div>
                 <div class="header-actions">
-                    <button class="btn"><i class="fas fa-bell"></i> Notifications</button>
+                    
                     <div class="user-info">
                         <div class="user-avatar">
                             <img src="../images/profile_pictures/<?php echo htmlspecialchars($_SESSION['profile_picture'] ?? 'default.jpg'); ?>" alt="Profile Picture">
@@ -82,7 +83,7 @@ $barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
 
             <div class="dashboard-panels">
                 <div class="left-panel">
-                    <h2 style="color: var(--primary);">Application Statistics</h2>
+                    <h2 style="color: var(--text);">Application Statistics</h2>
                     <div class="charts-container">
                         <div class="chart-card">
                             <h3><i class="fas fa-chart-pie"></i> Application Status Distribution</h3>
@@ -127,6 +128,7 @@ $barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
     </div>
 
     <script src="../assets/js/sidebar-toggle.js"></script>
+    <script src="../assets/js/dark-mode.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         initializeWelcomeMessage();
@@ -263,6 +265,10 @@ $barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
     }
 
     function initializeCharts(data) {
+        const isDarkMode = document.body.classList.contains('dark-mode');
+        const textColor = isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)';
+        const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+
         // --- Status Chart ---
         const statusCtx = document.getElementById('statusChart')?.getContext('2d');
         if (statusCtx && data.stats) {
@@ -279,8 +285,19 @@ $barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
             });
             new Chart(statusCtx, {
                 type: 'doughnut',
-                data: { labels, datasets: [{ data: counts, backgroundColor: backgroundColors, borderWidth: 2, borderColor: '#fff' }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+                data: { labels, datasets: [{ data: counts, backgroundColor: backgroundColors, borderWidth: 2, borderColor: isDarkMode ? '#0f1722' : '#fff' }] },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { 
+                        legend: { 
+                            position: 'right',
+                            labels: {
+                                color: textColor
+                            }
+                        } 
+                    } 
+                }
             });
         }
 
@@ -316,7 +333,36 @@ $barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
                         { label: 'Senior Citizen Applications', data: seniorData, backgroundColor: '#2ecc71' }
                     ]
                 },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: textColor
+                            }
+                        }
+                    },
+                    scales: { 
+                        y: { 
+                            beginAtZero: true,
+                            ticks: {
+                                color: textColor
+                            },
+                            grid: {
+                                color: gridColor
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: textColor
+                            },
+                            grid: {
+                                color: gridColor
+                            }
+                        }
+                    } 
+                }
             });
         }
     }

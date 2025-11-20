@@ -510,8 +510,7 @@ require_once '../includes/db_connect.php';
                     <div class="welcome-message" data-first-name="<?php echo htmlspecialchars($_SESSION['first_name']); ?>" data-last-name="<?php echo htmlspecialchars($_SESSION['last_name']); ?>" data-role="<?php echo htmlspecialchars($_SESSION['role']); ?>"></div>
                     <h1>Centralized Profiling Dashboard</h1>
                 </div>
-                <div class="header-actions">
-                    <button class="btn"><i class="fas fa-bell"></i> Notifications</button>
+                <div class="header-actions">        
                     <div class="user-info">
                         <div class="user-avatar">
                             <?php
