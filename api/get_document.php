@@ -15,7 +15,7 @@ if (isset($_GET['id']) && isset($_GET['doc_type'])) {
     ];
 
     if (in_array($docType, $allowed_doc_types)) {
-        $sql = "SELECT $docType, {$docType}_type FROM applications WHERE id = ?";
+        $sql = "SELECT $docType, {$docType}_type FROM applications WHERE id_number = ?";
         $stmt = $conn->prepare($sql);
         $stmt->execute([$appId]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);

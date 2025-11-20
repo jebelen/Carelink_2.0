@@ -32,7 +32,7 @@ try {
     $totalPages = ceil($totalRecords / $recordsPerPage);
 
     // Get applications for the current page
-    $recordsQuery = "SELECT id, full_name, application_type, barangay, date_submitted, status FROM applications ORDER BY date_submitted DESC LIMIT :limit OFFSET :offset";
+    $recordsQuery = "SELECT id_number as id, full_name, application_type, barangay, date_submitted, status FROM applications ORDER BY date_submitted DESC LIMIT :limit OFFSET :offset";
     $recordsStmt = $conn->prepare($recordsQuery);
     $recordsStmt->bindParam(':limit', $recordsPerPage, PDO::PARAM_INT);
     $recordsStmt->bindParam(':offset', $offset, PDO::PARAM_INT);

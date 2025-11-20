@@ -411,7 +411,7 @@ require_once '../includes/db_connect.php';
                         </thead>
                         <tbody>
                             <?php
-                            $sql = "SELECT * FROM applications WHERE status IN ('pending', 'rejected')";
+                            $sql = "SELECT id_number as id, full_name, application_type, barangay, date_submitted, status FROM applications WHERE status IN ('pending', 'rejected')";
                             $stmt = $conn->prepare($sql);
                             $stmt->execute();
                             $result = $stmt->fetchAll(PDO::FETCH_ASSOC);

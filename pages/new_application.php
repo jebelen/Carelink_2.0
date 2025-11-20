@@ -28,9 +28,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $idImageType = isset($_FILES['idImage']) && $_FILES['idImage']['error'] == 0 ? $_FILES['idImage']['type'] : null;
 
     // Prepare and bind
-    $stmt = $conn->prepare("INSERT INTO applications (full_name, application_type, birth_date, contact_number, complete_address, emergency_contact, emergency_contact_name, barangay, proof_of_address, proof_of_address_type, id_image, id_image_type, lastName, firstName, middleName, suffix) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt = $conn->prepare("INSERT INTO applications (id_number, full_name, application_type, birth_date, contact_number, complete_address, emergency_contact, emergency_contact_name, barangay, proof_of_address, proof_of_address_type, id_image, id_image_type, lastName, firstName, middleName, suffix) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-    if ($stmt->execute([$fullName, $applicationType, $birthDate, $contactNumber, $completeAddress, $emergencyContact, $emergencyContactName, $barangay, $proofOfAddress, $proofOfAddressType, $idImage, $idImageType, $lastName, $firstName, $middleName, $suffix])) {
+    if ($stmt->execute([$idNumber, $fullName, $applicationType, $birthDate, $contactNumber, $completeAddress, $emergencyContact, $emergencyContactName, $barangay, $proofOfAddress, $proofOfAddressType, $idImage, $idImageType, $lastName, $firstName, $middleName, $suffix])) {
         header("Location: Submit_Application.php?success=1");
         exit();
     } else {

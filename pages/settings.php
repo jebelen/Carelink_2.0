@@ -18,7 +18,8 @@ try {
     $stmt->execute(['id' => $user_id]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // Fetch notifications
+    // Fetch notifications (assuming 'notifications' table still exists and is used here)
+    // Note: The 'notifications' table still exists as per previous analysis.
     $stmt = $conn->prepare("SELECT * FROM notifications ORDER BY created_at DESC");
     $stmt->execute();
     $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -34,21 +35,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updateProfile'])) {
     $firstName = $_POST['firstName'];
     $lastName = $_POST['lastName'];
     $email = $_POST['email'];
-    $phone = $_POST['phone'];
-    $displayName = $firstName . ' ' . $lastName;
+    // $phone = $_POST['phone']; // Column 'phone' does not exist in 'users' table.
+    // $displayName = $firstName . ' ' . $lastName; // Column 'display_name' does not exist in 'users' table.
 
     try {
-        $stmt = $conn->prepare("UPDATE users SET first_name = :first_name, last_name = :last_name, display_name = :display_name, email = :email, phone = :phone WHERE id = :id");
+        $stmt = $conn->prepare("UPDATE users SET first_name = :first_name, last_name = :last_name, email = :email WHERE id = :id");
         $stmt->execute([
             'first_name' => $firstName,
             'last_name' => $lastName,
-            'display_name' => $displayName,
             'email' => $email,
-            'phone' => $phone,
             'id' => $user_id
         ]);
         $message = "Profile updated successfully!";
-        // Re-fetch user data
+        // Re-fetch user data to update session/display
         $stmt = $conn->prepare("SELECT u.*, s.theme, s.language, s.notifications FROM users u LEFT JOIN settings s ON u.id = s.user_id WHERE u.id = :id");
         $stmt->execute(['id' => $user_id]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -78,7 +77,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updatePassword'])) {
         $error = "Incorrect current password.";
     }
 }
-
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -622,22 +620,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updatePassword'])) {
 
             editPasswordBtn.addEventListener('click', () => {
                 passwordInputs.forEach(id => document.getElementById(id).disabled = false);
-                editPasswordBtn.style.display = 'none';
+                editProfileBtn.style.display = 'none';
                 savePasswordBtn.style.display = 'inline-block';
-                cancelPasswordBtn.style.display = 'inline-block';
+                cancelBtn.style.display = 'inline-block';
             });
 
-            cancelPasswordBtn.addEventListener('click', () => {
+            cancelBtn.addEventListener('click', () => {
                 passwordInputs.forEach(id => {
                     document.getElementById(id).disabled = true;
                     document.getElementById(id).value = '';
                 });
-                editPasswordBtn.style.display = 'inline-block';
+                editProfileBtn.style.display = 'inline-block';
                 savePasswordBtn.style.display = 'none';
-                cancelPasswordBtn.style.display = 'none';
+                cancelBtn.style.display = 'none';
             });
         });
     </script>
 </body>
 </html>
-
