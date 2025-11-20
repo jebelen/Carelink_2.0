@@ -83,241 +83,9 @@ function getStatusClass($status) {
     <title>Records - Barangay <?php echo $barangayName; ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/barangay-sidebar.css">
+    <link rel="stylesheet" href="../assets/css/main-dark-mode.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        /* Page-specific styles for records */
-        .records-section, .yearly-records {
-            margin-bottom: 30px;
-        }
-
-        .records-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .records-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .search-box {
-            display: flex;
-            align-items: center;
-            background: white;
-            border-radius: 5px;
-            padding: 8px 15px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-
-        .search-box input {
-            border: none;
-            outline: none;
-            padding: 5px;
-            width: 200px;
-        }
-
-        .records-table {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-
-        .table-container {
-            max-height: 500px;
-            overflow-y: auto;
-        }
-
-        .table-header {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
-            padding: 15px 20px;
-            background: var(--primary);
-            color: white;
-            font-weight: 600;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .table-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
-            padding: 15px 20px;
-            border-bottom: 1px solid #e0e0e0;
-            transition: background 0.3s;
-            font-size: 14px; /* Increased font size */
-            font-weight: 500; /* Made text bolder */
-            color: #212529; /* Darker color for better contrast */
-        }
-
-        .table-row:hover {
-            background: #f8f9fa;
-        }
-
-        .year-selector {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            align-items: center;
-        }
-
-        .year-btn {
-            padding: 8px 15px;
-            background: white;
-            border: 1px solid #e0e0e0;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .year-btn.active {
-            background: var(--secondary);
-            color: white;
-            border-color: var(--secondary);
-        }
-
-        .year-btn:hover:not(.active) {
-            background: #f8f9fa;
-        }
-
-        .filter-section {
-            background: white;
-            border-radius: 10px;
-            padding: 15px 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .filter-group label {
-            font-size: 14px;
-            color: var(--dark);
-            font-weight: 500;
-        }
-
-        .filter-group select, .filter-group input {
-            padding: 8px 12px;
-            border: 1px solid #e0e0e0;
-            border-radius: 5px;
-            font-size: 14px;
-            min-width: 150px;
-            transition: border-color 0.3s;
-        }
-
-        .filter-group select:focus, .filter-group input:focus {
-            border-color: var(--secondary);
-            outline: none;
-        }
-
-        .no-results {
-            text-align: center;
-            padding: 20px;
-            color: var(--gray);
-            font-style: italic;
-        }
-
-        /* Modal Styles */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            overflow-y: auto;
-        }
-
-        .modal-content {
-            background-color: white;
-            margin: 50px auto;
-            width: 90%;
-            max-width: 900px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            position: relative;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 30px;
-            border-bottom: 1px solid #e0e0e0;
-        }
-
-        .modal-header h2 {
-            color: var(--primary);
-        }
-
-        .close-modal {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: var(--gray);
-        }
-
-        .close-modal:hover {
-            color: var(--accent);
-        }
-
-        .modal-body {
-            padding: 30px;
-            max-height: 70vh;
-            overflow-y: auto;
-        }
-
-        .details-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-
-        .detail-item {
-            margin-bottom: 10px;
-        }
-
-        .detail-item label {
-            font-weight: bold;
-            color: var(--primary);
-        }
-
-        .detail-item p {
-            margin: 5px 0 0 0;
-        }
-
-        @media (max-width: 768px) {
-            .records-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 15px;
-            }
-            
-            .table-header, .table-row {
-                grid-template-columns: 1fr 1fr;
-                font-size: 14px;
-            }
-            
-            .year-selector, .filter-section {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="../assets/css/barangay-records.css">
 </head>
 <body>
     <div class="container">
@@ -333,7 +101,6 @@ function getStatusClass($status) {
                     <h1>Barangay <?php echo $barangayName; ?> Records</h1>
                 </div>
                 <div class="header-actions">
-                    <button class="btn"><i class="fas fa-bell"></i> Notifications</button>
                     <div class="user-info">
                         <div class="user-avatar">
                             <?php
@@ -701,7 +468,37 @@ function getStatusClass($status) {
         </div>
     </div>
 
+    <!-- Import Applications Modal -->
+    <div id="importModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Import Applications from CSV</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Download the responses from your Google Form as a CSV file and and upload it here to import the applications.</p>
+                <div class="message">
+                    <?php
+                        if (isset($_SESSION['import_message'])) {
+                            echo $_SESSION['import_message'];
+                            unset($_SESSION['import_message']);
+                        }
+                    ?>
+                </div>
+                <form action="../api/import_applications.php" method="post" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="csv_file">Select CSV File</label>
+                        <input type="file" name="csv_file" id="csv_file" accept=".csv" required>
+                    </div>
+                    <button type="submit" class="btn">Import Applications</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
     <script src="../assets/js/sidebar-toggle.js"></script>
+    <script src="../assets/js/dark-mode.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Add click event to navigation items
