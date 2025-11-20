@@ -5,9 +5,10 @@ $json = file_get_contents('php://input');
 $data = json_decode($json, true);
 
 if ($data) {
-    $sql = "INSERT INTO applications (full_name, application_type, birth_date, contact_number, complete_address, barangay, status, date_submitted) VALUES (:full_name, :application_type, :birth_date, :contact_number, :complete_address, :barangay, 'pending', NOW())";
+    $sql = "INSERT INTO applications (id_number, full_name, application_type, birth_date, contact_number, complete_address, barangay, status, date_submitted) VALUES (:id_number, :full_name, :application_type, :birth_date, :contact_number, :complete_address, :barangay, 'pending', NOW())";
     $stmt = $conn->prepare($sql);
 
+    $stmt->bindParam(':id_number', $data['ID Number']);
     $stmt->bindParam(':full_name', $data['Full Name']);
     $stmt->bindParam(':application_type', $data['Application Type']);
     $stmt->bindParam(':birth_date', $data['Birth Date']);

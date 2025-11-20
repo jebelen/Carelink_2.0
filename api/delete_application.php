@@ -4,7 +4,7 @@ require_once '../includes/db_connect.php';
 if (isset($_POST['id'])) {
     $id = $_POST['id'];
 
-    $sql = "DELETE FROM applications WHERE id = ?";
+    $sql = "DELETE FROM applications WHERE id_number = ?";
     $stmt = $conn->prepare($sql);
     
     if ($stmt->execute([$id])) {

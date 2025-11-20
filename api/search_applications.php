@@ -14,7 +14,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['role'] === 'barangay_staff') {
     $filter_barangay = $_SESSION['barangay'];
 }
 
-$sql = "SELECT id, full_name, application_type, birth_date, contact_number, date_submitted, status, complete_address FROM applications";
+$sql = "SELECT id_number as id, full_name, application_type, birth_date, contact_number, date_submitted, status, complete_address FROM applications";
 $params = [];
 $where_clauses = [];
 

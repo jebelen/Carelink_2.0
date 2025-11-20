@@ -49,7 +49,7 @@ try {
     // 3. Get recent applications for notifications list
     $notifStmt = $conn->prepare("
         SELECT 
-            id,
+            id_number as id,
             full_name,
             application_type,
             status,

@@ -305,36 +305,7 @@ session_start();
 
             <!-- Settings Grid -->
             <div class="settings-grid">
-                <!-- General Settings -->
-      <div class="card">
-                    <h3><i class="fas fa-cog"></i> General Settings</h3>
-                    <div class="form-group">
-                        <label for="systemName">System Name</label>
-                        <input type="text" id="systemName" value="CARELINK" disabled>
-                    </div>
-                    <div class="form-group">
-                        <label for="version">Version</label>
-                        <input type="text" id="version" value="2.0.0" disabled>
-                    </div>
-                    <div class="form-group">
-                        <label for="language">Default Language</label>
-                        <select id="language">
-                            <option value="en">English</option>
-                            <option value="fil">Filipino</option>
-                        </select>
-        </div>
-                    <div class="form-group">
-                        <label for="timezone">Timezone</label>
-                        <select id="timezone">
-                            <option value="UTC+8">UTC+8 (Philippines)</option>
-                            <option value="UTC+0">UTC+0 (GMT)</option>
-                        </select>
-                </div>
-                    <div class="actions">
-                        <button class="btn btn-small" onclick="editSettings('general')">Edit Settings</button>
-                        <button class="btn btn-secondary btn-small" onclick="saveSettings('general')" style="display: none;">Save Changes</button>
-                </div>
-              </div>
+
 
                 <!-- Security Settings -->
                 <div class="card">

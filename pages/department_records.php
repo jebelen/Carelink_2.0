@@ -25,7 +25,7 @@ $whereClauses = [];
 $params = [];
 
 if (!empty($search)) {
-    $whereClauses[] = "(full_name LIKE :search OR id LIKE :search)";
+    $whereClauses[] = "(full_name LIKE :search OR id_number LIKE :search)";
     $params[':search'] = "%$search%";
 }
 if ($barangayFilter !== 'all') {
@@ -54,7 +54,7 @@ $totalRecords = $totalStmt->fetchColumn();
 $totalPages = ceil($totalRecords / $recordsPerPage);
 
 // 4. Get the records for the current page
-$recordsQuery = "SELECT * " . $baseQuery . $whereSql . " ORDER BY date_submitted DESC LIMIT :limit OFFSET :offset";
+$recordsQuery = "SELECT id_number as id, full_name, application_type, barangay, date_submitted, status " . $baseQuery . $whereSql . " ORDER BY date_submitted DESC LIMIT :limit OFFSET :offset";
 $recordsStmt = $conn->prepare($recordsQuery);
 
 // Bind all parameters including limit and offset
