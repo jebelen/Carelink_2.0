@@ -338,6 +338,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updatePassword'])) {
             color: white;
             font-size: 24px;
             font-weight: bold;
+            overflow: hidden; /* Ensure image fits within avatar circle */
+        }
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .profile-info h2 {
@@ -487,7 +493,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updatePassword'])) {
                     <i id="themeIcon" class="fas fa-moon"></i>
                 </button>
                  <div class="profile-header">
-                     <div class="profile-avatar"><?php echo htmlspecialchars(strtoupper(substr($user['first_name'], 0, 1) . substr($user['last_name'], 0, 1))); ?></div>
+                     <div class="profile-avatar">
+                            <?php
+                                $profilePicDisplay = isset($user['profile_picture']) ? $user['profile_picture'] : 'default.jpg';
+                                $profilePicPathDisplay = '../images/profile_pictures/' . $profilePicDisplay;
+                                if (!file_exists($profilePicPathDisplay) || is_dir($profilePicPathDisplay)) {
+                                    $profilePicPathDisplay = '../images/profile_pictures/default.jpg'; // Fallback to default if file doesn't exist
+                                }
+                            ?>
+                            <img src="<?php echo $profilePicPathDisplay; ?>" alt="Profile Picture">
+                        </div>
                      <div class="profile-info">
                          <h2><?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?></h2>
                          <p><?php echo htmlspecialchars(ucwords(str_replace('_', ' ', $user['role']))); ?><?php if ($_SESSION['role'] !== 'department_admin'): ?> • <?php echo htmlspecialchars($user['barangay']); ?><?php endif; ?></p>

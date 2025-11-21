@@ -1,7 +1,7 @@
 <?php
 session_start();
 require_once '../includes/db_connect.php';
-require_once '../includes/barangays_list.php';
+require_once '../includes/barangays_list.php'; // Re-added this line!
 
 // Auto-login from remember me cookie
 if (!isset($_SESSION['user_id']) && isset($_COOKIE['remember_me'])) {
@@ -369,6 +369,86 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 font-size: 3.5rem;
             }
         }
+        /* Modal specific styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1001; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+            -webkit-animation: fadeIn 0.5s;
+            animation: fadeIn 0.5s;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto; /* For browsers that do not support justify-content/align-items for position:fixed */
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
+            -webkit-animation: slideIn 0.5s forwards;
+            animation: slideIn 0.5s forwards;
+            color: #333; /* Ensure text is readable */
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: #333;
+        }
+
+        .close-modal {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            background: none;
+            border: none;
+        }
+
+        .close-modal:hover,
+        .close-modal:focus {
+            color: #000;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        /* Animations */
+        @-webkit-keyframes fadeIn {
+            from {opacity: 0} 
+            to {opacity: 1}
+        }
+
+        @keyframes fadeIn {
+            from {opacity: 0} 
+            to {opacity: 1}
+        }
+
+        @-webkit-keyframes slideIn {
+            from {top: -300px; opacity: 0} 
+            to {top: 0; opacity: 1}
+        }
+
+        @keyframes slideIn {
+            from {top: -300px; opacity: 0}
+            to {top: 0; opacity: 1}
+        }
     </style>
 </head>
 <body>
@@ -433,16 +513,92 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </div>
     </div>
     
-<script>
+    <!-- Forgot Password Modal -->
+    <div id="forgotPasswordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Forgot Password</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Enter your email address to receive a password reset link.</p>
+                <form id="forgotPasswordForm">
+                    <div class="form-group">
+                        <label for="resetEmail">Email Address</label>
+                        <input type="email" id="resetEmail" name="email" class="form-control" placeholder="Enter your email" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Send Reset Link</button>
+                </form>
+                <div id="forgotPasswordMessage" style="margin-top: 15px;"></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Consolidated JavaScript for password toggle and forgot password modal logic
+        // Password toggle for staffPassword
         const toggleStaffPassword = document.querySelector('#toggleStaffPassword');
         const staffPassword = document.querySelector('#staffPassword');
 
         toggleStaffPassword.addEventListener('click', function (e) {
-            // toggle the type attribute
             const type = staffPassword.getAttribute('type') === 'password' ? 'text' : 'password';
             staffPassword.setAttribute('type', type);
-            // toggle the eye slash icon
             this.classList.toggle('fa-eye-slash');
+        });
+
+        // Forgot Password Modal Logic
+        const forgotPasswordLink = document.querySelector('.forgot-password a');
+        const forgotPasswordModal = document.getElementById('forgotPasswordModal');
+        const closeForgotPasswordModalBtn = forgotPasswordModal.querySelector('.close-modal');
+        const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+        const forgotPasswordMessage = document.getElementById('forgotPasswordMessage');
+
+        forgotPasswordLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            forgotPasswordModal.style.display = 'flex'; // Changed from 'block' to 'flex'
+            forgotPasswordMessage.innerHTML = ''; // Clear previous messages
+            forgotPasswordForm.reset(); // Clear form fields
+        });
+
+        closeForgotPasswordModalBtn.addEventListener('click', function() {
+            forgotPasswordModal.style.display = 'none';
+        });
+
+        // Close modal if user clicks outside of it
+        window.addEventListener('click', function(event) {
+            if (event.target == forgotPasswordModal) {
+                forgotPasswordModal.style.display = 'none';
+            }
+        });
+
+        forgotPasswordForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = document.getElementById('resetEmail').value;
+            forgotPasswordMessage.innerHTML = 'Sending reset link...';
+
+            fetch('../api/forgot_password.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `email=${encodeURIComponent(email)}`,
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    forgotPasswordMessage.style.color = 'green';
+                    forgotPasswordMessage.innerHTML = data.message;
+                    // Optionally close modal after a delay or success
+                    // setTimeout(() => { forgotPasswordModal.style.display = 'none'; }, 3000);
+                } else {
+                    forgotPasswordMessage.style.color = 'red';
+                    forgotPasswordMessage.innerHTML = data.message;
+                }
+            })
+            .catch(error => {
+                forgotPasswordMessage.style.color = 'red';
+                forgotPasswordMessage.innerHTML = 'An error occurred. Please try again.';
+                console.error('Error:', error);
+            });
         });
     </script>
 </body>

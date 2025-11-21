@@ -652,8 +652,8 @@ function getStatusClass($status) {
                                     <h3><i class="fas fa-wheelchair"></i> PWD Specific Information</h3>
                                     <div class="form-row">
                                         <div class="form-group">
-                                            <label for="idNumber">ID Number</label>
-                                            <input type="text" id="idNumber" name="idNumber" value="${application.id_number || ''}">
+                                            <label for="pwdIdNumber">ID Number</label>
+                                            <input type="text" id="pwdIdNumber" name="idNumber" value="${application.id_number || ''}">
                                         </div>
                                     </div>
                                     <div class="form-group">
@@ -688,8 +688,8 @@ function getStatusClass($status) {
                                     <h3><i class="fas fa-user-friends"></i> Senior Citizen Specific Information</h3>
                                     <div class="form-row">
                                         <div class="form-group">
-                                            <label for="idNumber">ID Number</label>
-                                            <input type="text" id="idNumber" name="idNumber" value="${application.id_number || ''}">
+                                            <label for="seniorIdNumber">ID Number</label>
+                                            <input type="text" id="seniorIdNumber" name="idNumber" value="${application.id_number || ''}">
                                         </div>
                                     </div>
                                 </div>

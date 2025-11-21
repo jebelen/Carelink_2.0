@@ -1,14 +1,10 @@
 import tensorflow as tf
 from tensorflow.keras import layers, models
 import os
-
-# --- Configuration ---
-IMG_HEIGHT, IMG_WIDTH = 128, 128 # Must match app.py
-BATCH_SIZE = 32
-EPOCHS = 10 # You might need to adjust this based on your dataset size and model performance
-DATA_DIR = 'training_data' # Relative path to your training data
-MODEL_SAVE_PATH = 'pasig_id_verifier_model.h5' # Must match app.py
-CLASS_NAMES = ['Fake_PWD_ID', 'Fake_Senior_ID', 'Not_An_ID', 'PWD_ID', 'Senior_ID'] # Must match app.py and your folder names
+from config import (
+    IMG_HEIGHT, IMG_WIDTH, BATCH_SIZE, EPOCHS, 
+    DATA_DIR, MODEL_PATH as MODEL_SAVE_PATH, CLASS_NAMES
+)
 
 def create_model(num_classes):
     """Defines a simple CNN model."""
