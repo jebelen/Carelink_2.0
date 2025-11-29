@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../includes/db_connect.php';
+require_once '../includes/password_validation.php'; // Include the password validation function
 
 $message = '';
 $error = '';
@@ -53,19 +54,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['resetPassword'])) {
             } elseif ($newPassword !== $confirmPassword) {
                 $error = "New passwords do not match.";
                 $showForm = true; // Still show form if validation fails
-            } elseif (strlen($newPassword) < 8) { // Basic password strength check
-                $error = "Password must be at least 8 characters long.";
-                $showForm = true;
             } else {
-                // Hash new password
-                $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+                $validationResult = validatePassword($newPassword);
+                if (!$validationResult['valid']) {
+                    $error = $validationResult['message'];
+                    $showForm = true;
+                } else {
+                    // Hash new password
+                    $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
 
-                // Update password and clear token
-                $updateStmt = $conn->prepare("UPDATE users SET password = :password, reset_token = NULL, reset_token_expiry = NULL WHERE id = :id");
-                $updateStmt->execute(['password' => $hashedPassword, 'id' => $user['id']]);
+                    // Update password and clear token
+                    $updateStmt = $conn->prepare("UPDATE users SET password = :password, reset_token = NULL, reset_token_expiry = NULL WHERE id = :id");
+                    $updateStmt->execute(['password' => $hashedPassword, 'id' => $user['id']]);
 
-                $message = "Your password has been successfully reset. You can now log in with your new password.";
-                $showForm = false; // Hide form after successful reset
+                    $message = "Your password has been successfully reset. You can now log in with your new password.";
+                    $showForm = false; // Hide form after successful reset
+                }
             }
         }
     } catch (PDOException $e) {

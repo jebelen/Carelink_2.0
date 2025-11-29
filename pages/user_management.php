@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../includes/db_connect.php';
+require_once '../includes/password_validation.php'; // Include the password validation function
 
 // Check if the user is logged in and has the correct role
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'department_admin') {
@@ -52,6 +53,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['addUser'])) {
                 }
             } else { // role is department_admin
                 $barangay = null; // Ensure barangay is null for department admins
+            }
+            
+            // Validate password using the new function
+            if (empty($error)) { // Only proceed if no other errors
+                $validationResult = validatePassword($password);
+                if (!$validationResult['valid']) {
+                    $error = $validationResult['message'];
+                }
             }
 
             if (empty($error)) {
@@ -209,11 +218,11 @@ try {
                     <div class="form-row">
                         <div class="form-group">
                             <label for="firstName">First Name</label>
-                            <input type="text" id="firstName" name="firstName" placeholder="Enter first name" required>
+                            <input type="text" id="firstName" name="firstName" placeholder="Enter first name" oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')" required>
                         </div>
                         <div class="form-group">
                             <label for="lastName">Last Name</label>
-                            <input type="text" id="lastName" name="lastName" placeholder="Enter last name" required>
+                            <input type="text" id="lastName" name="lastName" placeholder="Enter last name" oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')" required>
                         </div>
                     </div>
                     <div class="form-row">
@@ -223,7 +232,7 @@ try {
                         </div>
                         <div class="form-group">
                             <label for="username">Username</label>
-                            <input type="text" id="username" name="username" placeholder="Enter username" required>
+                            <input type="text" id="username" name="username" placeholder="Enter username" oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '')" required>
                         </div>
                     </div>
                     <div class="form-row">
@@ -329,12 +338,12 @@ try {
                     <input type="hidden" name="id" id="editUserId">
                     <!-- Form fields for edit modal -->
                     <div class="form-row">
-                        <div class="form-group"><label for="editFirstName">First Name</label><input type="text" id="editFirstName" name="firstName" required></div>
-                        <div class="form-group"><label for="editLastName">Last Name</label><input type="text" id="editLastName" name="lastName" required></div>
+                        <div class="form-group"><label for="editFirstName">First Name</label><input type="text" id="editFirstName" name="firstName" oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')" required></div>
+                        <div class="form-group"><label for="editLastName">Last Name</label><input type="text" id="editLastName" name="lastName" oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')" required></div>
                     </div>
                     <div class="form-row">
                         <div class="form-group"><label for="editEmail">Email</label><input type="email" id="editEmail" name="email" required></div>
-                        <div class="form-group"><label for="editUsername">Username</label><input type="text" id="editUsername" name="username" required></div>
+                        <div class="form-group"><label for="editUsername">Username</label><input type="text" id="editUsername" name="username" oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '')" required></div>
                     </div>
                     <div class="form-row">
                         <div class="form-group"><label for="editRole">Role</label><select id="editRole" name="role" required><option value="department_admin">Administrator</option><option value="barangay_staff">Barangay Staff</option></select></div>

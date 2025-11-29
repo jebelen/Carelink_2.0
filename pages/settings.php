@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../includes/db_connect.php';
+require_once '../includes/password_validation.php'; // Include the password validation function
 
 // Check if the user is logged in
 if (!isset($_SESSION['user_id'])) {
@@ -64,17 +65,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updatePassword'])) {
 
     if ($newPassword !== $confirmPassword) {
         $error = "New passwords do not match.";
-    } else if (password_verify($currentPassword, $user['password'])) {
-        try {
-            $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-            $stmt = $conn->prepare("UPDATE users SET password = :password WHERE id = :id");
-            $stmt->execute(['password' => $hashedPassword, 'id' => $user_id]);
-            $message = "Password updated successfully!";
-        } catch (PDOException $e) {
-            $error = "Error updating password: " . $e->getMessage();
-        }
     } else {
-        $error = "Incorrect current password.";
+        $validationResult = validatePassword($newPassword);
+        if (!$validationResult['valid']) {
+            $error = $validationResult['message'];
+        } else if (password_verify($currentPassword, $user['password'])) {
+            try {
+                $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+                $stmt = $conn->prepare("UPDATE users SET password = :password WHERE id = :id");
+                $stmt->execute(['password' => $hashedPassword, 'id' => $user_id]);
+                $message = "Password updated successfully!";
+            } catch (PDOException $e) {
+                $error = "Error updating password: " . $e->getMessage();
+            }
+        } else {
+            $error = "Incorrect current password.";
+        }
     }
 }
 ?>
@@ -531,11 +537,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updatePassword'])) {
                         <div class="form-row">
                             <div class="form-group col">
                                 <label for="firstName">First Name</label>
-                                <input type="text" id="firstName" name="firstName" value="<?php echo htmlspecialchars($user['first_name'] ?? ''); ?>" disabled>
+                                <input type="text" id="firstName" name="firstName" value="<?php echo htmlspecialchars($user['first_name'] ?? ''); ?>" oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')" disabled>
                             </div>
                             <div class="form-group col">
                                 <label for="lastName">Last Name</label>
-                                <input type="text" id="lastName" name="lastName" value="<?php echo htmlspecialchars($user['last_name'] ?? ''); ?>" disabled>
+                                <input type="text" id="lastName" name="lastName" value="<?php echo htmlspecialchars($user['last_name'] ?? ''); ?>" oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')" disabled>
                             </div>
                         </div>
 
@@ -551,7 +557,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updatePassword'])) {
 
                         <div class="form-group">
                             <label for="phone">Phone (optional)</label>
-                            <input type="text" id="phone" name="phone" value="<?php echo htmlspecialchars($user['phone'] ?? ''); ?>" disabled>
+                            <input type="text" id="phone" name="phone" value="<?php echo htmlspecialchars($user['phone'] ?? ''); ?>" oninput="this.value = this.value.replace(/[^0-9]/g, '')" disabled>
                         </div>
 
                         <div class="actions">

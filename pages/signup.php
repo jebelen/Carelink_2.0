@@ -1,6 +1,7 @@
 <?php
 require_once '../includes/db_connect.php';
 require_once '../includes/barangays_list.php';
+require_once '../includes/password_validation.php';
 
 $success = '';
 $error = '';
@@ -19,9 +20,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $error = 'Please fill in all required fields.';
     } else if ($password !== $confirmPassword) {
         $error = 'Passwords do not match.';
-    } else if (strlen($password) < 8) {
-        $error = 'Password must be at least 8 characters long.';
-    } else if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    } else {
+        $validationResult = validatePassword($password);
+        if (!$validationResult['valid']) {
+            $error = $validationResult['message'];
+        } else if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $error = 'Invalid email format.';
+        } else {
         $error = 'Invalid email format.';
     } else {
         try {
@@ -196,11 +201,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <div class="form-row">
                     <div class="form-group">
                         <label for="firstName">First Name</label>
-                        <input type="text" id="firstName" name="firstName" class="form-control" required>
+                        <input type="text" id="firstName" name="firstName" class="form-control" oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')" required>
                     </div>
                     <div class="form-group">
                         <label for="lastName">Last Name</label>
-                        <input type="text" id="lastName" name="lastName" class="form-control" required>
+                        <input type="text" id="lastName" name="lastName" class="form-control" oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')" required>
                     </div>
                 </div>
                 <div class="form-group" style="margin-bottom: 20px;">
@@ -209,7 +214,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 </div>
                 <div class="form-group" style="margin-bottom: 20px;">
                     <label for="username">Username</label>
-                    <input type="text" id="username" name="username" class="form-control" required>
+                    <input type="text" id="username" name="username" class="form-control" oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '')" required>
                 </div>
                 <div class="form-row">
                     <div class="form-group">

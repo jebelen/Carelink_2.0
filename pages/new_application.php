@@ -17,20 +17,36 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $emergencyContactName = filter_input(INPUT_POST, 'emergencyContactName', FILTER_SANITIZE_STRING) ?? '';
     $barangay = $_SESSION['barangay']; // Assuming barangay is stored in session
 
+    // PWD-specific fields
+    $idNumber = filter_input(INPUT_POST, 'idNumber', FILTER_SANITIZE_STRING); // Actual PK, must be provided
     $disabilityType = isset($_POST['disabilityType']) ? implode(', ', $_POST['disabilityType']) : null;
-    $idNumber = filter_input(INPUT_POST, 'idNumber', FILTER_SANITIZE_STRING);
-    $pwdIdIssueDate = filter_input(INPUT_POST, 'pwdIdIssueDate', FILTER_SANITIZE_STRING);
-    $pwdIdExpiryDate = filter_input(INPUT_POST, 'pwdIdExpiryDate', FILTER_SANITIZE_STRING);
+    // $pwdIdIssueDate and $pwdIdExpiryDate are from form but not in DB schema, so not inserted
+    
+    // The following fields are NOT in the actual DB schema, so we cannot insert them here.
+    // $emailAddress = filter_input(INPUT_POST, 'emailAddress', FILTER_SANITIZE_EMAIL);
+    // $medicalConditions = filter_input(INPUT_POST, 'medicalConditions', FILTER_SANITIZE_STRING);
+    // $additionalNotes = filter_input(INPUT_POST, 'additionalNotes', FILTER_SANITIZE_STRING);
+
 
     $proofOfAddress = isset($_FILES['proofOfAddress']) && $_FILES['proofOfAddress']['error'] == 0 ? file_get_contents($_FILES['proofOfAddress']['tmp_name']) : null;
     $proofOfAddressType = isset($_FILES['proofOfAddress']) && $_FILES['proofOfAddress']['error'] == 0 ? $_FILES['proofOfAddress']['type'] : null;
     $idImage = isset($_FILES['idImage']) && $_FILES['idImage']['error'] == 0 ? file_get_contents($_FILES['idImage']['tmp_name']) : null;
     $idImageType = isset($_FILES['idImage']) && $_FILES['idImage']['error'] == 0 ? $_FILES['idImage']['type'] : null;
 
-    // Prepare and bind
-    $stmt = $conn->prepare("INSERT INTO applications (id_number, full_name, application_type, birth_date, contact_number, complete_address, emergency_contact, emergency_contact_name, barangay, proof_of_address, proof_of_address_type, id_image, id_image_type, lastName, firstName, middleName, suffix) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    // Prepare and bind - Corrected based on actual DB schema
+    $stmt = $conn->prepare("INSERT INTO applications (
+                id_number, full_name, application_type, birth_date, contact_number, complete_address,
+                emergency_contact, emergency_contact_name, barangay,
+                proof_of_address, proof_of_address_type, id_image, id_image_type,
+                lastName, firstName, middleName, suffix, disability_type
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-    if ($stmt->execute([$idNumber, $fullName, $applicationType, $birthDate, $contactNumber, $completeAddress, $emergencyContact, $emergencyContactName, $barangay, $proofOfAddress, $proofOfAddressType, $idImage, $idImageType, $lastName, $firstName, $middleName, $suffix])) {
+    if ($stmt->execute([
+        $idNumber, $fullName, $applicationType, $birthDate, $contactNumber, $completeAddress,
+        $emergencyContact, $emergencyContactName, $barangay,
+        $proofOfAddress, $proofOfAddressType, $idImage, $idImageType,
+        $lastName, $firstName, $middleName, $suffix, $disabilityType
+    ])) {
         header("Location: Submit_Application.php?success=1");
         exit();
     } else {
@@ -71,27 +87,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             </div>
                             <div class="form-group">
                                 <label for="idNumber">ID Number</label>
-                                <input type="text" id="idNumber" name="idNumber">
+                                <input type="text" id="idNumber" name="idNumber" oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '')">
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="lastName">Last Name</label>
-                                <input type="text" id="lastName" name="lastName" required>
+                                <input type="text" id="lastName" name="lastName" oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')" required>
                             </div>
                             <div class="form-group">
                                 <label for="firstName">First Name</label>
-                                <input type="text" id="firstName" name="firstName" required>
+                                <input type="text" id="firstName" name="firstName" oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')" required>
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="middleName">Middle Name</label>
-                                <input type="text" id="middleName" name="middleName">
+                                <input type="text" id="middleName" name="middleName" oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')">
                             </div>
                             <div class="form-group">
                                 <label for="suffix">Suffix</label>
-                                <input type="text" id="suffix" name="suffix">
+                                <input type="text" id="suffix" name="suffix" oninput="this.value = this.value.replace(/[^a-zA-Z\s.]/g, '')">
                             </div>
                         </div>
                         <div class="form-row">
@@ -101,7 +117,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             </div>
                             <div class="form-group">
                                 <label for="contactNumber">Contact Number</label>
-                                <input type="text" id="contactNumber" name="contactNumber" required>
+                                <input type="text" id="contactNumber" name="contactNumber" oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
                             </div>
                         </div>
                         <div class="form-group">
@@ -111,11 +127,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="emergencyContactName">Emergency Contact Name</label>
-                                <input type="text" id="emergencyContactName" name="emergencyContactName">
+                                <input type="text" id="emergencyContactName" name="emergencyContactName" oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')">
                             </div>
                             <div class="form-group">
                                 <label for="emergencyContact">Emergency Contact Number</label>
-                                <input type="text" id="emergencyContact" name="emergencyContact">
+                                <input type="text" id="emergencyContact" name="emergencyContact" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                             </div>
                         </div>
                     </div>

@@ -19,6 +19,24 @@ $loggedInBarangay = htmlspecialchars($_SESSION['barangay'] ?? '');
     <link rel="stylesheet" href="../assets/css/barangay-sidebar.css">
     <link rel="stylesheet" href="../assets/css/main-dark-mode.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .image-placeholder {
+            margin-top: 10px;
+            width: 100%;
+            height: 200px; /* Or any other desired height */
+            border: 2px dashed #ccc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .image-placeholder img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -468,7 +486,7 @@ $loggedInBarangay = htmlspecialchars($_SESSION['barangay'] ?? '');
 
                     modalBody.innerHTML = `
                         <form id="applicationDetailForm" method="POST" action="../api/update_application.php" enctype="multipart/form-data">
-                            <input type="hidden" id="applicationId" name="applicationId" value="${application.id}">
+                            <input type="hidden" id="applicationId" name="applicationId" value="${application.id_number}">
                             <div class="form-section">
                                 <h3><i class="fas fa-user"></i> Basic Information</h3>
                                 <div class="form-row">
@@ -538,15 +556,15 @@ $loggedInBarangay = htmlspecialchars($_SESSION['barangay'] ?? '');
                                     <div class="form-group">
                                         <label>Type of Disability</label>
                                         <div>
-                                            <input type="checkbox" name="disabilityType[]" value="Deaf/Hard of Hearing" ${application.disabilityType && application.disabilityType.includes('Deaf/Hard of Hearing') ? 'checked' : ''}> Deaf/Hard of Hearing<br>
-                                            <input type="checkbox" name="disabilityType[]" value="Intellectual Disability" ${application.disabilityType && application.disabilityType.includes('Intellectual Disability') ? 'checked' : ''}> Intellectual Disability<br>
-                                            <input type="checkbox" name="disabilityType[]" value="Learning Disability" ${application.disabilityType && application.disabilityType.includes('Learning Disability') ? 'checked' : ''}> Learning Disability<br>
-                                            <input type="checkbox" name="disabilityType[]" value="Mental Disability" ${application.disabilityType && application.disabilityType.includes('Mental Disability') ? 'checked' : ''}> Mental Disability<br>
-                                            <input type="checkbox" name="disabilityType[]" value="Orthopedic" ${application.disabilityType && application.disabilityType.includes('Orthopedic') ? 'checked' : ''}> Orthopedic<br>
-                                            <input type="checkbox" name="disabilityType[]" value="Physical Disability" ${application.disabilityType && application.disabilityType.includes('Physical Disability') ? 'checked' : ''}> Physical Disability<br>
-                                            <input type="checkbox" name="disabilityType[]" value="Psychosocial Disability" ${application.disabilityType && application.disabilityType.includes('Psychosocial Disability') ? 'checked' : ''}> Psychosocial Disability<br>
-                                            <input type="checkbox" name="disabilityType[]" value="Speech and Language Impairment" ${application.disabilityType && application.disabilityType.includes('Speech and Language Impairment') ? 'checked' : ''}> Speech and Language Impairment<br>
-                                            <input type="checkbox" name="disabilityType[]" value="Visual Disability" ${application.disabilityType && application.disabilityType.includes('Visual Disability') ? 'checked' : ''}> Visual Disability<br>
+                                            <input type="checkbox" name="disabilityType[]" value="Deaf/Hard of Hearing" ${application.disability_type && application.disability_type.includes('Deaf/Hard of Hearing') ? 'checked' : ''}> Deaf/Hard of Hearing<br>
+                                            <input type="checkbox" name="disabilityType[]" value="Intellectual Disability" ${application.disability_type && application.disability_type.includes('Intellectual Disability') ? 'checked' : ''}> Intellectual Disability<br>
+                                            <input type="checkbox" name="disabilityType[]" value="Learning Disability" ${application.disability_type && application.disability_type.includes('Learning Disability') ? 'checked' : ''}> Learning Disability<br>
+                                            <input type="checkbox" name="disabilityType[]" value="Mental Disability" ${application.disability_type && application.disability_type.includes('Mental Disability') ? 'checked' : ''}> Mental Disability<br>
+                                            <input type="checkbox" name="disabilityType[]" value="Orthopedic" ${application.disability_type && application.disability_type.includes('Orthopedic') ? 'checked' : ''}> Orthopedic<br>
+                                            <input type="checkbox" name="disabilityType[]" value="Physical Disability" ${application.disability_type && application.disability_type.includes('Physical Disability') ? 'checked' : ''}> Physical Disability<br>
+                                            <input type="checkbox" name="disabilityType[]" value="Psychosocial Disability" ${application.disability_type && application.disability_type.includes('Psychosocial Disability') ? 'checked' : ''}> Psychosocial Disability<br>
+                                            <input type="checkbox" name="disabilityType[]" value="Speech and Language Impairment" ${application.disability_type && application.disability_type.includes('Speech and Language Impairment') ? 'checked' : ''}> Speech and Language Impairment<br>
+                                            <input type="checkbox" name="disabilityType[]" value="Visual Disability" ${application.disability_type && application.disability_type.includes('Visual Disability') ? 'checked' : ''}> Visual Disability<br>
                                         </div>
                                     </div>
                                     <div class="form-row">
@@ -579,12 +597,18 @@ $loggedInBarangay = htmlspecialchars($_SESSION['barangay'] ?? '');
                                 <div class="form-group">
                                     <label for="proofOfAddress">Proof of Address</label>
                                     <input type="file" id="proofOfAddress" name="proofOfAddress">
-                                    <p id="currentProofOfAddress">${application.has_proof_of_address ? `<a href="../api/get_document.php?id=${appId}&doc_type=proof_of_address" target="_blank">View Current Proof of Address</a>` : 'No document uploaded'}</p>
+                                    <div class="image-placeholder" id="proofOfAddressPreview">
+                                        ${application.has_proof_of_address ? `<img src="../api/get_document.php?id=${appId}&doc_type=proof_of_address" alt="Proof of Address">` : '<p>No document uploaded.</p>'}
+                                    </div>
+                                    ${application.has_proof_of_address ? `<p><a href="../api/get_document.php?id=${appId}&doc_type=proof_of_address" target="_blank" class="view-original-link">View Full Document</a></p>` : ''}
                                 </div>
                                 <div class="form-group">
-                                    <label for="idImage">ID Image</label>
+                                    <label for="idImage">Updated ID Image</label>
                                     <input type="file" id="idImage" name="idImage">
-                                    <p id="currentIdImage">${application.has_id_image ? `<a href="../api/get_document.php?id=${appId}&doc_type=id_image" target="_blank">View Current ID Image</a>` : 'No document uploaded'}</p>
+                                    <div class="image-placeholder" id="idImagePreview">
+                                        ${application.has_id_image ? `<img src="../api/get_document.php?id=${appId}&doc_type=id_image" alt="ID Image">` : '<p>No document uploaded.</p>'}
+                                    </div>
+                                    ${application.has_id_image ? `<p><a href="../api/get_document.php?id=${appId}&doc_type=id_image" target="_blank" class="view-original-link">View Full Document</a></p>` : ''}
                                 </div>
                             </div>
                             <div class="form-section">

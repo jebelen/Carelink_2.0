@@ -466,7 +466,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <form id="adminLoginForm" method="post" action="">
                 <div class="form-group">
                     <label for="adminUsername">Username</label>
-                    <input type="text" id="adminUsername" name="adminUsername" class="form-control" placeholder="Enter admin username" required>
+                    <input type="text" id="adminUsername" name="adminUsername" class="form-control" placeholder="Enter admin username" oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '')" required>
                 </div>
                 
                 <div class="form-group">

@@ -11,55 +11,36 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'barangay_staff') {
 $barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
 error_log("DEBUG: Logged-in barangay: " . $_SESSION['barangay']);
 
-// 1. Get filter, search, and pagination parameters from URL
+// 1. Get filter, search, and pagination parameters from URL (these will be used by JavaScript for client-side filtering)
 $search = $_GET['search'] ?? '';
 $typeFilter = $_GET['type'] ?? 'all';
-$statusFilter = $_GET['status'] ?? 'approved'; // Default to approved
+$yearFilter = $_GET['year'] ?? 'all'; // Default to 'all' for client-side
 $page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
-$recordsPerPage = 15;
-$offset = ($page - 1) * $recordsPerPage;
 
-// 2. Build the database query dynamically
-$baseQuery = "FROM applications WHERE barangay = :barangay";
-$whereClauses = [];
+// Fetch all APPROVED applications for the specific barangay to enable client-side filtering
+$baseQuery = "FROM applications WHERE barangay = :barangay AND status = 'approved'";
 $params = [':barangay' => $_SESSION['barangay']];
 
-if (!empty($search)) {
-    $whereClauses[] = "(full_name LIKE :search OR id_number LIKE :search)";
-    $params[':search'] = "%$search%";
-}
-if ($typeFilter !== 'all') {
-    $whereClauses[] = "application_type = :type";
-    $params[':type'] = $typeFilter;
-}
-if ($statusFilter !== 'all') {
-    $whereClauses[] = "status = :status";
-    $params[':status'] = $statusFilter;
-}
+// For client-side filtering, we'll fetch more records initially, or ideally all if performance allows.
+// Let's set a very high limit to simulate fetching all for client-side filtering.
+$recordsPerPage = 10000; // Assuming 10k records is a reasonable upper limit for a single barangay's display
+$offset = 0; // Fetch from the beginning
 
-$whereSql = '';
-if (!empty($whereClauses)) {
-    $whereSql = " AND " . implode(' AND ', $whereClauses);
-}
+// No other WHERE clauses for initial fetch.
 
-// 3. Get total number of records for pagination
-$totalQuery = "SELECT COUNT(*) " . $baseQuery . $whereSql;
+// 3. Get total number of records for pagination (though mostly client-side now, this count might still be useful for initial load info)
+$totalQuery = "SELECT COUNT(*) " . $baseQuery; // Count without other filters
 $totalStmt = $conn->prepare($totalQuery);
 $totalStmt->execute($params);
 $totalRecords = $totalStmt->fetchColumn();
-$totalPages = ceil($totalRecords / $recordsPerPage);
+$totalPages = ceil($totalRecords / $recordsPerPage); // This will likely be 1 now with high recordsPerPage
 
-// 4. Get the records for the current page
-$recordsQuery = "SELECT id_number as id, full_name, application_type, date_submitted, status " . $baseQuery . $whereSql . " ORDER BY date_submitted DESC LIMIT :limit OFFSET :offset";
+// 4. Get the records for the current page (effectively all for client-side filtering)
+$recordsQuery = "SELECT id_number as id, full_name, application_type, date_submitted, status " . $baseQuery . " ORDER BY date_submitted DESC LIMIT :limit OFFSET :offset";
 $recordsStmt = $conn->prepare($recordsQuery);
-
-// Bind all parameters including limit and offset
-foreach ($params as $key => &$val) {
-    $recordsStmt->bindParam($key, $val);
-}
+$recordsStmt->bindParam(':barangay', $_SESSION['barangay']); // Re-bind for clarity, though it's already in $params
 $recordsStmt->bindParam(':limit', $recordsPerPage, PDO::PARAM_INT);
 $recordsStmt->bindParam(':offset', $offset, PDO::PARAM_INT);
-
 $recordsStmt->execute();
 $applications = $recordsStmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -86,6 +67,24 @@ function getStatusClass($status) {
     <link rel="stylesheet" href="../assets/css/main-dark-mode.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="../assets/css/barangay-records.css">
+    <style>
+        .image-placeholder {
+            margin-top: 10px;
+            width: 100%;
+            height: 200px; /* Or any other desired height */
+            border: 2px dashed #ccc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .image-placeholder img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -120,61 +119,40 @@ function getStatusClass($status) {
                 </div>
             </div>
 
-            <!-- Yearly Records Section -->
-            <div class="yearly-records">
-                <div class="records-header">
-                    <h2>Yearly Application Records</h2>
-                    <div class="records-actions">
-                        <div class="search-box">
-                            <i class="fas fa-search"></i>
-                            <input type="text" placeholder="Search records...">
-                        </div>
-                        <button class="btn"><i class="fas fa-download"></i> Export</button>
-                    </div>
-                </div>
-                
-                <div class="year-selector">
-                    <button class="year-btn" data-year="2020">2020</button>
-                    <button class="year-btn" data-year="2021">2021</button>
-                    <button class="year-btn" data-year="2022">2022</button>
-                    <button class="year-btn" data-year="2023">2023</button>
-                    <button class="year-btn active" data-year="2024">2024</button>
-                </div>
-            </div>
-
             <!-- Records Section -->
             <div class="records-section">
                 <div class="records-header">
-                    <h2>All Records for <span id="current-year">2024</span></h2>
-                    <div class="records-actions">
-                        <button class="btn btn-accent" id="filter-btn">
-                            <i class="fas fa-filter"></i> Filter
-                        </button>
-                    </div>
+                    <h2>Application Records</h2>
                 </div>
                 
                 <!-- Filter Section -->
                 <div class="filter-section">
                     <div class="filter-group">
-                        <label for="type-filter">Application Type</label>
-                        <select id="type-filter">
-                            <option value="all">All Types</option>
-                            <option value="PWD">PWD</option>
-                            <option value="Senior Citizen">Senior Citizen</option>
-                            <option value="Solo Parent">Solo Parent</option>
-                            <option value="4Ps">4Ps</option>
-                            <option value="Others">Others</option>
+                        <label for="search-input">Search:</label>
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input id="search-input" type="text" placeholder="Search by name or ID..." oninput="applyFilters()">
+                        </div>
+                    </div>
+                    <div class="filter-group">
+                        <label for="year-filter">Year:</label>
+                        <select id="year-filter" onchange="applyFilters()">
+                            <option value="all">All Years</option>
+                            <?php
+                                $currentYear = date("Y");
+                                for ($y = $currentYear; $y >= 2020; $y--) {
+                                    $selected = ($yearFilter == $y) ? 'selected' : ''; // Use $yearFilter from PHP
+                                    echo "<option value=\"$y\" $selected>$y</option>";
+                                }
+                            ?>
                         </select>
                     </div>
                     <div class="filter-group">
-                        <label for="status-filter">Status</label>
-                        <select id="status-filter">
-                            <option value="all">All Status</option>
-                            <option value="pending">Pending</option>
-                            <option value="verified">Verified</option>
-                            <option value="rejected">Rejected</option>
-                            <option value="sent">Sent to City Hall</option>
-                            <option value="approved" selected>Approved</option>
+                        <label for="type-filter">Application Type:</label>
+                        <select id="type-filter" onchange="applyFilters()">
+                            <option value="all">All Types</option>
+                            <option value="PWD">PWD</option>
+                            <option value="Senior Citizen">Senior Citizen</option>
                         </select>
                     </div>
                 </div>
@@ -194,7 +172,11 @@ function getStatusClass($status) {
                                 <div class="no-results">No applications found for Barangay <?php echo $barangayName; ?>.</div>
                             <?php else: ?>
                                 <?php foreach ($applications as $app): ?>
-                                    <div class="table-row <?php echo getStatusClass($app['status']); ?>">
+                                    <div class="table-row <?php echo getStatusClass($app['status']); ?>" 
+                                         data-id="<?php echo htmlspecialchars($app['id']); ?>"
+                                         data-name="<?php echo htmlspecialchars($app['full_name']); ?>"
+                                         data-date="<?php echo htmlspecialchars($app['date_submitted']); ?>"
+                                         data-type="<?php echo htmlspecialchars($app['application_type']); ?>">
                                         <div><?php echo htmlspecialchars($app['full_name']); ?></div>
                                         <div><?php echo htmlspecialchars($app['application_type']); ?></div>
                                         <div><?php echo htmlspecialchars(date('m/d/Y', strtotime($app['date_submitted']))); ?></div>
@@ -376,30 +358,30 @@ function getStatusClass($status) {
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="sssNo">SSS No.</label>
-                                    <input type="text" id="sssNo" name="sssNo">
+                                    <input type="text" id="sssNo" name="sssNo" oninput="this.value = this.value.replace(/[^a-zA-Z0-9-]/g, '')">
                                 </div>
                                 <div class="form-group">
                                     <label for="gsisNo">GSIS No.</label>
-                                    <input type="text" id="gsisNo" name="gsisNo">
+                                    <input type="text" id="gsisNo" name="gsisNo" oninput="this.value = this.value.replace(/[^a-zA-Z0-9-]/g, '')">
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="pagibigNo">Pag-ibig No.</label>
-                                    <input type="text" id="pagibigNo" name="pagibigNo">
+                                    <input type="text" id="pagibigNo" name="pagibigNo" oninput="this.value = this.value.replace(/[^a-zA-Z0-9-]/g, '')">
                                 </div>
                                 <div class="form-group">
                                     <label for="philhealthNo">Philhealth No.</label>
-                                    <input type="text" id="philhealthNo" name="philhealthNo">
+                                    <input type="text" id="philhealthNo" name="philhealthNo" oninput="this.value = this.value.replace(/[^a-zA-Z0-9-]/g, '')">
                                 </div>
                             </div>
                             <div class="form-group">
                                 <label for="fatherName">Father's Name</label>
-                                <input type="text" id="fatherName" name="fatherName">
+                                <input type="text" id="fatherName" name="fatherName" oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')">
                             </div>
                             <div class="form-group">
                                 <label for="motherName">Mother's Name</label>
-                                <input type="text" id="motherName" name="motherName">
+                                <input type="text" id="motherName" name="motherName" oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')">
                             </div>
                         </div>
                     </div>
@@ -547,11 +529,9 @@ function getStatusClass($status) {
             
             // Auto-filter functionality (client-side filtering for now)
             const typeFilter = document.getElementById('type-filter');
-            const statusFilter = document.getElementById('status-filter');
             
             // Add event listeners for automatic filtering
             typeFilter.addEventListener('change', applyFilters);
-            statusFilter.addEventListener('change', applyFilters);
             
             // Update welcome message based on time of day
             const welcomeMessage = document.querySelector('.welcome-message');
@@ -604,21 +584,21 @@ function getStatusClass($status) {
                                 <div class="form-row">
                                     <div class="form-group">
                                         <label for="lastName">Last Name</label>
-                                        <input type="text" id="lastName" name="lastName" value="${application.lastName || ''}" required>
+                                        <input type="text" id="lastName" name="lastName" value="${application.lastName || ''}" oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')" required>
                                     </div>
                                     <div class="form-group">
                                         <label for="firstName">First Name</label>
-                                        <input type="text" id="firstName" name="firstName" value="${application.firstName || ''}" required>
+                                        <input type="text" id="firstName" name="firstName" value="${application.firstName || ''}" oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')" required>
                                     </div>
                                 </div>
                                 <div class="form-row">
                                     <div class="form-group">
                                         <label for="middleName">Middle Name</label>
-                                        <input type="text" id="middleName" name="middleName" value="${application.middleName || ''}">
+                                        <input type="text" id="middleName" name="middleName" value="${application.middleName || ''}" oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')">
                                     </div>
                                     <div class="form-group">
                                         <label for="suffix">Suffix</label>
-                                        <input type="text" id="suffix" name="suffix" value="${application.suffix || ''}">
+                                        <input type="text" id="suffix" name="suffix" value="${application.suffix || ''}" oninput="this.value = this.value.replace(/[^a-zA-Z\s.]/g, '')">
                                     </div>
                                 </div>
                                 <div class="form-row">
@@ -628,7 +608,7 @@ function getStatusClass($status) {
                                     </div>
                                     <div class="form-group">
                                         <label for="contactNumber">Contact Number</label>
-                                        <input type="text" id="contactNumber" name="contactNumber" value="${application.contact_number || ''}" required>
+                                        <input type="text" id="contactNumber" name="contactNumber" value="${application.contact_number || ''}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
                                     </div>
                                 </div>
                                 <div class="form-group">
@@ -638,11 +618,11 @@ function getStatusClass($status) {
                                 <div class="form-row">
                                     <div class="form-group">
                                         <label for="emergencyContactName">Emergency Contact Name</label>
-                                        <input type="text" id="emergencyContactName" name="emergencyContactName" value="${application.emergency_contact_name || ''}">
+                                        <input type="text" id="emergencyContactName" name="emergencyContactName" value="${application.emergency_contact_name || ''}" oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')">
                                     </div>
                                     <div class="form-group">
                                         <label for="emergencyContact">Emergency Contact Number</label>
-                                        <input type="text" id="emergencyContact" name="emergencyContact" value="${application.emergency_contact || ''}">
+                                        <input type="text" id="emergencyContact" name="emergencyContact" value="${application.emergency_contact || ''}" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                                     </div>
                                 </div>
                             </div>
@@ -653,21 +633,21 @@ function getStatusClass($status) {
                                     <div class="form-row">
                                         <div class="form-group">
                                             <label for="pwdIdNumber">ID Number</label>
-                                            <input type="text" id="pwdIdNumber" name="idNumber" value="${application.id_number || ''}">
+                                            <input type="text" id="pwdIdNumber" name="idNumber" value="${application.id_number || ''}" oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '')">
                                         </div>
                                     </div>
                                     <div class="form-group">
                                         <label>Type of Disability</label>
                                         <div>
-                                            <input type="checkbox" name="disabilityType[]" value="Deaf/Hard of Hearing" ${application.disabilityType && application.disabilityType.includes('Deaf/Hard of Hearing') ? 'checked' : ''}> Deaf/Hard of Hearing<br>
-                                            <input type="checkbox" name="disabilityType[]" value="Intellectual Disability" ${application.disabilityType && application.disabilityType.includes('Intellectual Disability') ? 'checked' : ''}> Intellectual Disability<br>
-                                            <input type="checkbox" name="disabilityType[]" value="Learning Disability" ${application.disabilityType && application.disabilityType.includes('Learning Disability') ? 'checked' : ''}> Learning Disability<br>
-                                            <input type="checkbox" name="disabilityType[]" value="Mental Disability" ${application.disabilityType && application.disabilityType.includes('Mental Disability') ? 'checked' : ''}> Mental Disability<br>
-                                            <input type="checkbox" name="disabilityType[]" value="Orthopedic" ${application.disabilityType && application.disabilityType.includes('Orthopedic') ? 'checked' : ''}> Orthopedic<br>
-                                            <input type="checkbox" name="disabilityType[]" value="Physical Disability" ${application.disabilityType && application.disabilityType.includes('Physical Disability') ? 'checked' : ''}> Physical Disability<br>
-                                            <input type="checkbox" name="disabilityType[]" value="Psychosocial Disability" ${application.disabilityType && application.disabilityType.includes('Psychosocial Disability') ? 'checked' : ''}> Psychosocial Disability<br>
-                                            <input type="checkbox" name="disabilityType[]" value="Speech and Language Impairment" ${application.disabilityType && application.disabilityType.includes('Speech and Language Impairment') ? 'checked' : ''}> Speech and Language Impairment<br>
-                                            <input type="checkbox" name="disabilityType[]" value="Visual Disability" ${application.disabilityType && application.disabilityType.includes('Visual Disability') ? 'checked' : ''}> Visual Disability<br>
+                                            <input type="checkbox" name="disabilityType[]" value="Deaf/Hard of Hearing" ${application.disability_type && application.disability_type.includes('Deaf/Hard of Hearing') ? 'checked' : ''}> Deaf/Hard of Hearing<br>
+                                            <input type="checkbox" name="disabilityType[]" value="Intellectual Disability" ${application.disability_type && application.disability_type.includes('Intellectual Disability') ? 'checked' : ''}> Intellectual Disability<br>
+                                            <input type="checkbox" name="disabilityType[]" value="Learning Disability" ${application.disability_type && application.disability_type.includes('Learning Disability') ? 'checked' : ''}> Learning Disability<br>
+                                            <input type="checkbox" name="disabilityType[]" value="Mental Disability" ${application.disability_type && application.disability_type.includes('Mental Disability') ? 'checked' : ''}> Mental Disability<br>
+                                            <input type="checkbox" name="disabilityType[]" value="Orthopedic" ${application.disability_type && application.disability_type.includes('Orthopedic') ? 'checked' : ''}> Orthopedic<br>
+                                            <input type="checkbox" name="disabilityType[]" value="Physical Disability" ${application.disability_type && application.disability_type.includes('Physical Disability') ? 'checked' : ''}> Physical Disability<br>
+                                            <input type="checkbox" name="disabilityType[]" value="Psychosocial Disability" ${application.disability_type && application.disability_type.includes('Psychosocial Disability') ? 'checked' : ''}> Psychosocial Disability<br>
+                                            <input type="checkbox" name="disabilityType[]" value="Speech and Language Impairment" ${application.disability_type && application.disability_type.includes('Speech and Language Impairment') ? 'checked' : ''}> Speech and Language Impairment<br>
+                                            <input type="checkbox" name="disabilityType[]" value="Visual Disability" ${application.disability_type && application.disability_type.includes('Visual Disability') ? 'checked' : ''}> Visual Disability<br>
                                         </div>
                                     </div>
                                     <div class="form-row">
@@ -689,7 +669,7 @@ function getStatusClass($status) {
                                     <div class="form-row">
                                         <div class="form-group">
                                             <label for="seniorIdNumber">ID Number</label>
-                                            <input type="text" id="seniorIdNumber" name="idNumber" value="${application.id_number || ''}">
+                                            <input type="text" id="seniorIdNumber" name="idNumber" value="${application.id_number || ''}" oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '')">
                                         </div>
                                     </div>
                                 </div>
@@ -700,12 +680,16 @@ function getStatusClass($status) {
                                 <div class="form-group">
                                     <label for="proofOfAddress">Proof of Address</label>
                                     <input type="file" id="proofOfAddress" name="proofOfAddress">
-                                    <p id="currentProofOfAddress">${application.has_proof_of_address ? `<a href="../api/get_document.php?id=${appId}&doc_type=proof_of_address" target="_blank">View Current Proof of Address</a>` : 'No document uploaded'}</p>
+                                     <div class="image-placeholder" id="proofOfAddressPreview">
+                                        ${application.has_proof_of_address ? `<img src="../api/get_document.php?id=${appId}&doc_type=proof_of_address" alt="Proof of Address">` : '<p>No document uploaded.</p>'}
+                                    </div>
                                 </div>
                                 <div class="form-group">
                                     <label for="idImage">ID Image</label>
                                     <input type="file" id="idImage" name="idImage">
-                                    <p id="currentIdImage">${application.has_id_image ? `<a href="../api/get_document.php?id=${appId}&doc_type=id_image" target="_blank">View Current ID Image</a>` : 'No document uploaded'}</p>
+                                    <div class="image-placeholder" id="idImagePreview">
+                                        ${application.has_id_image ? `<img src="../api/get_document.php?id=${appId}&doc_type=id_image" alt="ID Image">` : '<p>No document uploaded.</p>'}
+                                    </div>
                                 </div>
                             </div>
                             <div class="form-section">
@@ -766,41 +750,27 @@ function getStatusClass($status) {
                     modalBody.innerHTML = '<p>Error loading application details. Please check the console for more information.</p>';
                 });
         }
-        function updateTableData(year) {
-            // In a real application, this would fetch data from a server
-            // For this demo, we'll just update the year in the table header
-            document.getElementById('current-year').textContent = year;
-            
-            // Show a message to indicate the data has been updated
-            const tableRows = document.querySelectorAll('.table-row');
-            tableRows.forEach(row => {
-                // Update the date to reflect the selected year
-                const dateCell = row.children[2];
-                const currentDate = dateCell.textContent;
-                const newDate = currentDate.replace(/\d{4}$/, year);
-                dateCell.textContent = newDate;
-            });
-        }
+
 
         function applyFilters() {
-            // const idFilterValue = document.getElementById('id-filter').value.toLowerCase(); // Removed ID filter
-            const typeFilterValue = document.getElementById('type-filter').value;
-            const statusFilterValue = document.getElementById('status-filter').value;
+            const searchValue = document.getElementById('search-input').value.toLowerCase();
+            const yearFilterValue = document.getElementById('year-filter').value;
+            const typeFilterValue = document.getElementById('type-filter').value.toLowerCase();
             const tableRows = document.querySelectorAll('.table-data .table-row');
             
             let hasResults = false;
 
             tableRows.forEach(row => {
-                const fullName = row.children[0].textContent.toLowerCase(); // Using full_name for general search
-                const applicationType = row.children[1].textContent;
-                const status = row.children[3].textContent.toLowerCase(); // Status is now at index 3
-                
-                // Check if row matches all filter criteria
-                // const idMatch = idFilterValue === '' || fullName.includes(idFilterValue); // Removed ID filter
-                const typeMatch = typeFilterValue === 'all' || applicationType === typeFilterValue;
-                const statusMatch = statusFilterValue === 'all' || status.includes(statusFilterValue);
-                
-                if (typeMatch && statusMatch) { // Only type and status filters
+                const id = row.dataset.id.toLowerCase();
+                const name = row.dataset.name.toLowerCase();
+                const date = row.dataset.date;
+                const type = row.dataset.type.toLowerCase();
+
+                const searchMatch = name.includes(searchValue) || id.includes(searchValue);
+                const yearMatch = yearFilterValue === 'all' || (date && new Date(date).getFullYear().toString() === yearFilterValue);
+                const typeMatch = typeFilterValue === 'all' || type.toLowerCase() === typeFilterValue;
+
+                if (searchMatch && yearMatch && typeMatch) {
                     row.style.display = 'grid';
                     hasResults = true;
                 } else {

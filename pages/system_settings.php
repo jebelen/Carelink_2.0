@@ -507,11 +507,11 @@ try {
                     <form action="" method="POST">
                         <div class="form-group">
                             <label for="sessionTimeout">Session Timeout (minutes)</label>
-                            <input type="number" id="sessionTimeout" name="sessionTimeout" value="<?php echo htmlspecialchars($system_settings['session_timeout'] ?? 30); ?>" min="5" max="120" disabled>
+                            <input type="number" id="sessionTimeout" name="sessionTimeout" value="<?php echo htmlspecialchars($system_settings['session_timeout'] ?? 30); ?>" min="5" max="120" oninput="this.value = this.value.replace(/[^0-9]/g, '')" disabled>
                         </div>
                         <div class="form-group">
                             <label for="maxLoginAttempts">Max Login Attempts</label>
-                            <input type="number" id="maxLoginAttempts" name="maxLoginAttempts" value="<?php echo htmlspecialchars($system_settings['max_login_attempts'] ?? 5); ?>" min="3" max="10" disabled>
+                            <input type="number" id="maxLoginAttempts" name="maxLoginAttempts" value="<?php echo htmlspecialchars($system_settings['max_login_attempts'] ?? 5); ?>" min="3" max="10" oninput="this.value = this.value.replace(/[^0-9]/g, '')" disabled>
                         </div>
                         <div class="actions">
                             <button type="button" class="btn btn-small" id="editSecuritySettingsBtn">Edit Settings</button>

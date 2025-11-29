@@ -17,3 +17,9 @@ MODEL_PATH = os.path.join(os.path.dirname(__file__), 'pasig_id_verifier_model.h5
 BATCH_SIZE = 32
 EPOCHS = 10
 DATA_DIR = 'training_data'
+
+# --- Autoencoder Configuration ---
+AUTOENCODER_MODEL_PATH = os.path.join(os.path.dirname(__file__), 'pasig_id_autoencoder_model.h5')
+# This threshold will need tuning. It represents the maximum acceptable reconstruction error for a "genuine" ID.
+# Images with reconstruction error above this threshold will be considered anomalous/fake.
+RECONSTRUCTION_THRESHOLD = 0.005 # Example value, tune this after training
