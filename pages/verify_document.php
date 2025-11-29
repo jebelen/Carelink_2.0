@@ -359,6 +359,22 @@ require_once '../includes/db_connect.php';
             max-height: 70vh;
             overflow-y: auto;
         }
+        .image-placeholder {
+            margin-top: 10px;
+            width: 100%;
+            height: 200px; /* Or any other desired height */
+            border: 2px dashed #ccc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .image-placeholder img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
     </style>
 </head>
 <body>
@@ -512,7 +528,7 @@ require_once '../includes/db_connect.php';
 
                     modalBody.innerHTML = `
                         <form id="applicationDetailForm" method="POST" action="../api/update_application.php" enctype="multipart/form-data">
-                            <input type="hidden" id="applicationId" name="applicationId" value="${application.id}">
+                            <input type="hidden" id="applicationId" name="applicationId" value="${application.id_number}">
                             <div class="form-section">
                                 <h3><i class="fas fa-user"></i> Basic Information</h3>
                                 <div class="form-row">
@@ -575,8 +591,8 @@ require_once '../includes/db_connect.php';
                                     <h3><i class="fas fa-wheelchair"></i> PWD Specific Information</h3>
                                     <div class="form-row">
                                         <div class="form-group">
-                                            <label for="idNumber">ID Number</label>
-                                            <input type="text" id="idNumber" name="idNumber" value="${application.id_number || ''}">
+                                            <label for="pwdIdNumber">ID Number</label>
+                                            <input type="text" id="pwdIdNumber" name="idNumber" value="${application.id_number || ''}">
                                         </div>
                                     </div>
                                     <div class="form-group">
@@ -611,8 +627,8 @@ require_once '../includes/db_connect.php';
                                     <h3><i class="fas fa-user-friends"></i> Senior Citizen Specific Information</h3>
                                     <div class="form-row">
                                         <div class="form-group">
-                                            <label for="idNumber">ID Number</label>
-                                            <input type="text" id="idNumber" name="idNumber" value="${application.id_number || ''}">
+                                            <label for="seniorIdNumber">ID Number</label>
+                                            <input type="text" id="seniorIdNumber" name="idNumber" value="${application.id_number || ''}">
                                         </div>
                                     </div>
                                 </div>
@@ -623,12 +639,18 @@ require_once '../includes/db_connect.php';
                                 <div class="form-group">
                                     <label for="proofOfAddress">Proof of Address</label>
                                     <input type="file" id="proofOfAddress" name="proofOfAddress">
-                                    <p id="currentProofOfAddress">${application.has_proof_of_address ? `<a href="../api/get_document.php?id=${appId}&doc_type=proof_of_address" target="_blank">View Current Proof of Address</a> <button type="button" class="btn btn-small btn-secondary" onclick="verifyDocumentWithCNN(${appId}, 'proof_of_address', 'proofOfAddressResult')">Verify</button><span id="proofOfAddressResult"></span>` : 'No document uploaded'}</p>
+                                    <div class="image-placeholder" id="proofOfAddressPreview">
+                                        ${application.has_proof_of_address ? `<img src="../api/get_document.php?id=${appId}&doc_type=proof_of_address" alt="Proof of Address">` : '<p>No document uploaded.</p>'}
+                                    </div>
+                                    ${application.has_proof_of_address ? `<p><a href="../api/get_document.php?id=${appId}&doc_type=proof_of_address" target="_blank">View Full Document</a> | <button type="button" class="btn btn-small btn-secondary" onclick="verifyDocumentWithCNN(${appId}, 'proof_of_address', 'proofOfAddressResult')">Verify</button><span id="proofOfAddressResult"></span></p>` : ''}
                                 </div>
                                 <div class="form-group">
                                     <label for="idImage">ID Image</label>
                                     <input type="file" id="idImage" name="idImage">
-                                    <p id="currentIdImage">${application.has_id_image ? `<a href="../api/get_document.php?id=${appId}&doc_type=id_image" target="_blank">View Current ID Image</a> <button type="button" class="btn btn-small btn-secondary" onclick="verifyDocumentWithCNN(${appId}, 'id_image', 'idImageResult')">Verify</button><span id="idImageResult"></span>` : 'No document uploaded'}</p>
+                                    <div class="image-placeholder" id="idImagePreview">
+                                        ${application.has_id_image ? `<img src="../api/get_document.php?id=${appId}&doc_type=id_image" alt="ID Image">` : '<p>No document uploaded.</p>'}
+                                    </div>
+                                    ${application.has_id_image ? `<p><a href="../api/get_document.php?id=${appId}&doc_type=id_image" target="_blank">View Full Document</a> | <button type="button" class="btn btn-small btn-secondary" onclick="verifyDocumentWithCNN(${appId}, 'id_image', 'idImageResult')">Verify</button><span id="idImageResult"></span></p>` : ''}
                                 </div>
                             </div>
                             <div class="form-section">
@@ -646,6 +668,22 @@ require_once '../includes/db_connect.php';
                             </div>
                         </form>
                     `;
+
+                    // Get all disabilityType checkboxes
+                    const disabilityCheckboxes = modalBody.querySelectorAll('input[name="disabilityType[]"]');
+                    
+                    // Split the disability_type string from the application object into an array
+                    const disabilities = application.disability_type ? application.disability_type.split(', ').map(s => s.trim()) : [];
+
+                    // Check the appropriate checkboxes
+                    disabilityCheckboxes.forEach(checkbox => {
+                        if (disabilities.includes(checkbox.value)) {
+                            checkbox.checked = true;
+                        } else {
+                            checkbox.checked = false; // Ensure unchecked if not in list
+                        }
+                    });
+
 
                     // Add event listener for application type change within the modal
                     document.getElementById('applicationType').addEventListener('change', function () {
@@ -772,7 +810,13 @@ require_once '../includes/db_connect.php';
                 .then(data => {
                     if (data.status === 'success') {
                         resultElement.innerHTML = ` Result: ${data.verification_result} (Confidence: ${(data.confidence * 100).toFixed(2)}%)`;
-                        resultElement.style.color = data.verification_result === 'verified' ? 'green' : 'red';
+                        if (data.confidence >= 0.9) {
+                            resultElement.style.color = 'green';
+                        } else if (data.confidence > 0.7) {
+                            resultElement.style.color = 'orange';
+                        } else {
+                            resultElement.style.color = 'red';
+                        }
                     } else {
                         resultElement.innerHTML = ` Error: ${data.error}`;
                         resultElement.style.color = 'red';

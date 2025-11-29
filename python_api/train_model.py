@@ -1,19 +1,18 @@
 import tensorflow as tf
 from tensorflow.keras import layers, models
 import os
-
-# --- Configuration ---
-IMG_HEIGHT, IMG_WIDTH = 128, 128 # Must match app.py
-BATCH_SIZE = 32
-EPOCHS = 10 # You might need to adjust this based on your dataset size and model performance
-DATA_DIR = 'training_data' # Relative path to your training data
-MODEL_SAVE_PATH = 'pasig_id_verifier_model.h5' # Must match app.py
-CLASS_NAMES = ['Fake_PWD_ID', 'Fake_Senior_ID', 'Not_An_ID', 'PWD_ID', 'Senior_ID'] # Must match app.py and your folder names
+import numpy as np
+from PIL import Image
+from config import (
+    IMG_HEIGHT, IMG_WIDTH, BATCH_SIZE, EPOCHS, 
+    DATA_DIR, MODEL_PATH as MODEL_SAVE_PATH, CLASS_NAMES
+)
 
 def create_model(num_classes):
     """Defines a simple CNN model."""
     model = models.Sequential([
-        layers.Conv2D(32, (3, 3), activation='relu', input_shape=(IMG_HEIGHT, IMG_WIDTH, 3)),
+        layers.Rescaling(1./255, input_shape=(IMG_HEIGHT, IMG_WIDTH, 3)),
+        layers.Conv2D(32, (3, 3), activation='relu'),
         layers.MaxPooling2D((2, 2)),
         layers.Conv2D(64, (3, 3), activation='relu'),
         layers.MaxPooling2D((2, 2)),
@@ -21,40 +20,54 @@ def create_model(num_classes):
         layers.MaxPooling2D((2, 2)),
         layers.Flatten(),
         layers.Dense(128, activation='relu'),
-        layers.Dense(num_classes, activation='softmax') # Softmax for multi-class classification
+        layers.Dense(num_classes, activation='softmax')
     ])
     return model
 
+def load_and_preprocess_image(path, label):
+    """Loads and preprocesses a single image."""
+    try:
+        img = tf.io.read_file(path)
+        img = tf.image.decode_image(img, channels=3, expand_animations=False)
+        img = tf.image.resize(img, [IMG_HEIGHT, IMG_WIDTH])
+        return img, label
+    except Exception:
+        return None, None
+
 def train_model():
-    print("Loading training data...")
-    # Load data from directories
-    # This function automatically infers labels from subdirectory names
-    train_ds = tf.keras.preprocessing.image_dataset_from_directory(
-        DATA_DIR,
-        labels='inferred',
-        label_mode='categorical', # Use categorical for one-hot encoded labels
-        image_size=(IMG_HEIGHT, IMG_WIDTH),
-        interpolation='nearest',
-        batch_size=BATCH_SIZE,
-        shuffle=True,
-        seed=42 # for reproducibility
-    )
+    print("Manually scanning for all image files...")
+    all_files = []
+    all_labels = []
+    
+    sorted_class_names = sorted(CLASS_NAMES)
+    class_to_index = {name: i for i, name in enumerate(sorted_class_names)}
 
-    # Get class names from the dataset to verify against expected CLASS_NAMES
-    found_class_names = train_ds.class_names
-    print(f"Found classes in data directory: {found_class_names}")
+    for class_name in sorted_class_names:
+        class_dir = os.path.join(DATA_DIR, class_name)
+        if not os.path.isdir(class_dir):
+            continue
+        for fname in os.listdir(class_dir):
+            if fname.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif', '.jfif')):
+                all_files.append(os.path.join(class_dir, fname))
+                all_labels.append(class_to_index[class_name])
 
-    # It's crucial that the order of classes in train_ds.class_names matches CLASS_NAMES
-    # image_dataset_from_directory sorts class names alphabetically by default.
-    # Ensure your CLASS_NAMES list is also sorted alphabetically if your folder names are.
-    if sorted(found_class_names) != sorted(CLASS_NAMES):
-        print("WARNING: Class names found in data directory do not match expected CLASS_NAMES.")
-        print(f"Expected: {CLASS_NAMES}, Found: {found_class_names}")
-        print("Please ensure your folder names match the CLASS_NAMES in app.py and train_model.py, and are sorted consistently.")
-        # You might want to exit or raise an error here if this mismatch is critical
+    if not all_files:
+        print("Error: No image files found in the training directory.")
         return
 
-    num_classes = len(CLASS_NAMES)
+    print(f"--- Found {len(all_files)} total files to be used for training ---")
+    for file_path in all_files:
+        print(file_path)
+    print("--- End of file list ---\n")
+
+    path_ds = tf.data.Dataset.from_tensor_slices((all_files, all_labels))
+    image_label_ds = path_ds.map(load_and_preprocess_image, num_parallel_calls=tf.data.AUTOTUNE)
+    image_label_ds = image_label_ds.filter(lambda x, y: x is not None)
+    
+    num_classes = len(sorted_class_names)
+    image_label_ds = image_label_ds.map(lambda x, y: (x, tf.one_hot(y, depth=num_classes)))
+
+    train_ds = image_label_ds.cache().shuffle(buffer_size=len(all_files)).batch(BATCH_SIZE).prefetch(buffer_size=tf.data.AUTOTUNE)
 
     print(f"Creating model with {num_classes} classes...")
     model = create_model(num_classes)
@@ -76,18 +89,7 @@ def train_model():
     print("Model training complete and saved.")
 
 if __name__ == '__main__':
-    # Ensure the training_data directory exists and has subfolders
-    expected_subdirs = [os.path.join(DATA_DIR, name) for name in CLASS_NAMES]
-    all_exist = True
-    for subdir in expected_subdirs:
-        if not os.path.exists(subdir):
-            print(f"Error: Expected subdirectory '{subdir}' not found.")
-            all_exist = False
-    
-    if not all_exist:
-        print("\nPlease create the following subdirectories inside 'training_data':")
-        for name in CLASS_NAMES:
-            print(f"- {DATA_DIR}/{name}")
-        print("And place your images accordingly before running this script.")
+    if not os.path.isdir(DATA_DIR):
+        print(f"Error: Training data directory '{DATA_DIR}' not found.")
     else:
         train_model()

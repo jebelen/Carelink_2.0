@@ -14,7 +14,6 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'department_admin') {
 $search = $_GET['search'] ?? '';
 $barangayFilter = $_GET['barangay'] ?? 'all';
 $typeFilter = $_GET['type'] ?? 'all';
-$statusFilter = $_GET['status'] ?? 'Approved';
 $page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
 $recordsPerPage = 15; // Number of records to display per page
 $offset = ($page - 1) * $recordsPerPage;
@@ -36,10 +35,11 @@ if ($typeFilter !== 'all') {
     $whereClauses[] = "application_type = :type"; // Match the column name
     $params[':type'] = $typeFilter;
 }
-if ($statusFilter !== 'all') {
-    $whereClauses[] = "status = :status";
-    $params[':status'] = $statusFilter;
-}
+
+// Always filter by status = 'Approved'
+$whereClauses[] = "status = :status_approved";
+$params[':status_approved'] = 'Approved';
+
 
 $whereSql = '';
 if (!empty($whereClauses)) {
@@ -482,6 +482,22 @@ function getStatusClass($status) {
         .status-default .application-status {
             background-color: var(--gray); /* Gray fallback */
         }
+        .image-placeholder {
+            margin-top: 10px;
+            width: 100%;
+            height: 200px; /* Or any other desired height */
+            border: 2px dashed #ccc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .image-placeholder img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
     </style>
 </head>
 <body>
@@ -517,17 +533,14 @@ function getStatusClass($status) {
 
             <!-- Records Section -->
             <div class="records-section">
-                <form method="GET" action="department_records.php">
+                <form id="filterForm" method="GET" action="department_records.php">
                     <div class="records-header">
                         <h2>All Records for Pasig City</h2>
                         <div class="records-actions">
                             <div class="search-box">
                                 <i class="fas fa-search"></i>
-                                <input type="text" name="search" placeholder="Search records..." value="<?php echo htmlspecialchars($search); ?>">
+                                <input type="text" id="searchInput" name="search" placeholder="Search records..." value="<?php echo htmlspecialchars($search); ?>">
                             </div>
-                            <button type="submit" class="btn"><i class="fas fa-filter"></i> Filter</button>
-                            <button type="button" class="btn" onclick="window.location.href='department_records.php'"><i class="fas fa-redo"></i> Reset</button>
-                            <button type="button" class="btn"><i class="fas fa-download"></i> Export</button>
                         </div>
                     </div>
                     
@@ -535,7 +548,7 @@ function getStatusClass($status) {
                     <div class="filter-section">
                         <div class="filter-group">
                             <label for="barangay-filter">Barangay</label>
-                            <select id="barangay-filter" name="barangay">
+                            <select id="barangayFilter" name="barangay">
                                 <option value="all">All Barangays</option>
                                 <?php foreach ($barangays_list as $b): ?>
                                     <option value="<?php echo htmlspecialchars($b); ?>" <?php echo ($barangayFilter === $b) ? 'selected' : ''; ?>><?php echo htmlspecialchars($b); ?></option>
@@ -544,20 +557,10 @@ function getStatusClass($status) {
                         </div>
                         <div class="filter-group">
                             <label for="type-filter">Application Type</label>
-                            <select id="type-filter" name="type">
+                            <select id="typeFilter" name="type">
                                 <option value="all">All Types</option>
                                 <option value="PWD" <?php echo ($typeFilter === 'PWD') ? 'selected' : ''; ?>>PWD</option>
                                 <option value="Senior Citizen" <?php echo ($typeFilter === 'Senior Citizen') ? 'selected' : ''; ?>>Senior Citizen</option>
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label for="status-filter">Status</label>
-                            <select id="status-filter" name="status">
-                                <option value="all">All Status</option>
-                                <option value="Pending" <?php echo ($statusFilter === 'Pending') ? 'selected' : ''; ?>>Pending</option>
-                                <option value="Verified" <?php echo ($statusFilter === 'Verified') ? 'selected' : ''; ?>>Verified</option>
-                                <option value="Rejected" <?php echo ($statusFilter === 'Rejected') ? 'selected' : ''; ?>>Rejected</option>
-                                <option value="Approved" <?php echo ($statusFilter === 'Approved') ? 'selected' : ''; ?>>Approved</option>
                             </select>
                         </div>
                     </div>
@@ -602,7 +605,7 @@ function getStatusClass($status) {
                         </div>
                         <div class="pagination-links">
                             <?php
-                            $queryString = http_build_query(array_filter(['search' => $search, 'barangay' => $barangayFilter, 'type' => $typeFilter, 'status' => $statusFilter]));
+                            $queryString = http_build_query(array_filter(['search' => $search, 'barangay' => $barangayFilter, 'type' => $typeFilter]));
                             
                             if ($page > 1) { echo '<a href="?page=' . ($page - 1) . '&' . $queryString . '">Previous</a>'; } else { echo '<span class="disabled">Previous</span>'; }
 
@@ -752,8 +755,8 @@ function getStatusClass($status) {
                                     <h3><i class="fas fa-wheelchair"></i> PWD Specific Information</h3>
                                     <div class="form-row">
                                         <div class="form-group">
-                                            <label for="idNumber">ID Number</label>
-                                            <input type="text" id="idNumber" name="idNumber" value="${application.id_number || ''}">
+                                            <label for="pwdIdNumber">ID Number</label>
+                                            <input type="text" id="pwdIdNumber" name="idNumber" value="${application.id_number || ''}">
                                         </div>
                                     </div>
                                     <div class="form-group">
@@ -788,8 +791,8 @@ function getStatusClass($status) {
                                     <h3><i class="fas fa-user-friends"></i> Senior Citizen Specific Information</h3>
                                     <div class="form-row">
                                         <div class="form-group">
-                                            <label for="idNumber">ID Number</label>
-                                            <input type="text" id="idNumber" name="idNumber" value="${application.id_number || ''}">
+                                            <label for="seniorIdNumber">ID Number</label>
+                                            <input type="text" id="seniorIdNumber" name="idNumber" value="${application.id_number || ''}">
                                         </div>
                                     </div>
                                 </div>
@@ -800,12 +803,16 @@ function getStatusClass($status) {
                                 <div class="form-group">
                                     <label for="proofOfAddress">Proof of Address</label>
                                     <input type="file" id="proofOfAddress" name="proofOfAddress">
-                                    <p id="currentProofOfAddress">${application.has_proof_of_address ? `<a href="../api/get_document.php?id=${appId}&doc_type=proof_of_address" target="_blank">View Current Proof of Address</a>` : 'No document uploaded'}</p>
+                                     <div class="image-placeholder" id="proofOfAddressPreview">
+                                        ${application.has_proof_of_address ? `<img src="../api/get_document.php?id=${appId}&doc_type=proof_of_address" alt="Proof of Address">` : '<p>No document uploaded.</p>'}
+                                    </div>
                                 </div>
                                 <div class="form-group">
                                     <label for="idImage">ID Image</label>
                                     <input type="file" id="idImage" name="idImage">
-                                    <p id="currentIdImage">${application.has_id_image ? `<a href="../api/get_document.php?id=${appId}&doc_type=id_image" target="_blank">View Current ID Image</a>` : 'No document uploaded'}</p>
+                                    <div class="image-placeholder" id="idImagePreview">
+                                        ${application.has_id_image ? `<img src="../api/get_document.php?id=${appId}&doc_type=id_image" alt="ID Image">` : '<p>No document uploaded.</p>'}
+                                    </div>
                                 </div>
                             </div>
                             <div class="form-section">
@@ -822,6 +829,7 @@ function getStatusClass($status) {
                         </form>
                     `;
 
+                    
                     // Add event listener for application type change within the modal
                     document.getElementById('applicationType').addEventListener('change', function () {
                         if (this.value === 'pwd') {
@@ -865,6 +873,27 @@ function getStatusClass($status) {
                     modalBody.innerHTML = '<p>Error loading application details. Please check the console for more information.</p>';
                 });
         }
+
+        // Real-time filtering logic
+        document.addEventListener('DOMContentLoaded', function() {
+            const filterForm = document.getElementById('filterForm');
+            const searchInput = document.getElementById('searchInput');
+            const barangayFilter = document.getElementById('barangayFilter');
+            const typeFilter = document.getElementById('typeFilter');
+
+            function applyFilters() {
+                const currentUrl = new URL(window.location.href);
+                currentUrl.searchParams.set('search', searchInput.value);
+                currentUrl.searchParams.set('barangay', barangayFilter.value);
+                currentUrl.searchParams.set('type', typeFilter.value);
+                currentUrl.searchParams.set('page', 1); // Reset to first page on filter change
+                window.location.href = currentUrl.toString();
+            }
+
+            searchInput.addEventListener('input', applyFilters);
+            barangayFilter.addEventListener('change', applyFilters);
+            typeFilter.addEventListener('change', applyFilters);
+        });
     </script>
 </body>
 </html>

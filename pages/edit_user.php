@@ -5,6 +5,7 @@ error_reporting(E_ALL);
 error_log("DEBUG: edit_user.php: Script started.");
 session_start();
 require_once '../includes/db_connect.php';
+require_once '../includes/password_validation.php'; // Include the password validation function
 
 // Check if the user is logged in and has the correct role
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'department_admin') {
@@ -171,6 +172,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['updateUser'])) {
                         if (!empty($newPassword)) {
                             if ($newPassword !== $confirmPassword) {
                                 $response['message'] = 'New password and confirm password do not match.'; // Changed from $response['error']
+                            } else {
+                                $validationResult = validatePassword($newPassword);
+                                if (!$validationResult['valid']) {
+                                    $response['message'] = $validationResult['message'];
+                                }
                             }
                         }
                     }

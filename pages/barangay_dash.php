@@ -301,70 +301,82 @@ $barangayName = htmlspecialchars($_SESSION['barangay'] ?? 'Unknown Barangay');
             });
         }
 
-        // --- Monthly Chart ---
-        const monthlyCtx = document.getElementById('monthlyChart')?.getContext('2d');
-        if (monthlyCtx && data.monthly) {
-            const twelveMonths = [...Array(12)].map((_, i) => {
-                const d = new Date();
-                d.setMonth(d.getMonth() - i);
-                return d.toLocaleString('default', { month: 'short' });
-            }).reverse();
-
-            const pwdData = Array(12).fill(0);
-            const seniorData = Array(12).fill(0);
-
-            data.monthly.forEach(item => {
-                const monthIndex = twelveMonths.indexOf(item.month.substring(0, 3));
-                if (monthIndex > -1) {
-                    if (item.application_type === 'PWD') {
-                        pwdData[monthIndex] = item.count;
-                    } else if (item.application_type === 'Senior Citizen') {
-                        seniorData[monthIndex] = item.count;
-                    }
+            // --- Monthly Chart ---
+            const monthlyCtx = document.getElementById('monthlyChart')?.getContext('2d');
+            if (monthlyCtx && data.monthly) {
+                // Generate an array of the last 12 months, including month number and year
+                const twelveMonths = [];
+                for (let i = 11; i >= 0; i--) { // Iterate backwards from 11 to 0 for correct chronological order
+                    const d = new Date();
+                    d.setMonth(d.getMonth() - i);
+                    twelveMonths.push({
+                        name: d.toLocaleString('default', { month: 'short' }),
+                        month_num: d.getMonth() + 1, // getMonth() is 0-indexed
+                        year: d.getFullYear()
+                    });
                 }
-            });
 
-            new Chart(monthlyCtx, {
-                type: 'bar',
-                data: {
-                    labels: twelveMonths,
-                    datasets: [
-                        { label: 'PWD Applications', data: pwdData, backgroundColor: '#3498db' },
-                        { label: 'Senior Citizen Applications', data: seniorData, backgroundColor: '#2ecc71' }
-                    ]
-                },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false, 
-                    plugins: {
-                        legend: {
-                            labels: {
-                                color: textColor
-                            }
+                const chartLabels = twelveMonths.map(m => `${m.name} ${m.year.toString().slice(2)}`); // e.g., "Nov 23"
+
+                const pwdData = Array(12).fill(0);
+                const seniorData = Array(12).fill(0);
+
+                data.monthly.forEach(item => {
+                    // Find the index in our twelveMonths array based on month number and year
+                    const index = twelveMonths.findIndex(
+                        m => m.month_num == item.month_num && m.year == item.year
+                    );
+
+                    if (index !== -1) { // If a matching month is found
+                        if (item.application_type === 'pwd') { // Corrected to match database casing
+                            pwdData[index] = item.count;
+                        } else if (item.application_type === 'senior') { // Corrected to match database casing
+                            seniorData[index] = item.count;
                         }
+                    }
+                });
+
+                new Chart(monthlyCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: chartLabels, // Use the new chartLabels
+                        datasets: [
+                            { label: 'PWD Applications', data: pwdData, backgroundColor: '#3498db' },
+                            { label: 'Senior Citizen Applications', data: seniorData, backgroundColor: '#2ecc71' }
+                        ]
                     },
-                    scales: { 
-                        y: { 
-                            beginAtZero: true,
-                            ticks: {
-                                color: textColor
-                            },
-                            grid: {
-                                color: gridColor
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: textColor
+                                }
                             }
                         },
-                        x: {
-                            ticks: {
-                                color: textColor
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    color: textColor
+                                },
+                                grid: {
+                                    color: gridColor
+                                }
                             },
-                            grid: {
-                                color: gridColor
+                            x: {
+                                ticks: {
+                                    color: textColor
+                                },
+                                grid: {
+                                    color: gridColor
+                                }
                             }
                         }
-                    } 
-                }
-            });
-        }
+                    }
+                });
+            }
     }
     </script>
 </body>

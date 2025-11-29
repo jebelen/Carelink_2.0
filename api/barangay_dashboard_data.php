@@ -34,15 +34,16 @@ try {
 
     // 2. Get data for Monthly Applications Chart (last 12 months)
     $monthlyStmt = $conn->prepare("
-        SELECT 
-            MONTHNAME(date_submitted) as month,
-            application_type,
-            COUNT(*) as count
-        FROM applications
-        WHERE barangay = :barangay AND date_submitted >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
-        GROUP BY MONTH(date_submitted), MONTHNAME(date_submitted), application_type
-        ORDER BY MIN(date_submitted)
-    ");
+                SELECT
+                    MONTHNAME(date_submitted) as month,
+                    MONTH(date_submitted) as month_num,
+                    YEAR(date_submitted) as year,
+                    application_type,
+                    COUNT(*) as count
+                FROM applications
+                WHERE barangay = :barangay AND date_submitted >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+                GROUP BY YEAR(date_submitted), MONTH(date_submitted), MONTHNAME(date_submitted), application_type
+                ORDER BY YEAR(date_submitted), MONTH(date_submitted)    ");
     $monthlyStmt->execute(['barangay' => $barangay]);
     $response['data']['monthly'] = $monthlyStmt->fetchAll(PDO::FETCH_ASSOC);
 
