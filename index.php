@@ -554,6 +554,7 @@ if (isset($_COOKIE['remember_user'])) {
         </div>
         <div class="nav-links">
             <a href="#" id="aboutLink">About</a>
+            <a href="pages/signup.php">Sign Up</a>
         </div>
     </div>
 

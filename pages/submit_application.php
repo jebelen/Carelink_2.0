@@ -53,7 +53,6 @@ $loggedInBarangay = htmlspecialchars($_SESSION['barangay'] ?? '');
                 </div>
                 <div class="header-actions">
                     <a href="new_application.php" class="btn"><i class="fas fa-plus"></i> Add Application</a>
-                    <button class="btn" id="importBtn"><i class="fas fa-upload"></i> Import Applications</button>
                     <div class="user-info">
                         <div class="user-avatar">
                             <?php
@@ -377,33 +376,7 @@ $loggedInBarangay = htmlspecialchars($_SESSION['barangay'] ?? '');
         </div>
     </div>
 
-    <!-- Import Applications Modal -->
-    <div id="importModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Import Applications from CSV</h2>
-                <button class="close-modal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <p>Download the responses from your Google Form as a CSV file and and upload it here to import the applications.</p>
-                <div class="message">
-                    <?php
-                        if (isset($_SESSION['import_message'])) {
-                            echo $_SESSION['import_message'];
-                            unset($_SESSION['import_message']);
-                        }
-                    ?>
-                </div>
-                <form action="../api/import_applications.php" method="post" enctype="multipart/form-data">
-                    <div class="form-group">
-                        <label for="csv_file">Select CSV File</label>
-                        <input type="file" name="csv_file" id="csv_file" accept=".csv" required>
-                    </div>
-                    <button type="submit" class="btn">Import Applications</button>
-                </form>
-            </div>
-        </div>
-    </div>
+
 
 
     <script src="../assets/js/sidebar-toggle.js"></script>
@@ -432,18 +405,6 @@ $loggedInBarangay = htmlspecialchars($_SESSION['barangay'] ?? '');
             const closeModalBtn = document.querySelector('#applicationModal .close-modal');
             closeModalBtn.addEventListener('click', () => {
                 document.getElementById('applicationModal').style.display = 'none';
-            });
-
-            const importBtn = document.getElementById('importBtn');
-            const importModal = document.getElementById('importModal');
-            const closeImportModalBtn = document.querySelector('#importModal .close-modal');
-
-            importBtn.addEventListener('click', () => {
-                importModal.style.display = 'block';
-            });
-
-            closeImportModalBtn.addEventListener('click', () => {
-                importModal.style.display = 'none';
             });
 
             // Update welcome message based on time of day

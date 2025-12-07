@@ -26,102 +26,122 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['addUser'])) {
     if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
         $error = 'CSRF token validation failed.';
     } else {
-        $firstName = $_POST['firstName'];
-        $lastName = $_POST['lastName'];
-        $email = $_POST['email'];
-        $username = $_POST['username'];
-        $role = $_POST['role'];
-        $barangay = isset($_POST['barangay']) ? $_POST['barangay'] : null;
-        $password = $_POST['password'];
-        $profilePicture = 'default.jpg'; // Default profile picture
+        $masterPassword = $_POST['masterPassword'];
+        $correctMasterPassword = 'CarelinkMaster2025!';
 
-        if (empty($firstName) || empty($lastName) || empty($email) || empty($username) || empty($role) || empty($password)) {
-            $error = 'Please fill in all required fields.';
+        if ($masterPassword !== $correctMasterPassword) {
+            $error = 'Invalid Master Password. User creation failed.';
         } else {
-            // Validate role
-            $allowedRoles = ['department_admin', 'barangay_staff'];
-            if (!in_array($role, $allowedRoles)) {
-                $error = 'Invalid role selected.';
-            }
+            $firstName = $_POST['firstName'];
+            $lastName = $_POST['lastName'];
+            $email = $_POST['email'];
+            $username = $_POST['username'];
+            $role = $_POST['role'];
+            $barangay = isset($_POST['barangay']) ? $_POST['barangay'] : null;
+            $password = $_POST['password'];
+            $profilePicture = 'default.jpg'; // Default profile picture
 
-            // Validate barangay based on the selected role
-            if ($role === 'barangay_staff') {
-                if (empty($barangay)) {
-                    $error = 'Barangay is required for Barangay Staff.';
-                } elseif (!in_array($barangay, $barangays_list)) {
-                    $error = 'Invalid barangay selected.';
+            if (empty($firstName) || empty($lastName) || empty($email) || empty($username) || empty($role) || empty($password)) {
+                $error = 'Please fill in all required fields.';
+            } else {
+                // Validate role
+                $allowedRoles = ['department_admin', 'barangay_staff'];
+                if (!in_array($role, $allowedRoles)) {
+                    $error = 'Invalid role selected.';
                 }
-            } else { // role is department_admin
-                $barangay = null; // Ensure barangay is null for department admins
-            }
-            
-            // Validate password using the new function
-            if (empty($error)) { // Only proceed if no other errors
-                $validationResult = validatePassword($password);
-                if (!$validationResult['valid']) {
-                    $error = $validationResult['message'];
+
+                // Validate barangay based on the selected role
+                if ($role === 'barangay_staff') {
+                    if (empty($barangay)) {
+                        $error = 'Barangay is required for Barangay Staff.';
+                    } elseif (!in_array($barangay, $barangays_list)) {
+                        $error = 'Invalid barangay selected.';
+                    }
+                } else { // role is department_admin
+                    $barangay = null; // Ensure barangay is null for department admins
                 }
-            }
-
-            if (empty($error)) {
-                // Handle profile picture upload
-                if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] == UPLOAD_ERR_OK) {
-                    $fileTmpPath = $_FILES['profile_picture']['tmp_name'];
-                    $fileName = $_FILES['profile_picture']['name'];
-                    $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-
-                    $allowedfileExtensions = array('jpg', 'gif', 'png', 'jpeg');
-                    if (in_array($fileExtension, $allowedfileExtensions)) {
-                        $uploadFileDir = '../images/profile_pictures/';
-                        if (!is_dir($uploadFileDir)) {
-                            mkdir($uploadFileDir, 0777, true);
-                        }
-                        $newFileName = md5(time() . $fileName) . '.' . $fileExtension;
-                        $dest_path = $uploadFileDir . $newFileName;
-
-                        if(move_uploaded_file($fileTmpPath, $dest_path)) {
-                            $profilePicture = $newFileName;
-                        } else {
-                            $error = "There was an error moving the uploaded profile picture file.";
-                        }
-                    } else {
-                        $error = "Invalid profile picture file type. Only JPG, JPEG, PNG, GIF are allowed.";
+                
+                // Validate password using the new function
+                if (empty($error)) { // Only proceed if no other errors
+                    $validationResult = validatePassword($password);
+                    if (!$validationResult['valid']) {
+                        $error = $validationResult['message'];
                     }
                 }
 
                 if (empty($error)) {
-                    // Hash the password
-                    $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+                    // Check user limit for barangay_staff role
+                    if ($role === 'barangay_staff' && !empty($barangay)) {
+                        $stmt = $conn->prepare("SELECT COUNT(*) FROM users WHERE role = 'barangay_staff' AND barangay = :barangay");
+                        $stmt->execute(['barangay' => $barangay]);
+                        $userCount = $stmt->fetchColumn();
 
-                    // Check for duplicate username
-                    $stmt = $conn->prepare("SELECT COUNT(*) FROM users WHERE username = :username");
-                    $stmt->execute(['username' => $username]);
-                    if ($stmt->fetchColumn() > 0) {
-                        $error = 'Username already exists. Please choose a different one.';
-                    } else {
-                        // Check for duplicate email
-                        $stmt = $conn->prepare("SELECT COUNT(*) FROM users WHERE email = :email");
-                        $stmt->execute(['email' => $email]);
-                        if ($stmt->fetchColumn() > 0) {
-                            $error = 'Email already exists. Please use a different one.';
-                        } else {
-                            try {
-                                $stmt = $conn->prepare("INSERT INTO users (first_name, last_name, email, username, role, barangay, password, profile_picture) VALUES (:first_name, :last_name, :email, :username, :role, :barangay, :password, :profile_picture)");
-                                $stmt->execute([
-                                    'first_name' => $firstName,
-                                    'last_name' => $lastName,
-                                    'email' => $email,
-                                    'username' => $username,
-                                    'role' => $role,
-                                    'barangay' => $barangay,
-                                    'password' => $hashedPassword,
-                                    'profile_picture' => $profilePicture
-                                ]);
-                                $message = 'User added successfully!';
-                                // Regenerate CSRF token after successful submission
-                                $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-                            } catch (PDOException $e) {
-                                $error = "Error: " . $e->getMessage();
+                        if ($userCount >= 2) {
+                            $error = 'The maximum number of users for this barangay has been reached.';
+                        }
+                    }
+
+                    if (empty($error)) {
+                        // Handle profile picture upload
+                        if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] == UPLOAD_ERR_OK) {
+                            $fileTmpPath = $_FILES['profile_picture']['tmp_name'];
+                            $fileName = $_FILES['profile_picture']['name'];
+                            $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+
+                            $allowedfileExtensions = array('jpg', 'gif', 'png', 'jpeg');
+                            if (in_array($fileExtension, $allowedfileExtensions)) {
+                                $uploadFileDir = '../images/profile_pictures/';
+                                if (!is_dir($uploadFileDir)) {
+                                    mkdir($uploadFileDir, 0777, true);
+                                }
+                                $newFileName = md5(time() . $fileName) . '.' . $fileExtension;
+                                $dest_path = $uploadFileDir . $newFileName;
+
+                                if(move_uploaded_file($fileTmpPath, $dest_path)) {
+                                    $profilePicture = $newFileName;
+                                } else {
+                                    $error = "There was an error moving the uploaded profile picture file.";
+                                }
+                            } else {
+                                $error = "Invalid profile picture file type. Only JPG, JPEG, PNG, GIF are allowed.";
+                            }
+                        }
+
+                        if (empty($error)) {
+                            // Hash the password
+                            $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+
+                            // Check for duplicate username
+                            $stmt = $conn->prepare("SELECT COUNT(*) FROM users WHERE username = :username");
+                            $stmt->execute(['username' => $username]);
+                            if ($stmt->fetchColumn() > 0) {
+                                $error = 'Username already exists. Please choose a different one.';
+                            } else {
+                                // Check for duplicate email
+                                $stmt = $conn->prepare("SELECT COUNT(*) FROM users WHERE email = :email");
+                                $stmt->execute(['email' => $email]);
+                                if ($stmt->fetchColumn() > 0) {
+                                    $error = 'Email already exists. Please use a different one.';
+                                } else {
+                                    try {
+                                        $stmt = $conn->prepare("INSERT INTO users (first_name, last_name, email, username, role, barangay, password, profile_picture) VALUES (:first_name, :last_name, :email, :username, :role, :barangay, :password, :profile_picture)");
+                                        $stmt->execute([
+                                            'first_name' => $firstName,
+                                            'last_name' => $lastName,
+                                            'email' => $email,
+                                            'username' => $username,
+                                            'role' => $role,
+                                            'barangay' => $barangay,
+                                            'password' => $hashedPassword,
+                                            'profile_picture' => $profilePicture
+                                        ]);
+                                        $message = 'User added successfully!';
+                                        // Regenerate CSRF token after successful submission
+                                        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+                                    } catch (PDOException $e) {
+                                        $error = "Error: " . $e->getMessage();
+                                    }
+                                }
                             }
                         }
                     }
@@ -189,6 +209,13 @@ try {
         .password-input-container { position: relative; width: 100%; }
         .password-input-container .toggle-password { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--gray); }
         
+        .error-message-inline {
+            color: var(--accent);
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+
         /* Modal Styles */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
         .modal-content { background-color: #fefefe; margin: auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 700px; border-radius: 10px; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19); position: relative; }
@@ -229,10 +256,12 @@ try {
                         <div class="form-group">
                             <label for="email">Email</label>
                             <input type="email" id="email" name="email" placeholder="Enter email address" required>
+                            <span id="emailError" class="error-message-inline"></span>
                         </div>
                         <div class="form-group">
                             <label for="username">Username</label>
                             <input type="text" id="username" name="username" placeholder="Enter username" oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '')" required>
+                            <span id="usernameError" class="error-message-inline"></span>
                         </div>
                     </div>
                     <div class="form-row">
@@ -242,7 +271,18 @@ try {
                                 <input type="password" id="password" name="password" placeholder="Create a password" required>
                                 <span class="toggle-password"><i class="fas fa-eye"></i></span>
                             </div>
+                            <span id="passwordError" class="error-message-inline"></span>
                         </div>
+                        <div class="form-group">
+                            <label for="confirmPassword">Confirm Password</label>
+                            <div class="password-input-container">
+                                <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm the password" required>
+                                <span class="toggle-password"><i class="fas fa-eye"></i></span>
+                            </div>
+                            <span id="confirmPasswordError" class="error-message-inline"></span>
+                        </div>
+                    </div>
+                    <div class="form-row">
                         <div class="form-group">
                             <label for="role">Role</label>
                             <select id="role" name="role" required>
@@ -251,9 +291,7 @@ try {
                                 <option value="barangay_staff">Barangay Staff</option>
                             </select>
                         </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
+                        <div class="form-group" id="barangay-form-group">
                             <label for="barangay">Barangay</label>
                             <select id="barangay" name="barangay">
                                 <option value="">Select barangay</option>
@@ -261,11 +299,18 @@ try {
                                     <option value="<?php echo htmlspecialchars($b); ?>"><?php echo htmlspecialchars($b); ?></option>
                                 <?php endforeach; ?>
                             </select>
+                            <span id="barangayError" class="error-message-inline"></span>
                         </div>
+                    </div>
+                    <div class="form-row">
                         <div class="form-group">
                             <label for="profile_picture">Profile Picture (optional)</label>
                             <input type="file" id="profile_picture" name="profile_picture" accept="image/*">
                             <img id="profile_picture_preview" class="profile-picture-preview" src="../images/profile_pictures/default.jpg" alt="Profile Picture Preview">
+                        </div>
+                        <div class="form-group">
+                            <label for="masterPassword">Master Password</label>
+                            <input type="password" id="masterPassword" name="masterPassword" placeholder="Enter master password" required>
                         </div>
                     </div>
                     <div class="actions">
@@ -385,10 +430,117 @@ try {
         // --- Add User Form Logic ---
         const addUserForm = document.getElementById('addUserForm');
         if (addUserForm) {
-            const togglePasswordAddUser = addUserForm.querySelector('.toggle-password');
-            if (togglePasswordAddUser) {
-                togglePasswordAddUser.addEventListener('click', () => window.togglePasswordVisibility('password'));
+            const roleSelect = document.getElementById('role');
+            const barangayGroup = document.getElementById('barangay-form-group');
+
+            function toggleAddBarangayField() {
+                barangayGroup.style.display = (roleSelect.value === 'barangay_staff') ? 'block' : 'none';
             }
+            roleSelect.addEventListener('change', toggleAddBarangayField);
+            toggleAddBarangayField(); // Initial check
+
+            const passwordField = document.getElementById('password');
+            const confirmPasswordField = document.getElementById('confirmPassword');
+            const passwordError = document.getElementById('passwordError');
+            const confirmPasswordError = document.getElementById('confirmPasswordError');
+
+            const usernameField = document.getElementById('username');
+            const emailField = document.getElementById('email');
+            const barangayField = document.getElementById('barangay');
+            const usernameError = document.getElementById('usernameError');
+            const emailError = document.getElementById('emailError');
+            const barangayError = document.getElementById('barangayError');
+            
+            function validatePassword() {
+                const password = passwordField.value;
+                const errors = [];
+                if (password.length < 8) errors.push("at least 8 characters");
+                if (!/[a-z]/.test(password)) errors.push("at least one lowercase letter");
+                if (!/[A-Z]/.test(password)) errors.push("at least one uppercase letter");
+                if (!/\d/.test(password)) errors.push("at least one number");
+                if (!/[^a-zA-Z0-9]/.test(password)) errors.push("at least one special character");
+
+                if (errors.length > 0) {
+                    passwordError.textContent = "Password must contain " + errors.join(', ') + '.';
+                    passwordError.style.display = 'block';
+                    return false;
+                }
+                passwordError.style.display = 'none';
+                return true;
+            }
+
+            function validateConfirmPassword() {
+                if (passwordField.value !== confirmPasswordField.value) {
+                    confirmPasswordError.textContent = "Passwords do not match.";
+                    confirmPasswordError.style.display = 'block';
+                    return false;
+                }
+                confirmPasswordError.style.display = 'none';
+                return true;
+            }
+
+            passwordField.addEventListener('input', () => {
+                validatePassword();
+                validateConfirmPassword();
+            });
+            confirmPasswordField.addEventListener('input', validateConfirmPassword);
+            
+            function debounce(func, delay = 500) {
+                let timeout;
+                return function(...args) {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => {
+                        func.apply(this, args);
+                    }, delay);
+                };
+            }
+
+            async function checkAvailability(field, value, errorElement) {
+                if (!value) {
+                    errorElement.style.display = 'none';
+                    return;
+                }
+                try {
+                    const response = await fetch(`../api/check_user.php?field=${field}&value=${encodeURIComponent(value)}`);
+                    const data = await response.json();
+
+                    if (field === 'barangay') {
+                        if (data.count >= 2) {
+                            errorElement.textContent = 'This barangay already has the maximum number of users.';
+                            errorElement.style.display = 'block';
+                        } else {
+                            errorElement.style.display = 'none';
+                        }
+                    } else { // username or email
+                        if (data.exists) {
+                            errorElement.textContent = `This ${field} is already taken.`;
+                            errorElement.style.display = 'block';
+                        } else {
+                            errorElement.style.display = 'none';
+                        }
+                    }
+                } catch (error) {
+                    console.error('Validation check failed:', error);
+                }
+            }
+
+            usernameField.addEventListener('input', debounce(e => checkAvailability('username', e.target.value, usernameError)));
+            emailField.addEventListener('input', debounce(e => checkAvailability('email', e.target.value, emailError)));
+            barangayField.addEventListener('change', e => {
+                if (roleSelect.value === 'barangay_staff') {
+                    checkAvailability('barangay', e.target.value, barangayError)
+                }
+            });
+
+            const togglePasswords = document.querySelectorAll('.toggle-password');
+            togglePasswords.forEach(toggle => {
+                toggle.addEventListener('click', function() {
+                    const passwordInput = this.previousElementSibling;
+                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                    passwordInput.setAttribute('type', type);
+                    this.querySelector('i').classList.toggle('fa-eye-slash');
+                });
+            });
 
             const profilePictureInput = document.getElementById('profile_picture');
             const profilePicturePreview = document.getElementById('profile_picture_preview');
