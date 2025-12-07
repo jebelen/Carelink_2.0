@@ -111,11 +111,40 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         body {
             background: linear-gradient(135deg, #1a4b8c 0%, #0d3a6e 100%);
             color: white;
-            height: 100vh;
-            overflow: auto;
+            min-height: 100vh; /* Changed from height to min-height */
             display: flex;
             justify-content: center;
             align-items: center;
+            padding: 20px 0; /* Add some padding for when content overflows viewport */
+        }
+
+        .background-image {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-image: url('../images/system_background.png'); /* Adjusted path */
+            background-size: cover;
+            background-position: center;
+            opacity: 0.3;
+            animation: kenburns 30s ease-in-out infinite;
+        }
+
+        @keyframes kenburns {
+            0% {
+                transform: scale(1) translate(0, 0);
+                opacity: 0.3;
+            }
+            50% {
+                transform: scale(1.2) translate(-5%, 5%);
+                opacity: 0.4;
+            }
+            100% {
+                transform: scale(1) translate(0, 0);
+                opacity: 0.3;
+            }
         }
 
         .signup-container {
@@ -128,7 +157,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             border-radius: 15px;
             padding: 40px;
             width: 100%;
-            max-width: 600px;
+            max-width: 700px; /* Increased from 600px */
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
@@ -210,6 +239,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </style>
 </head>
 <body>
+    <!-- Background Image -->
+    <div class="background-image"></div>
     <div class="signup-container">
         <div class="signup-card">
             <div class="signup-header">
@@ -279,7 +310,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <label for="masterPassword">Master Password</label>
                     <input type="password" id="masterPassword" name="masterPassword" class="form-control" required>
                 </div>
-                <button type="submit" class="btn">Sign Up</button>
+                <button type="submit" class="btn btn-primary">Sign Up</button>
             </form>
         </div>
     </div>
