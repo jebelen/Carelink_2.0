@@ -1,0 +1,41 @@
+# render.yaml
+
+services:
+  # Main PHP Web Service
+  - type: web
+    name: carelink-php
+    runtime: php
+    plan: free # Note: Free plan instances spin down after 15 mins of inactivity.
+    #rootDir: ./ # The root of your project
+    build:
+      - command: "composer install --no-dev --optimize-autoloader"
+    startCommand: "vendor/bin/heroku-php-apache2 ."
+    envVars:
+      - key: DATABASE_URL
+        fromService:
+          type: psql
+          name: carelink-db
+          property: connectionString
+      # Set the document root for Apache
+      - key: DOCUMENT_ROOT
+        value: . 
+
+  # Python API Service for Image Diagnosis
+  - type: web
+    name: carelink-python-api
+    runtime: python
+    plan: free # Warning: Tensorflow is memory-intensive and may not run well on the free tier.
+    rootDir: ./python_api # Sets the working directory for this service
+    build:
+      - command: "pip install -r requirements.txt"
+    startCommand: "gunicorn app:app"
+    envVars:
+      - key: FLASK_ENV
+        value: production
+
+  # PostgreSQL Database
+  - type: psql
+    name: carelink-db
+    plan: free
+    # You will need to import your database manually.
+    # The existing .sql files are for MySQL and will need to be converted to PostgreSQL format.
