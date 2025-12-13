@@ -34,7 +34,7 @@ services:
         value: production
 
   # PostgreSQL Database
-  - type: psql
+  - type: postgres
     name: carelink-db
     plan: free
     # You will need to import your database manually.
